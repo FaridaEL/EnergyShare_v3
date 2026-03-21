@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="EnergyShare_v3.Application/EnergyShare_v3.Application.csproj" Id="41c553fd-dd84-4fcf-aeac-8ba20f8ea516" />
+    <Project Path="EnergyShare_v3.Domain/EnergyShare_v3.Domain.csproj" Id="1f9f7215-ecc8-4c8f-abfd-97f5b2c168aa" />
+    <Project Path="EnergyShare_v3.Infrastructure/EnergyShare_v3.Infrastructure.csproj" Id="d47e83b4-f03e-4547-a770-2632d6c282ce" />
+    <Project Path="src/EnergyShare_v3.Web/EnergyShare_v3.Web.csproj" />
+  </Folder>
+</Solution>
