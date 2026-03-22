@@ -15,14 +15,14 @@ namespace EnergyShare_v3.Domain.Entities
         appliquer des valeurs moyennes. ex : Gridfee --> valeur moyenne de 0.03 cent**/
         [Key]
         public Guid Id { get; set; }
-       
+
         [Required]
-        public string Code { get; set; }   // ex: CO2_COEFF, Gridfee 
+        public string Code { get; set; } = null!;   // ex: CO2_COEFF, Gridfee 
         public string? Description { get; set; }
         [Required]
         public string? TypeValeur { get; set; } //  decimal
         [Required]
-        public string Unite { get; set; } //kWh, €
+        public string Unite { get; set; } = null!; //kWh, €
         public decimal Valeur { get; set; }  // ex : 0.03; 0,15
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -36,7 +36,7 @@ namespace EnergyShare_v3.Domain.Entities
 
         public Guid PointAccessId { get; set; }
         [ForeignKey("PointAccessId")]
-        public PointAccess PointAccess { get; set; }
+        public PointAccess PointAccess { get; set; } = null!;
 
         //Données d'audit
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

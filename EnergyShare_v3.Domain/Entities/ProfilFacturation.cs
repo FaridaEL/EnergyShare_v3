@@ -22,9 +22,9 @@ namespace EnergyShare_v3.Domain.Entities
         public string? IBAN { get; set; }
 
         public string? BIC { get; set; }
-        public string? numeroCompteBancaire { get; set; }
-        public string? numéroTVA { get; set; }
-        public string? adresseFacturation { get; set; }
+        public string? NumeroCompteBancaire { get; set; }
+        public string? NumeroTVA { get; set; }
+        public string? AdresseFacturation { get; set; }
 
 
         public Guid? UserId { get; set; }

@@ -22,7 +22,7 @@ namespace EnergyShare_v3.Domain.Entities
 
         public Guid PartageId { get; set; }
         [ForeignKey("PartageId")]
-        public Partage Partage { get; set; }
+        public Partage Partage { get; set; } = null!;
 
         //Données d'audit
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

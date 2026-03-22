@@ -18,9 +18,9 @@ namespace EnergyShare_v3.Domain.Entities
         [ForeignKey("PointAccessVendeurId")]
         public PointAccess PointAccessVendeur { get; set; } = null!;
 
-        public Guid PointAccesAcheteurId { get; set; } //  quid si plusieurs acheteurs cas de figures meme batiments? 
-        [ForeignKey("PointAccesAcheteurId")]
-        public PointAccess PointAccesAcheteur { get; set; } = null!;
+        public Guid PointAccessAcheteurId { get; set; }    //  quid si plusieurs acheteurs cas de figures meme batiments? 
+        [ForeignKey("PointAccessAcheteurId")]
+        public PointAccess PointAccessAcheteur { get; set; } = null!;
 
         // Données d'audit
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -10,7 +10,7 @@ namespace EnergyShare_v3.Domain.Entities
         //règle 1 point EAN ne peut appartenir qu'a un seul partage à la fois.
         [Key]
         public Guid Id { get; set; }
-        public bool? IsInterlocuteurUnique { get; set; }
+        public bool IsInterlocuteurUnique { get; set; } = false;
         public DateTime JoinedAt { get; set; }
         public DateTime? ExitAt { get; set; }
         public DateTime? DateCommunicationPreavis { get; set; }

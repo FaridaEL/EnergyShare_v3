@@ -27,7 +27,7 @@ namespace EnergyShare_v3.Domain.Entities
         public string Contenu { get; set; } = null!; // Le corps du message
         [Required]
         public DateTime DateEnvoi { get; set; } = DateTime.UtcNow;
-        public bool? IsLu { get; set; } = false;
+        public bool IsLu { get; set; } = false;
 
         [Required]
         public Guid ExpediteurId { get; set; }

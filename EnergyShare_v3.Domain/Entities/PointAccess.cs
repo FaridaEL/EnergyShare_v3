@@ -24,7 +24,7 @@ namespace EnergyShare_v3.Domain.Entities
         public double? Latitude { get; set; }  
         public double? Longitude { get; set; }
         
-        public bool? IsInjectionPoint { get; set; } = false;  //permet de déterminer si le point injecte sur le résau et donc est un producteur/vendeur  -> redondant vu que siprofil vendeur alors injecte..
+        public bool IsInjectionPoint { get; set; } = false;  //permet de déterminer si le point injecte sur le résau et donc est un producteur/vendeur  -> redondant vu que siprofil vendeur alors injecte..
         
         //règle métier : compteur intelligent obligatoire, commence par 1SJ et longueur maximale 20 caractères
         [Required]
@@ -38,7 +38,7 @@ namespace EnergyShare_v3.Domain.Entities
         public string? EAN_Encrypted { get; set; } //numéro EAN chiffré pour garantir la confidentialité des données de consommation/production d'énergie
         
 
-        public ICollection<MembrePartage> Membres { get; set; } = new List<MembrePartage>();
+        public ICollection<MembrePartage> Membres { get; set; } = [];
 
         [Required]
         public Guid UserId { get; set; }
@@ -48,13 +48,15 @@ namespace EnergyShare_v3.Domain.Entities
         [Required]    //règle métier : point d'accès couvert par un contrat d'énergie
         public Guid FournisseurId { get; set; }
         [ForeignKey("FournisseurId")]
-        public FournisseurEnergie Fournisseur { get; set; }   
-       
-        //enumérations
+        public FournisseurEnergie Fournisseur { get; set; } = null!
+
+;        //enumérations
         public SourceRenouvelable? Source { get; set; }
         //Naviguation 
-        public ICollection<Match> MatchsAcheteurs { get; set; } = new List<Match>();
-        public ICollection<Match> MatchsVendeurs { get; set; } = new List<Match>();
+        
+        public ProfilEnergie? ProfilEnergie { get; set; }
+        public ICollection<Match> MatchsAcheteurs { get; set; } = [];
+        public ICollection<Match> MatchsVendeurs { get; set; } = [];
 
         //Données d'audit
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -21,7 +21,7 @@ namespace EnergyShare_v3.Domain.Entities
         public string CheminStockage { get; set; } = null!; // Chemin sur le serveur/Cloud
         [Required]
         public DateTime DateUpload { get; set; } = DateTime.UtcNow;
-        public bool? IsSigned {  get; set; }
+        public bool IsSigned { get; set; } = false;
         public DateTime? SignedAt { get; set; }
         
         //Enumération

@@ -46,10 +46,10 @@ namespace EnergyShare_v3.Domain.Entities
         public SocieteType? SocieteType { get; set; }
 
         //naviguation
-        public ICollection<Message> MessagesEnvoyes { get; set; } = new List<Message>();
-        public ICollection<Message> MessagesRecus { get; set; } = new List<Message>();
+        public ICollection<Message> MessagesEnvoyes { get; set; } = [];
+        public ICollection<Message> MessagesRecus { get; set; } = [];
 
-        public ICollection<PointAccess> PointsAccess { get; set; } = new List<PointAccess>();   //1 user peut avoir plusieurs points d'accès Mais un même point d'accès ne peut être rattaché qu'à un seul partage atif à la fois
+        public ICollection<PointAccess> PointsAccess { get; set; } = [];   //1 user peut avoir plusieurs points d'accès Mais un même point d'accès ne peut être rattaché qu'à un seul partage atif à la fois
 
 
         //Données d'audit

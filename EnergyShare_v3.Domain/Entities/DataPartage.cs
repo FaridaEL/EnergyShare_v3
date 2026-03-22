@@ -59,6 +59,5 @@ namespace EnergyShare_v3.Domain.Entities
 
 
     }
-
-   
+    
 }

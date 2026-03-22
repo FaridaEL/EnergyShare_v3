@@ -16,7 +16,7 @@ namespace EnergyShare_v3.Domain.Entities
         public string? Description { get; set; }
         public DateTime? DateDebut { get; set; }
         public DateTime? DateFin { get; set; }
-        public bool? RecevoirDataParticipant { get; set; } = false;   //permet de demander des fichiers détaillés par participant --> Message à ajouter sur l'interface: "Chaque mois, Sibelga vous enverra un fichier contenant les données vous permettant de connaitre le volume local mensuel (la consommation qui vient du partage) de chaque participant et le montant des tarifs réseau associés. Si vous le souhaitez, vous pouvez également recevoir un fichier contenant les données de chaque participant sous forme quart horaire(= par quart d’heure) en cochant la cases ci-dessous.
+        public bool RecevoirDataParticipant { get; set; } = false;   //permet de demander des fichiers détaillés par participant --> Message à ajouter sur l'interface: "Chaque mois, Sibelga vous enverra un fichier contenant les données vous permettant de connaitre le volume local mensuel (la consommation qui vient du partage) de chaque participant et le montant des tarifs réseau associés. Si vous le souhaitez, vous pouvez également recevoir un fichier contenant les données de chaque participant sous forme quart horaire(= par quart d’heure) en cochant la cases ci-dessous.
 
         //énumération 
         public PartageEnergieStatutType Statut { get; set; } = PartageEnergieStatutType.Inactif; // au moment de la création est en inactif  Mais comment gérer cela avec l'historique des statuts?
@@ -36,18 +36,18 @@ namespace EnergyShare_v3.Domain.Entities
         public User? GestionnairePartage { get; set; } = null!;
 
 
-        public ICollection<MembrePartage> Membres { get; set; } = new List<MembrePartage>(); // On suppose que chaque membre ajouté à signer la convention  et/ou le fera avant la validation vers Sibelga
+        public ICollection<MembrePartage> Membres { get; set; } = []; // On suppose que chaque membre ajouté à signer la convention  et/ou le fera avant la validation vers Sibelga
 
-        public  ICollection<TarifAccord> TarifsAccord { get; set; } = new List<TarifAccord>();
+        public  ICollection<TarifAccord> TarifsAccord { get; set; } = [];
 
-        public ICollection<FraisComptageMesurage> HistoriqueFraisComptage { get; set; } = new List<FraisComptageMesurage>();
+        public ICollection<FraisComptageMesurage> HistoriqueFraisComptage { get; set; } = [];
 
-        public ICollection<MethodeRepartitionInjection> HistoriqueMethodes { get; set; } = new List<MethodeRepartitionInjection>();
-        public ICollection<HistoriquePartageStatut> HistoriqueStatut { get; set; } = new List<HistoriquePartageStatut>();
-        public ICollection<DataPartage> RelevesSibelga { get; set; } = new List<DataPartage>();
-        public ICollection<DocumentPartage> Documents { get; set; } = new List<DocumentPartage>();
-        public ICollection<DdeValidationPartage> Validations { get; set; }   = new List<DdeValidationPartage>();
-        public ICollection<DdeInfoPerimetre> DemandesInfos { get; set; }    = new List<DdeInfoPerimetre>();
+        public ICollection<MethodeRepartitionInjection> HistoriqueMethodes { get; set; } = [];
+        public ICollection<HistoriquePartageStatut> HistoriqueStatut { get; set; } = [];
+        public ICollection<DataPartage> RelevesSibelga { get; set; } = [];
+        public ICollection<DocumentPartage> Documents { get; set; } = [];
+        public ICollection<DdeValidationPartage> Validations { get; set; }   = [];
+        public ICollection<DdeInfoPerimetre> DemandesInfos { get; set; }    = [];
 
         
 
