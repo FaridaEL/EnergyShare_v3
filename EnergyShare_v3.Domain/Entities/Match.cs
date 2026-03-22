@@ -11,16 +11,16 @@ namespace EnergyShare_v3.Domain.Entities
         [Key]
         public Guid Id { get; set; }
               
-        public decimal DistanceCalculée { get; set; } //données calcué ) à partir de la distance entre deux points
+        public decimal DistanceCalculee { get; set; } //données calcué ) à partir de la distance entre deux points
         
        
-        public Guid VendeurId { get; set; } 
-        [ForeignKey("VendeurId")]
-        public User Vendeur { get; set; } = null!;
+        public Guid PointAccessVendeurId { get; set; } 
+        [ForeignKey("PointAccessVendeurId")]
+        public PointAccess PointAccessVendeur { get; set; } = null!;
 
-        public Guid AcheteurId { get; set; } //  quid si plusieurs acheteurs cas de figures meme batiments? 
-        [ForeignKey("AcheteurId")]
-        public User Acheteur { get; set; } = null!;
+        public Guid PointAccesAcheteurId { get; set; } //  quid si plusieurs acheteurs cas de figures meme batiments? 
+        [ForeignKey("PointAccesAcheteurId")]
+        public PointAccess PointAccesAcheteur { get; set; } = null!;
 
         // Données d'audit
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

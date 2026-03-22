@@ -25,7 +25,7 @@ namespace EnergyShare_v3.Domain.Entities
         public string Unite { get; set; } //kWh, €
         public decimal Valeur { get; set; }  // ex : 0.03; 0,15
 
-        public DateTime CreateddAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt  { get; set; } = DateTime.UtcNow;
 
 

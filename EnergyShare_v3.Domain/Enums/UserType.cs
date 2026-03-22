@@ -10,6 +10,8 @@ namespace EnergyShare_v3.Domain.Enums
         [Display(Name = "Professionnel")]
         Professionnel = 1,
         [Display(Name = "Résidentiel")]
-        Residentiel = 2
+        Residentiel = 2,
+        [Display(Name = "Client protégé")]
+        ClientProtege = 3
     }
 }

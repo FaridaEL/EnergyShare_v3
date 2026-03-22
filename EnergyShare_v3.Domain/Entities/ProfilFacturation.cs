@@ -27,7 +27,7 @@ namespace EnergyShare_v3.Domain.Entities
         public string? adresseFacturation { get; set; }
 
 
-        public Guid? UserID { get; set; }
+        public Guid? UserId { get; set; }
         [ForeignKey("UserId")]
         public User? User { get; set; }
 

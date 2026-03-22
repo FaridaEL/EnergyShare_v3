@@ -17,9 +17,9 @@ namespace EnergyShare_v3.Domain.Entities
         public string? MotifRefusSibelga { get; set; }
         
       
-        public Guid? PartageId { get; set; }
+        public Guid PartageId { get; set; }
         [ForeignKey("PartageId")]
-        public Partage? Partage { get; set; } = null!;
+        public Partage Partage { get; set; } = null!;
 
         // StatutDemande : EnAttente, Valide, Refus
         // Gestion statut partage :
@@ -32,7 +32,7 @@ namespace EnergyShare_v3.Domain.Entities
         public DdeGRDType? DemandeType { get; set; } // NouvelleActivation, ModificationPartageExistant, clôturePartage, etc.
 
          //Lien vers l'esace documentaire ou 1 ou pls document ?
-        public DocumentPartage? PathConventionSignee { get; set; }   // On stocke le chemin vers le fichier (ex: /uploads/conventions/...) --> Mais si pls conventions?
+        public string? PathConventionSignee { get; set; }   // On stocke le chemin vers le fichier (ex: /uploads/conventions/...) --> Mais si pls conventions?
 
         public Guid? OrganismePublicId { get; set; }
         [ForeignKey("OrganismePublicId")]

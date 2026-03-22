@@ -21,7 +21,7 @@ namespace EnergyShare_v3.Domain.Entities
         //énumération 
         public PartageEnergieStatutType Statut { get; set; } = PartageEnergieStatutType.Inactif; // au moment de la création est en inactif  Mais comment gérer cela avec l'historique des statuts?
         public PartageEnergieType EnergieType { get; set; }
-        public DataTransmissionType DataTranmissionType { get; set; }   //SFTP ou SharepointLink , pour envoi de données de consommation du partage et le montant des tarifs réseau associés chaque mois
+        public DataTransmissionType DataTransmissionType { get; set; }   //SFTP ou SharepointLink , pour envoi de données de consommation du partage et le montant des tarifs réseau associés chaque mois
 
         //Lien tables et clés étrangères
         public Guid? PerimetreId { get; set; } //connu qu'après dde d'infos auprès de Sibelga --> null au moment de la création du partage  ou A si même batiment
@@ -42,7 +42,7 @@ namespace EnergyShare_v3.Domain.Entities
 
         public ICollection<FraisComptageMesurage> HistoriqueFraisComptage { get; set; } = new List<FraisComptageMesurage>();
 
-        public ICollection<MethodeRepartitionInjectionType> HistoriqueMethodes { get; set; } = new List<MethodeRepartitionInjectionType>();
+        public ICollection<MethodeRepartitionInjection> HistoriqueMethodes { get; set; } = new List<MethodeRepartitionInjection>();
         public ICollection<HistoriquePartageStatut> HistoriqueStatut { get; set; } = new List<HistoriquePartageStatut>();
         public ICollection<DataPartage> RelevesSibelga { get; set; } = new List<DataPartage>();
         public ICollection<DocumentPartage> Documents { get; set; } = new List<DocumentPartage>();

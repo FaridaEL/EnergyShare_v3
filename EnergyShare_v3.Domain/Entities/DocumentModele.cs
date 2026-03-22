@@ -20,7 +20,7 @@ namespace EnergyShare_v3.Domain.Entities
         public string? Format { get; set; }//Excel, Word, PDF, etc.
 
         [Required]
-        public string? TemplatePath { get; set; } // Chemin vers le fichier
+        public string TemplatePath { get; set; } = null!; // Chemin vers le fichier
 
         //Enumérations
         public DocumentType? DocumentType { get; set; }         

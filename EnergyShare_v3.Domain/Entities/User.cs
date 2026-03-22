@@ -13,8 +13,8 @@ namespace EnergyShare_v3.Domain.Entities
         [Key]    
         public Guid Id { get; set; } //Globally Unique Identifier
 
-        public UserStatus Status { get; set; } = UserStatus.Actif; //Statut du membre (Actif, Inactif)
-        /// <summary>---Obligatoire à l'inscription : uniquement mail + password pour faciliter l'inscription--- </summary>
+        public UserStatus Status { get; set; } = UserStatus.Actif; //Statut du membre (Actif, Inactif)  ( ex après un délai d'inactivité passerait automatiquement en inactif..)
+        //Obligatoire à l'inscription : uniquement mail + password pour faciliter l'inscription
         [Required, EmailAddress]
         public string Email { get; set; } = null!;  //null indique qu'il ne faut pas envoyer d'avertissement de non-nullabilité 
         [Required]
@@ -28,39 +28,28 @@ namespace EnergyShare_v3.Domain.Entities
 
         //Si société 
         public bool IsSociety { get; set; }
-        public string? SocieteNom { get; set; }  // Null si particulier
+        public string? SocieteName { get; set; }  // Null si particulier
         
         [RegularExpression(@"^BE\d{10}$", ErrorMessage = "Format invalide (BE + 10 chiffres)")]             
         public string? NumeroEntreprise { get; set; } // Null si particulier, commence par BE suivi de 10 chiffres
 
         //Données de naviguation 
-        public Guid? PointAcessId {  get; set; }
-        [ForeignKey("PointAcessId")]
-        public PointAccess? PointAccess { get; set; }
-
-        public Guid? ProfileEnergieId { get; set; }
-        [ForeignKey("ProfileEnergieId")]
-        public ProfilEnergie? ProfilEnergie { get; set; }
-        public Guid? PartageEnergieId { get; set; }
-        [ForeignKey("PartageEnergieId")]
-        public Partage? PartageEnergie { get; set; }
-        public Guid? OrgansimePublicId { get; set; }
-        [ForeignKey("OrgansimePublicId")]
-        public OrganismePublic? OrgansimePublic { get; set; }
+            
+        public Guid? OrganismePublicId { get; set; }
+        [ForeignKey("OrganismePublicId")]
+        public OrganismePublic? OrganismePublic { get; set; }
 
         //Enumérations
-        public UserStatus? UserStatut { get; set; }  //Actif , inactif ( ex après un délai d'inactivité passerait automatiquement en inactif..)
-        public UserRole? UserRole { get; set; }   //Role : Acheteur, Vendeur, OrganismePublic, Administrateur.
-        public UserType? UserType { get; set; }    // professionnel ou particulier
+       
+        public UserRole Role { get; set; }   //Role : Acheteur, Vendeur, OrganismePublic, Administrateur.
+        public UserType UserType { get; set; }    // professionnel ou particulier
         public SocieteType? SocieteType { get; set; }
 
-        public ICollection<Match>? MatchsAcheteurs { get; set; } = new List<Match>();
-        public ICollection<Match>? MatchsVendeurs { get; set; } = new List<Match>();
+        //naviguation
+        public ICollection<Message> MessagesEnvoyes { get; set; } = new List<Message>();
+        public ICollection<Message> MessagesRecus { get; set; } = new List<Message>();
 
-        public ICollection<Message>? MessageExpedieur { get; set; } = new List<Message>();
-        public ICollection<Message>? MessageDestinataire { get; set; } = new List<Message>();
-
-        public ICollection<PointAccess>? PointsAccess { get; set; } = new List<PointAccess>();   //1 user peut avoir plusieurs points d'accès Mais un même point d'accès ne peut être rattaché qu'à un seul partage atif à la fois
+        public ICollection<PointAccess> PointsAccess { get; set; } = new List<PointAccess>();   //1 user peut avoir plusieurs points d'accès Mais un même point d'accès ne peut être rattaché qu'à un seul partage atif à la fois
 
 
         //Données d'audit
@@ -75,10 +64,6 @@ namespace EnergyShare_v3.Domain.Entities
                                   : $"{FirstName} {LastName}".Trim();
 
 
-
-
-
     }
-
    
 }

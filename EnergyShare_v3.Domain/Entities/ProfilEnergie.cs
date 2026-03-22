@@ -34,9 +34,9 @@ namespace EnergyShare_v3.Domain.Entities
         public bool AccordConsentement { get; set; } = true;
         public DateTime DateAccordConsentement { get; set; } = DateTime.UtcNow;
 
-        public Guid? UserID { get; set; }
-        [ForeignKey("UserId")]
-        public User? User { get; set; }
+        public Guid PointAccessId { get; set; }
+        [ForeignKey("PointAccessId")]
+        public PointAccess PointAccess { get; set; }
 
         //Données d'audit
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

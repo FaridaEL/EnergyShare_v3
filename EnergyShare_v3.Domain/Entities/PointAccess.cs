@@ -26,27 +26,35 @@ namespace EnergyShare_v3.Domain.Entities
         
         public bool? IsInjectionPoint { get; set; } = false;  //permet de déterminer si le point injecte sur le résau et donc est un producteur/vendeur  -> redondant vu que siprofil vendeur alors injecte..
         
-        [Required]    //règle métier : compteur intelligent obligatoire, commence par 1SJ et longueur maximale 20 caractères
+        //règle métier : compteur intelligent obligatoire, commence par 1SJ et longueur maximale 20 caractères
+        [Required]
+        [MaxLength(20)]
+        [RegularExpression(@"^1SJ.{0,17}$")]
         public string? SmartMeter_Encrypted { get; set; } //numéro de compteur intelligent chiffré pour garantir la confidentialité des données de consommation/production d'énergie
         
-        [Required]   //règle métier : commence par 5414489 et comporte 18 chiffres
+        //règle métier : commence par 5414489 et comporte 18 chiffres
+        [Required]
+        [RegularExpression(@"^5414489\d{11}$")]
         public string? EAN_Encrypted { get; set; } //numéro EAN chiffré pour garantir la confidentialité des données de consommation/production d'énergie
         
 
         public ICollection<MembrePartage> Membres { get; set; } = new List<MembrePartage>();
 
-        public Guid? UserId { get; set; }
-        [ForeignKey("UserId")]
-        public User? User { get; set; }
-
         [Required]
-        public Guid? FournisseurId { get; set; }
+        public Guid UserId { get; set; }
+        [ForeignKey("UserId")]
+        public User User { get; set; } = null!;  //règle métier : point d'accès rattaché à un utilisateur actif
+
+        [Required]    //règle métier : point d'accès couvert par un contrat d'énergie
+        public Guid FournisseurId { get; set; }
         [ForeignKey("FournisseurId")]
-        public FournisseurEnergie? Fournisseur { get; set; }   //règle métier : point d'accès couvert par un contrat d'énergie
+        public FournisseurEnergie Fournisseur { get; set; }   
        
         //enumérations
         public SourceRenouvelable? Source { get; set; }
-
+        //Naviguation 
+        public ICollection<Match> MatchsAcheteurs { get; set; } = new List<Match>();
+        public ICollection<Match> MatchsVendeurs { get; set; } = new List<Match>();
 
         //Données d'audit
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
