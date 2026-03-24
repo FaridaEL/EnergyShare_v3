@@ -33,7 +33,7 @@ namespace EnergyShare_v3.Domain.Entities
 
         public Guid? GestionnairePartageId { get; set; } // L'ID du Gestionnaire s'il y en a un, sinon null   //Est-ce que le vendeur-producteur va gérer le partage ou déleguer à un gestionnaire de partage?
         [ForeignKey("GestionnairePartageId")]
-        public User? GestionnairePartage { get; set; } = null!;
+        public User? GestionnairePartage { get; set; } 
 
 
         public ICollection<MembrePartage> Membres { get; set; } = []; // On suppose que chaque membre ajouté à signer la convention  et/ou le fera avant la validation vers Sibelga
@@ -57,7 +57,43 @@ namespace EnergyShare_v3.Domain.Entities
 
         //Données calculées
         [NotMapped]
-        public int NombreParticipants => Membres.Count; // 1 Vendeur + les acheteurs
+        public int NombreParticipants => Membres.Count(m => m.ExitAt == null); // 1 Vendeur + les acheteurs
+
+        //Méthodes : ajouter membres, document, supprimer
+
+        public void AjouterMembre(MembrePartage membre)
+        {
+            if (membre is null)
+                throw new ArgumentNullException(nameof(membre));
+
+            if (Statut == PartageEnergieStatutType.EnCoursCloture)
+                throw new InvalidOperationException("Impossible d'ajouter un membre à un partage en cours de clôture.");
+            if (Statut == PartageEnergieStatutType.Cloture)
+                throw new InvalidOperationException("Impossible d'ajouter un membre à un partage clôturé.");
+            //if (membre.PartageId != Id && membre.PartageId != Guid.Empty)
+            //  throw new InvalidOperationException("Le membre appartient déjà à un autre partage.");  //pas correcte il peut appartenr 
+
+            Membres.Add(membre);
+            VerifierNombreMembres();
+        }
+
+        public void AjouterDocument(DocumentPartage document)
+        {
+            if (document is null)
+                throw new ArgumentNullException(nameof(document));
+
+            Documents.Add(document);
+        }
+
+        public void AjouterMethodeRepartition(MethodeRepartitionInjection methode)
+        {
+            if (methode is null)
+                throw new ArgumentNullException(nameof(methode));
+
+            VerifierMethodeRepartition(methode);
+
+            HistoriqueMethodes.Add(methode);
+        }
 
 
         //Règles de gestion : nombre de membres  et méthode de répartition 
@@ -100,6 +136,8 @@ namespace EnergyShare_v3.Domain.Entities
             if (Statut is not PartageEnergieStatutType.EnAttenteValidation)
                 throw new InvalidOperationException("Le partage doit être en attente de validation.");
 
+            VerifierNombreMembres();
+
             Statut = PartageEnergieStatutType.Actif;
             DateDebut = DateTime.UtcNow; // La date de début est fixée à la validation par le GRD
         }
@@ -120,7 +158,7 @@ namespace EnergyShare_v3.Domain.Entities
             Statut = PartageEnergieStatutType.EnAttenteModification;
         }
 
-        public void ValiderModifiationPartageParGrd()
+        public void ValiderModificationPartageParGrd()
         {
             if (Statut is not PartageEnergieStatutType.EnAttenteModification)
                 throw new InvalidOperationException("Le partage doit être en attente de modification.");
