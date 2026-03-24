@@ -12,26 +12,26 @@ namespace EnergyShare_v3.Application.Interfaces
 /// - L'Application ne sait pas si on utilise SQL Server, PostgreSQL ou SQLite*/
     public interface IEnergyShareDbContext
     {   //Acces aux utilisateurs
-        DbSet<DataPartage> DataPartage { get; }
-        DbSet<DdeInfoPerimetre> DdeInfoPerimetre { get; }
-        DbSet<DdeValidationPartage> DdeValidationPartage { get; }
-        DbSet<DocumentModele> DocumentModele { get; }
-        DbSet<DocumentPartage> DocumentPartage { get; }
-        DbSet<FournisseurEnergie> FournisseurEnergie { get; }
+        DbSet<DataPartage> DataPartages { get; }
+        DbSet<DdeInfoPerimetre> DdesInfoPerimetre { get; }
+        DbSet<DdeValidationPartage> DdesValidationPartage { get; }
+        DbSet<DocumentModele> DocumentsModele { get; }
+        DbSet<DocumentPartage> DocumentsPartage { get; }
+        DbSet<FournisseurEnergie> FournisseursEnergie { get; }
         DbSet<FraisComptageMesurage> FraisComptageMesurage { get; }
-        DbSet<HistoriquePartageStatut> HistoriquePartageStatut { get; }
-        DbSet<Match> Match { get; }
-        DbSet<MembrePartage> MembrePartage { get; }
-        DbSet<Message> Message { get; }
-        DbSet<MethodeRepartitionInjection> MethodeRepartitionInjection { get; }
-        DbSet<OrganismePublic> OrganismePublic { get; }
-        DbSet<ParametreSysteme> ParametreSysteme { get; }
-        DbSet<Partage> Partage { get; }
-        DbSet<PerimetrePartageReglementaire> PerimetrePartageReglementaire { get; }
-        DbSet<PointAccess> PointAccess { get; }
-        DbSet<ProfilEnergie> ProfilEnergie { get; }
-        DbSet<ProfilFacturation> ProfilFacturation { get; }
-        DbSet<TarifAccord> TarifAccord { get; }
+        DbSet<HistoriquePartageStatut> HistoriquesPartageStatut { get; }
+        DbSet<Match> Matches { get; }
+        DbSet<MembrePartage> MembresPartage { get; }
+        DbSet<Message> Messages { get; }
+        DbSet<MethodeRepartitionInjection> MethodesRepartitionInjection { get; }
+        DbSet<OrganismePublic> OrganismesPublics { get; }
+        DbSet<ParametreSysteme> ParametresSysteme { get; }
+        DbSet<Partage> Partages { get; }
+        DbSet<PerimetrePartageReglementaire> PerimetresPartageReglementaire { get; }
+        DbSet<PointAccess> PointAccesses { get; }
+        DbSet<ProfilEnergie> ProfilsEnergie { get; }
+        DbSet<ProfilFacturation> ProfilsFacturation { get; }
+        DbSet<TarifAccord> TarifsAccord { get; }
         DbSet<User> Users { get; }
 
         /// <summary>Sauvegarde les changements en base de donnees.</summary>

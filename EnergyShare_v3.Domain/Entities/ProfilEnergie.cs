@@ -33,6 +33,7 @@ namespace EnergyShare_v3.Domain.Entities
         [Required] //rgèle métier : en créant un profil l'utlisateur donne son consentement pour le partage de ses données.
         public bool AccordConsentement { get; set; } = true;
         public DateTime DateAccordConsentement { get; set; } = DateTime.UtcNow;
+        public DateTime? DateRetraitConsentement { get; set; } 
 
         public Guid PointAccessId { get; set; }
         [ForeignKey("PointAccessId")]
@@ -41,6 +42,31 @@ namespace EnergyShare_v3.Domain.Entities
         //Données d'audit
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        //Règle de gesiton : 
+        public void RetirerConsentement()  //par défaut le consentement est donnée   //Quid de la date de retrait du consentement?  
+        {
+            AccordConsentement = false;
+            DateRetraitConsentement = DateTime.UtcNow;
+        }
+        public void DonnerConsentement()
+        {
+            AccordConsentement = true;
+            DateAccordConsentement = DateTime.UtcNow;
+            DateRetraitConsentement = null;
+        }
+
+        public void VerifierEligibiliteMatching()
+        {
+            if (!AccordConsentement)
+                throw new InvalidOperationException("Le consentement au partage des données énergétiques est requis.");
+
+            var aUneOffre = OffreEnergie_kWh.HasValue && OffreEnergie_kWh.Value > 0;
+            var aUneDemande = DemandeEnergie_kWh.HasValue && DemandeEnergie_kWh.Value > 0;
+
+            if (!aUneOffre && !aUneDemande)
+                throw new InvalidOperationException("Le profil énergétique doit contenir une offre ou une demande d'énergie.");
+        }
 
     }
 

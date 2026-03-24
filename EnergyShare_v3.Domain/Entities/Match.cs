@@ -26,6 +26,16 @@ namespace EnergyShare_v3.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        
+
+        //Règle de gestion 
+        public void VerifierCohérence()
+        {
+            if (PointAccessVendeurId == PointAccessAcheteurId)
+                throw new InvalidOperationException("Un point d'accès ne peut pas être mis en relation avec lui-même.");
+
+            if (DistanceCalculee < 0)
+                throw new InvalidOperationException("La distance calculée ne peut pas être négative.");
+        }
+
     }
 }

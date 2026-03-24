@@ -58,5 +58,103 @@ namespace EnergyShare_v3.Domain.Entities
         //Données calculées
         [NotMapped]
         public int NombreParticipants => Membres.Count; // 1 Vendeur + les acheteurs
+
+
+        //Règles de gestion : nombre de membres  et méthode de répartition 
+        public void VerifierNombreMembres()
+        {
+            var nbActifs = Membres.Count(m => m.ExitAt == null);
+
+            if (EnergieType == PartageEnergieType.PairToPair && nbActifs != 2)
+                throw new InvalidOperationException("Un partage pair-à-pair doit contenir exactement deux membres.");
+
+            if (EnergieType == PartageEnergieType.MemeBatiment && nbActifs < 2)
+                throw new InvalidOperationException("Un partage de type même bâtiment doit contenir au moins deux membres.");
+             // Todo : les membres doivent résider à la meme addresse ! + le périmetre est d'office A --> à ajouter dans point d'accès
+        
+        }
+
+        public void VerifierMethodeRepartition(MethodeRepartitionInjection? methode)
+        {
+            if (EnergieType == PartageEnergieType.PairToPair && methode is not null)
+                throw new InvalidOperationException("Une méthode de répartition n'est pas nécessaire pour un partage pair-à-pair.");
+
+            if (EnergieType != PartageEnergieType.PairToPair && methode is null)
+                throw new InvalidOperationException("Une méthode de répartition est requise pour ce type de partage.");
+        }
+
+
+        //Règles de Gestion RG-E031 à RG041  : statut du partage +cf. enum PartageEnergieStatutType :
+
+        //Pour un nouveau partage
+        public void SoumettreNouveauPartageAuGrd()
+        {
+            if (Statut is not PartageEnergieStatutType.Inactif)
+                throw new InvalidOperationException("Seul un partage inactif peut être soumis au GRD.");
+
+            Statut = PartageEnergieStatutType.EnAttenteValidation;
+        }
+
+        public void ValiderNouveauPartageParGrd()
+        {
+            if (Statut is not PartageEnergieStatutType.EnAttenteValidation)
+                throw new InvalidOperationException("Le partage doit être en attente de validation.");
+
+            Statut = PartageEnergieStatutType.Actif;
+            DateDebut = DateTime.UtcNow; // La date de début est fixée à la validation par le GRD
+        }
+
+        public void RefuserNouveauParGrd()
+        {
+            if (Statut is not PartageEnergieStatutType.EnAttenteValidation)
+                throw new InvalidOperationException("Le partage doit être en attente de validation.");
+
+            Statut = PartageEnergieStatutType.Inactif;
+        }
+         //Pour les modifications
+        public void DemanderModification()
+        {
+            if (Statut != PartageEnergieStatutType.Actif)
+                throw new InvalidOperationException("Seul un partage actif peut passer en attente de modification.");
+
+            Statut = PartageEnergieStatutType.EnAttenteModification;
+        }
+
+        public void ValiderModifiationPartageParGrd()
+        {
+            if (Statut is not PartageEnergieStatutType.EnAttenteModification)
+                throw new InvalidOperationException("Le partage doit être en attente de modification.");
+
+            Statut = PartageEnergieStatutType.Actif;
+        }
+
+      
+        public void RefuserModificationPartageParGrd()  
+        {
+            if (Statut != PartageEnergieStatutType.EnAttenteModification)
+                throw new InvalidOperationException("Seul un partage en attente de modification peut être suspendu.");
+
+            Statut = PartageEnergieStatutType.Suspendu;
+        }
+
+        //Fin de vie
+        public void DemarrerCloture()   //Dès le début du délai de préavis de 3 semaines ou après la date de fin du partage si elle est connue et jusquà la validation de la clôture par le GRD, le partage est en cours de clôture. Pendant cette période, les participants peuvent continuer à consommer et produire de l'énergie, mais aucun nouveau participant ne peut rejoindre le partage et les membres existants ne peuvent pas augmenter leur volume de consommation ou de production.
+        {
+            if (Statut != PartageEnergieStatutType.Actif)
+                throw new InvalidOperationException("Seul un partage actif peut entrer en cours de clôture.");
+
+            Statut = PartageEnergieStatutType.EnCoursCloture;
+        }
+
+        public void Cloturer()
+        {
+            if (Statut != PartageEnergieStatutType.EnCoursCloture)
+                throw new InvalidOperationException("Le partage doit être en cours de clôture.");
+
+            Statut = PartageEnergieStatutType.Cloture;
+            DateFin = DateTime.UtcNow; // La date de fin est fixée à la date de clôture effective
+        }
+
+
     }
 }

@@ -11,7 +11,8 @@ namespace EnergyShare_v3.Domain.Entities
     public class FraisComptageMesurage
     {
         /*Frais de comptage de mesure uniquement dus par l'acheteur annuellement
-         On suppose que ces prix peuvent varier d'année en année*/
+         On suppose que ces prix peuvent varier d'année en année
+        actuellement de 12,78€HTVA*/
            [Key]
         public Guid Id { get; set; }
 
