@@ -1,7 +1,4 @@
-﻿using EnergyShare_v3.Application.Interfaces;
-using EnergyShare_v3.Domain.Entities;
-using EnergyShare_v3.Domain.Enums;
-using Microsoft.EntityFrameworkCore;
+﻿using EnergyShare_v3.Domain.Enums;
 
 namespace EnergyShare_v3.Application.Features.Users
 {       /*DTO pour afficher un user dans une liste.

@@ -1,0 +1,58 @@
+﻿
+@page "/partages"
+@inject GetPartagesHandler PartagesHandler
+@rendermode InteractiveServer
+
+@using EnergyShare_v3.Application.Features.Partage
+
+
+<PageTitle>EnergyShare - Partages</PageTitle>
+
+<h1>Partages</h1>
+
+@if (_partages is null)
+{
+    <p><em>Chargement...</em></p>
+}
+else if (!_partages.Any())
+{
+    <div class="alert alert-info">
+        Aucun partage pour le moment.
+    </div>
+}
+else
+{
+    <div class="row">
+        @foreach (var partage in _partages)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@partage.Nom</h5>
+                        <p class="card-text">
+                            <strong>@partage.NombreParticipants</strong> participant(s)
+                        </p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Créé le @partage.CreatedAt.ToString("dd/MM/yyyy")
+                            </small>
+                        </p>
+                        <a href="/partages/@partage.Id"
+                               class="btn btn-outline-primary btn-sm">
+                            Voir les détails
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<PartageSummaryDto>? _partages;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _partages = await PartagesHandler.HandleAsync();
+    }
+}
