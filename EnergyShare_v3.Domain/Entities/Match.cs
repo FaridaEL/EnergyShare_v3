@@ -1,7 +1,5 @@
-﻿using EnergyShare_v3.Domain.Enums;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.IO.Pipes;
 
 namespace EnergyShare_v3.Domain.Entities
 {
@@ -11,7 +9,7 @@ namespace EnergyShare_v3.Domain.Entities
         [Key]
         public Guid Id { get; set; }
               
-        public decimal DistanceCalculee { get; set; } //données calcué ) à partir de la distance entre deux points
+        public decimal DistanceCalculee { get; private set; } //données calcué ) à partir de la distance entre deux points
         
        
         public Guid PointAccessVendeurId { get; set; } 
@@ -26,6 +24,16 @@ namespace EnergyShare_v3.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+
+        //Constructeur
+        private Match() { } // Constructeur privé pour EF Core
+        public Match(Guid pointAccessVendeurId, Guid pointAccessAcheteurId, decimal distanceCalculee)
+        {
+            PointAccessVendeurId = pointAccessVendeurId;
+            PointAccessAcheteurId = pointAccessAcheteurId;
+            DistanceCalculee = distanceCalculee;
+            VerifierCohérence();
+        }
 
         //Règle de gestion 
         public void VerifierCohérence()

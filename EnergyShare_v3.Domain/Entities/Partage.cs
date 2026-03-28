@@ -1,7 +1,6 @@
 ﻿using EnergyShare_v3.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.IO.Pipes;
 
 namespace EnergyShare_v3.Domain.Entities
 {
@@ -12,14 +11,16 @@ namespace EnergyShare_v3.Domain.Entities
         public Guid Id { get; set; }
 
         [Required, MaxLength(100)]
-        public string Nom { get; set; } = null!;
+        public string Nom { get; private set; } = null!;
         public string? Description { get; set; }
-        public DateTime? DateDebut { get; set; }
-        public DateTime? DateFin { get; set; }
+        public DateTime? DateDebut { get; private set; }
+        public DateTime? DateFin { get; private set; }
         public bool RecevoirDataParticipant { get; set; } = false;   //permet de demander des fichiers détaillés par participant --> Message à ajouter sur l'interface: "Chaque mois, Sibelga vous enverra un fichier contenant les données vous permettant de connaitre le volume local mensuel (la consommation qui vient du partage) de chaque participant et le montant des tarifs réseau associés. Si vous le souhaitez, vous pouvez également recevoir un fichier contenant les données de chaque participant sous forme quart horaire(= par quart d’heure) en cochant la cases ci-dessous.
 
         //énumération 
-        public PartageEnergieStatutType Statut { get; set; } = PartageEnergieStatutType.Inactif; // au moment de la création est en inactif  Mais comment gérer cela avec l'historique des statuts?
+        //private set --> ref. entité riche --> meilleure controle de la modification : à  utiliser dès que la propriété ne doit pas
+        //être modifiée librement, mais uniquement via des méthodes métier 
+        public PartageEnergieStatutType Statut { get; private set; } = PartageEnergieStatutType.Inactif; // au moment de la création est en inactif  Mais comment gérer cela avec l'historique des statuts?
         public PartageEnergieType EnergieType { get; set; }
         public DataTransmissionType DataTransmissionType { get; set; }   //SFTP ou SharepointLink , pour envoi de données de consommation du partage et le montant des tarifs réseau associés chaque mois
 
@@ -58,6 +59,21 @@ namespace EnergyShare_v3.Domain.Entities
         //Données calculées
         [NotMapped]
         public int NombreParticipants => Membres.Count(m => m.ExitAt == null); // 1 Vendeur + les acheteurs
+
+       
+        
+        //Constructeur
+        private Partage() { } // Constructeur privé pour EF Core
+        public Partage(string nom, PartageEnergieType energieType, DataTransmissionType dataTransmissionType, Guid vendeurId)
+        {
+            if (string.IsNullOrWhiteSpace(nom))
+                throw new ArgumentException("Le nom du partage ne peut pas être vide.", nameof(nom));
+            Nom = nom.Trim();
+            EnergieType = energieType;
+            DataTransmissionType = dataTransmissionType;
+            VendeurId = vendeurId;
+            Statut = PartageEnergieStatutType.Inactif; // Un nouveau partage commence toujours en statut Inactif
+        }
 
         //Méthodes : ajouter membres, document, supprimer
 
@@ -119,6 +135,20 @@ namespace EnergyShare_v3.Domain.Entities
                 throw new InvalidOperationException("Une méthode de répartition est requise pour ce type de partage.");
         }
 
+
+        public void Renommer(string nouveauNom)
+        {
+            if (Statut == PartageEnergieStatutType.EnCoursCloture)
+                throw new InvalidOperationException("Impossible de renommer un partage en cours de clôture.");
+
+            if (Statut == PartageEnergieStatutType.Cloture)
+                throw new InvalidOperationException("Impossible de renommer un partage clôturé.");
+
+            if (string.IsNullOrWhiteSpace(nouveauNom))
+                throw new ArgumentException("Le nom du partage ne peut pas être vide.", nameof(nouveauNom));
+
+            Nom = nouveauNom.Trim();
+        }
 
         //Règles de Gestion RG-E031 à RG041  : statut du partage +cf. enum PartageEnergieStatutType :
 

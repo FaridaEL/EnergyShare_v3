@@ -1,10 +1,5 @@
-﻿using EnergyShare_v3.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 
 namespace EnergyShare_v3.Domain.Entities
 {
@@ -22,12 +17,12 @@ namespace EnergyShare_v3.Domain.Entities
         public Guid Id { get; set; }
 
         [Required]
-        public string Objet { get; set; } = null!; // ex: "Demande de partage d'énergie"
+        public string ObjetMessage { get; set; } = null!; // ex: "Demande de partage d'énergie"
         [Required]
         public string Contenu { get; set; } = null!; // Le corps du message
         [Required]
-        public DateTime DateEnvoi { get; set; } = DateTime.UtcNow;
-        public bool IsLu { get; set; } = false;
+        public DateTime DateEnvoi { get; private set; } = DateTime.UtcNow;
+        public bool IsLu { get; private set; } = false;
 
         [Required]
         public Guid ExpediteurId { get; set; }
@@ -42,7 +37,27 @@ namespace EnergyShare_v3.Domain.Entities
         [ForeignKey("MatchId")]
         public Match? Match { get; set; }
 
+        //Méhtodes
+        public void MarquerCommeLu() => IsLu = true;
+        public void MarquerCommeNonLu() => IsLu = false;
+
+        //Constructeurs
+        //Constructeur
+        private Message() { } // Constructeur privé pour EF Core
+        public Message(string objet, string contenu, Guid expediteurId, Guid destinataire)
+        {
+            if (string.IsNullOrWhiteSpace(objet))
+                throw new ArgumentException("Veuillez renseigner un objet", nameof(objet));
+            if (string.IsNullOrWhiteSpace(contenu))
+                throw new ArgumentException("Veullez indiquer votre message", nameof(contenu));
+            ObjetMessage = objet;
+            Contenu = contenu;
+            ExpediteurId = expediteurId;
+            DestinataireId = destinataire;
+
+        }
+
     }
 
-   
+
 }

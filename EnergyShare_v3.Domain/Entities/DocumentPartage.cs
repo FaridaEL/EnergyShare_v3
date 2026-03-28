@@ -1,10 +1,6 @@
 ﻿using EnergyShare_v3.Domain.Enums;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 
 namespace EnergyShare_v3.Domain.Entities
 {
@@ -20,10 +16,11 @@ namespace EnergyShare_v3.Domain.Entities
         [Required]
         public string CheminStockage { get; set; } = null!; // Chemin sur le serveur/Cloud
         [Required]
-        public DateTime DateUpload { get; set; } = DateTime.UtcNow;
+        public DateTime DateUpload { get; private set; } = DateTime.UtcNow;
         public bool IsSigned { get; set; } = false;
         public DateTime? SignedAt { get; set; }
         
+
         //Enumération
         public DocumentType TypeDocument { get; set; } // Enum  Convention, Mandat, PreuvePropriete
 
@@ -36,9 +33,11 @@ namespace EnergyShare_v3.Domain.Entities
         public Guid UploadedById { get; set; }
         [ForeignKey("UploadedById")]
         public User UploadedBy { get; set; } = null!;
-        public Guid? SignedByNameId { get; set; } // --> Mais si plusieurs signataires pas plus simple de laisser une ligne de texte.. comme un todo?
+
+        /* hors MVP , de plus 1 document peut être signé par plusieurs signataires (ex: vendeur + acheteur) 
+         * public Guid? SignedByNameId { get; set; } 
         [ForeignKey("SignedByNameId")]
-        public User? SignedByName { get; set; }
+        public User? SignedByName { get; set; }  */
 
 
         //Données d'audit

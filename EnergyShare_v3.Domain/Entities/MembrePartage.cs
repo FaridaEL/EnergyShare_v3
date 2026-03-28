@@ -1,7 +1,6 @@
 ﻿using EnergyShare_v3.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.IO.Pipes;
 
 namespace EnergyShare_v3.Domain.Entities
 {
@@ -10,11 +9,12 @@ namespace EnergyShare_v3.Domain.Entities
         //règle 1 point EAN ne peut appartenir qu'a un seul partage à la fois.
         [Key]
         public Guid Id { get; set; }
-        public bool IsInterlocuteurUnique { get; set; } = false;
+        public bool IsInterlocuteurUnique { get; private set; } = false;
+        public UserRolePartage UserRolePartage { get; set; } //acheteur ou vendeur dans le partage.
         public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? ExitAt { get; set; }
-        public DateTime? DateCommunicationPreavis { get; set; }
-        public DateTime? DateSortiePlanifiee { get; set; } //peut être calculé à partir de datePravisDonnées + 3 semaines? 
+        public DateTime? ExitAt { get; private set; }
+        public DateTime? DateCommunicationPreavis { get; private set; }
+        public DateTime? DateSortiePlanifiee { get; private set; } //peut être calculé à partir de datePravisDonnées + 3 semaines? 
 
         //Enumérations
         public Guid UserId { get; set; } 
@@ -27,6 +27,7 @@ namespace EnergyShare_v3.Domain.Entities
         [ForeignKey("PointAccessId")]
         public PointAccess PointAccess { get; set; } = null!;
 
+
     
         // Données d'audit
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -35,12 +36,17 @@ namespace EnergyShare_v3.Domain.Entities
 
         //interlocuteur unique : le vendeur-producteur est l'interlocuteur unique du partage, il est le seul à pouvoir créer le partage et à communiquer le préavis de sortie du partage.
 
-        /*public void DesignerCommeInterlocuteurUnique()
+        public void DefinirCommeInterlocuteurUnique()
         {
-            if( UserId.UserRole != UserRole.Vendeur)
-                throw new InvalidOperationException("Seul le vendeur-producteur peut être désigné comme interlocuteur unique du partage.");
+            if (UserRolePartage != UserRolePartage.Vendeur)
+                throw new InvalidOperationException("Seul un vendeur peut être interlocuteur unique.");
+
+            if (!PointAccess.IsInjectionPoint)
+                throw new InvalidOperationException("L'interlocuteur unique doit disposer d'un point d'injection.");
+
             IsInterlocuteurUnique = true;
-        } */
+        }
+
 
         //Règles de gestion RG-E018 à RG-E023 : adhésion et sortie du partage
         //Impact pour un pair-to-pair  sur le statut du partage qui passe en Démarrer cloture dès que

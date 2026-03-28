@@ -9,11 +9,11 @@ namespace EnergyShare_v3.Application.Features.Users
          * Ils servent a transporter des donnees entre les couches sans exposer les entites du domaine..*/
     public record UserSummaryDto(
       Guid Id,
-      string FirstName,
-      string LastName,
+      string? FirstName,
+      string? LastName,
       string Email,
       UserRole Role,
-      UserType Type,
+      UserType UserType,
       DateTime CreatedAt
     );
     /// <summary>
@@ -21,7 +21,7 @@ namespace EnergyShare_v3.Application.Features.Users
     /// </summary>
     public record UserDetailsDto(
         Guid Id,
-        string FirstName,
+        string? FirstName,
         DateTime CreatedAt
         //IReadOnlyList<MemberDto> Members
     );

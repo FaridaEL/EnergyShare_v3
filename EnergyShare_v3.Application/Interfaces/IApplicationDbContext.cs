@@ -10,7 +10,7 @@ namespace EnergyShare_v3.Application.Interfaces
 /// - Permet de tester sans base de donnees reelle (mock)
 /// - Respecte le principe d'inversion de dependance
 /// - L'Application ne sait pas si on utilise SQL Server, PostgreSQL ou SQLite*/
-    public interface IEnergyShareDbContext
+    public interface IApplicationDbContext
     {   //Acces aux utilisateurs
         DbSet<DataPartage> DataPartages { get; }
         DbSet<DdeInfoPerimetre> DdesInfoPerimetre { get; }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace EnergyShare_v3.Domain.Entities
+﻿namespace EnergyShare_v3.Domain.Entities
 {
     public class FournisseurEnergie
     {

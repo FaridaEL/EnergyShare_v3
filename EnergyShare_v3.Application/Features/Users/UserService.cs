@@ -11,7 +11,8 @@ namespace EnergyShare_v3.Application.Features.Users
 /// Il coordonne : recoit une requete, appelle le domain, persiste le resultat.
 ///
 /// Dans le Module 02 (CQRS), ce service sera remplace par des Commands/Queries.*/
-    public class UserService(IEnergyShareDbContext context)
+    /*
+    public class UserService(IApplicationDbContext context)
     {
         public async Task<IReadOnlyList<User>> GetAllUsersAsync()
         {
@@ -52,4 +53,7 @@ namespace EnergyShare_v3.Application.Features.Users
             return true;
         }
     }
+
+*/
+
 }

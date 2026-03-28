@@ -1,10 +1,5 @@
-﻿using EnergyShare_v3.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 
 namespace EnergyShare_v3.Domain.Entities
 {
@@ -28,9 +23,7 @@ namespace EnergyShare_v3.Domain.Entities
 
         public string?  EAN { get; set; }
         public string? Compteur { get; set; }
-        
-        public string? Partage { get; set; }
-
+       
         public decimal Tarif { get; set; }
         
         [Column(TypeName = "decimal(18,4)")]

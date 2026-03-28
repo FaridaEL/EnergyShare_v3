@@ -1,10 +1,5 @@
-﻿using EnergyShare_v3.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 
 namespace EnergyShare_v3.Domain.Entities
 {
@@ -31,17 +26,51 @@ namespace EnergyShare_v3.Domain.Entities
         public decimal? PrixVenteInjectionFournisseurActuel_Eur {  get; set; } //permet de calculer l'écononmie
         
         [Required] //rgèle métier : en créant un profil l'utlisateur donne son consentement pour le partage de ses données.
-        public bool AccordConsentement { get; set; } = true;
-        public DateTime DateAccordConsentement { get; set; } = DateTime.UtcNow;
-        public DateTime? DateRetraitConsentement { get; set; } 
+        public bool AccordConsentement { get; private set; } = true;
+        public DateTime DateAccordConsentement { get; private set; } = DateTime.UtcNow;
+        public DateTime? DateRetraitConsentement { get;  private set; } 
 
-        public Guid PointAccessId { get; set; }
+        public Guid PointAccessId { get; set; }  
         [ForeignKey("PointAccessId")]
         public PointAccess PointAccess { get; set; } = null!;
 
         //Données d'audit
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        //Constructeurs
+        public ProfilEnergie() { }    //constructeur par défaut nécessaire pour EF Core
+        public ProfilEnergie(
+            decimal? demandeEnergie_kWh,
+        decimal? offreEnergie_kWh,
+        decimal? prixAchatCible_Eur,
+        decimal? prixVenteCible_Eur,
+        decimal? consommationAnnuelleEstime_kWh,
+        decimal? productionAnnuelleEstime_kWh,
+        decimal? prixAchatEnergieFournisseur_Eur,
+        decimal? prixVenteInjectionFournisseurActuel_Eur,
+        Guid pointAccessId) {
+            if (!demandeEnergie_kWh.HasValue && !offreEnergie_kWh.HasValue)
+                throw new ArgumentException("Le profil doit contenir une demande ou une offre.");
+
+            PointAccessId = pointAccessId;
+            DemandeEnergie_kWh = demandeEnergie_kWh;
+            OffreEnergie_kWh = offreEnergie_kWh;
+            PrixAchatCible_Eur = prixAchatCible_Eur;
+            PrixVenteCible_Eur = prixVenteCible_Eur;
+            ConsommationAnnuelleEstime_kWh = consommationAnnuelleEstime_kWh;
+            ProductionAnnuelleEstime_kWh = productionAnnuelleEstime_kWh;
+            PrixAchatEnergieFournisseur_Eur = prixAchatEnergieFournisseur_Eur;
+            PrixVenteInjectionFournisseurActuel_Eur = prixVenteInjectionFournisseurActuel_Eur;
+            AccordConsentement = true;
+            DateAccordConsentement = DateTime.UtcNow;
+            CreatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
+
+
+        } //constructeur pour la création d'un profil énergie, le consentement est donné par défaut
+
+
 
         //Règle de gesiton : 
         public void RetirerConsentement()  //par défaut le consentement est donnée   //Quid de la date de retrait du consentement?  

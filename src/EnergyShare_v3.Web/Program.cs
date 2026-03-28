@@ -16,7 +16,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 //Enregistrer les handlers de l'application 
 /*à vérifier ça me semble peu et contradiction entre le projet et les exos */
-builder.Services.AddScoped<GetUsersQueryHandler>();
+builder.Services.AddScoped<GetUsersHandler>();
 
 
 
@@ -26,9 +26,8 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<EnergyShareDBContext>();
-    await context.Database.EnsureCreatedAsync();
-}
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDBContext>();
+    await context.Database.EnsureCreatedAsync(); // Todo à remplacer par MigrateAsync() lorsque je fais mes migrations
 
 
 // Configure the HTTP request pipeline.

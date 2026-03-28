@@ -6,33 +6,30 @@ using Microsoft.EntityFrameworkCore;
 namespace EnergyShare_v3.Application.Features.Users
 {       /*Service applicatif pour la gestion des utilisateurs.
 / Requete pour obtenir la liste de toutes les familles..*/
-    public record GetUserByIdQuery;
-    public class GetUserByIdQueryHandler
+    public record GetUserByIdQuery(Guid Id);
+    public class GetUserByIdHandler
     {
-        private readonly IEnergyShareDbContext _context;
+        private readonly IApplicationDbContext _context;
 
-        public GetUserByIdQueryHandler(IEnergyShareDbContext context)
+        public GetUserByIdHandler(IApplicationDbContext context)
         {
             _context = context;
         }
 
-        //pas un bon exemple il faudrait plutot un partage et récupére le membre du partage cf. ex du prof en 3.5
-        public async Task<IReadOnlyList<UserDetailsDto>> HandleAsync(
-       CancellationToken cancellationToken = default)
-        {
+       public async Task<UserDetailsDto?> HandleAsync(
+           GetUserByIdQuery query,
+            CancellationToken cancellationToken = default)
+        {       
             return await _context.Users
                 .AsNoTracking()
-                .Select(f => new UserDetailsDto(
-                    f.Id,
-                    f.FirstName,
-                    f.CreatedAt
+                .Where(u => u.Id == query.Id)
+                .Select(u => new UserDetailsDto(
+                    u.Id,
+                    u.FirstName,
+                    u.CreatedAt
                 ))
-                .OrderBy(f => f.FirstName)
-                .ToListAsync(cancellationToken);
+                .FirstAsync(cancellationToken);
         }
-
-
-
 
     }
 }

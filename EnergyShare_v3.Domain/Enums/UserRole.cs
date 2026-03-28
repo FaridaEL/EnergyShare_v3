@@ -1,21 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace EnergyShare_v3.Domain.Enums
 {
     public enum UserRole
     {
-        [Display(Name = "Vendeur")]
-        Vendeur = 1,
-        [Display(Name = "Acheteur")]
-        Acheteur = 2,
-        [Display(Name = "Gestionnaire de Partage")] 
-        GestionnairePartage = 3,
+        [Display(Name = "Utilisateur")]   //role standard pour vendre/acheter énergie/GestionnaireDePartage
+        Utilisateur = 1,                 
         [Display(Name = "Organisme public")]
-        OrganismePublic = 4,
+        OrganismePublic = 2,
         [Display(Name = "Administrateur")]
-        Administrateur = 5
+        Administrateur = 3
     }
 }

@@ -7,11 +7,11 @@ namespace EnergyShare_v3.Application.Features.Users
 {       /*Service applicatif pour la gestion des utilisateurs.
 / Requete pour obtenir la liste de toutes les familles..*/
     public record GetUsersQuery;
-    public class GetUsersQueryHandler
+    public class GetUsersHandler
     {
-        private readonly IEnergyShareDbContext _context;
+        private readonly IApplicationDbContext _context;
 
-        public GetUsersQueryHandler(IEnergyShareDbContext context)
+        public GetUsersHandler(IApplicationDbContext context)
         {
             _context = context;
         }
@@ -21,16 +21,16 @@ namespace EnergyShare_v3.Application.Features.Users
         {
             return await _context.Users
                 .AsNoTracking()
-                .Select(f => new UserSummaryDto(
-                    f.Id,
-                    f.FirstName,
-                    f.LastName,
-                    f.Email,
-                    f.Role,
-                    f.UserType,
-                    f.CreatedAt
+                .Select(u => new UserSummaryDto(
+                    u.Id,
+                    u.FirstName,
+                    u.LastName,
+                    u.Email,
+                    u.Role,
+                    u.UserType,
+                    u.CreatedAt
                 ))
-                .OrderBy(f => f.FirstName)
+                .OrderBy(u => u.FirstName)
                 .ToListAsync(cancellationToken); 
         }
 
