@@ -1,8 +1,10 @@
-﻿using EnergyShare_v3.Domain.Enums;
+﻿using Ardalis.Result;
+using EnergyShare_v3.Domain.Entities.Users;
+using EnergyShare_v3.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EnergyShare_v3.Domain.Entities
+namespace EnergyShare_v3.Domain.Entities.Partages
 {
     public class Partage
     {
@@ -21,8 +23,8 @@ namespace EnergyShare_v3.Domain.Entities
         //private set --> ref. entité riche --> meilleure controle de la modification : à  utiliser dès que la propriété ne doit pas
         //être modifiée librement, mais uniquement via des méthodes métier 
         public PartageEnergieStatutType Statut { get; private set; } = PartageEnergieStatutType.Inactif; // au moment de la création est en inactif  Mais comment gérer cela avec l'historique des statuts?
-        public PartageEnergieType EnergieType { get; set; }
-        public DataTransmissionType DataTransmissionType { get; set; }   //SFTP ou SharepointLink , pour envoi de données de consommation du partage et le montant des tarifs réseau associés chaque mois
+        public PartageEnergieType EnergieType { get; private set; }
+        public DataTransmissionType DataTransmissionType { get; private set; }   //SFTP ou SharepointLink , pour envoi de données de consommation du partage et le montant des tarifs réseau associés chaque mois
 
         //Lien tables et clés étrangères
         public Guid? PerimetreId { get; set; } //connu qu'après dde d'infos auprès de Sibelga --> null au moment de la création du partage  ou A si même batiment
@@ -64,163 +66,224 @@ namespace EnergyShare_v3.Domain.Entities
         
         //Constructeur
         private Partage() { } // Constructeur privé pour EF Core
-        public Partage(string nom, PartageEnergieType energieType, DataTransmissionType dataTransmissionType, Guid vendeurId)
+        //constructeur privé métier  à utiliser avec public Static Result <Partage> Create() pour valider les règles métier avant de créer une instance de Partage
+        private Partage(string nom, PartageEnergieType energieType, DataTransmissionType dataTransmissionType, Guid vendeurId)
         {
-            if (string.IsNullOrWhiteSpace(nom))
-                throw new ArgumentException("Le nom du partage ne peut pas être vide.", nameof(nom));
+            //if (string.IsNullOrWhiteSpace(nom))
+              //  throw new ArgumentException("Le nom du partage ne peut pas être vide.", nameof(nom));
+            Id = Guid.NewGuid();
             Nom = nom.Trim();
             EnergieType = energieType;
             DataTransmissionType = dataTransmissionType;
             VendeurId = vendeurId;
             Statut = PartageEnergieStatutType.Inactif; // Un nouveau partage commence toujours en statut Inactif
         }
+        public static Result<Partage> Create(
+            string nom,
+            PartageEnergieType energieType,
+            DataTransmissionType dataTransmissionType,
+            Guid vendeurId)
+                {
+                    if (string.IsNullOrWhiteSpace(nom))
+                        return PartageErrors.NomObligatoire().Map();
+
+                    return Result.Success(new Partage(
+                        nom,
+                        energieType,
+                        dataTransmissionType,
+                        vendeurId));
+        }
 
         //Méthodes : ajouter membres, document, supprimer
 
-        public void AjouterMembre(MembrePartage membre)
+        public Result AjouterMembre(MembrePartage membre)
         {
             if (membre is null)
                 throw new ArgumentNullException(nameof(membre));
 
             if (Statut == PartageEnergieStatutType.EnCoursCloture)
-                throw new InvalidOperationException("Impossible d'ajouter un membre à un partage en cours de clôture.");
+              return PartageErrors.PartageEnCoursDeCloture();
             if (Statut == PartageEnergieStatutType.Cloture)
-                throw new InvalidOperationException("Impossible d'ajouter un membre à un partage clôturé.");
+              return PartageErrors.PartageCloture();
             //if (membre.PartageId != Id && membre.PartageId != Guid.Empty)
             //  throw new InvalidOperationException("Le membre appartient déjà à un autre partage.");  //pas correcte il peut appartenr 
 
             Membres.Add(membre);
-            VerifierNombreMembres();
+
+            var validation = VerifierNombreMembres();
+            if (!validation.IsSuccess)
+            {
+                Membres.Remove(membre);
+                return validation;
+            }
+            UpdatedAt = DateTime.UtcNow;
+
+            return Result.Success();
         }
 
-        public void AjouterDocument(DocumentPartage document)
+        public Result AjouterDocument(DocumentPartage document)
         {
             if (document is null)
                 throw new ArgumentNullException(nameof(document));
+            if (Statut == PartageEnergieStatutType.EnCoursCloture)
+                return PartageErrors.PartageEnCoursDeCloture();
+
+            if (Statut == PartageEnergieStatutType.Cloture)
+                return PartageErrors.PartageCloture();
 
             Documents.Add(document);
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
-        public void AjouterMethodeRepartition(MethodeRepartitionInjection methode)
+        public Result AjouterMethodeRepartition(MethodeRepartitionInjection methode)
         {
             if (methode is null)
                 throw new ArgumentNullException(nameof(methode));
 
-            VerifierMethodeRepartition(methode);
+            var validation = VerifierMethodeRepartition(methode);
+            if (!validation.IsSuccess)
+                return validation;
 
             HistoriqueMethodes.Add(methode);
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
 
         //Règles de gestion : nombre de membres  et méthode de répartition 
-        public void VerifierNombreMembres()
+        public Result VerifierNombreMembres()
         {
             var nbActifs = Membres.Count(m => m.ExitAt == null);
 
             if (EnergieType == PartageEnergieType.PairToPair && nbActifs != 2)
-                throw new InvalidOperationException("Un partage pair-à-pair doit contenir exactement deux membres.");
+                return PartageErrors.NombreMembresPairToPairInvalide();;
 
             if (EnergieType == PartageEnergieType.MemeBatiment && nbActifs < 2)
-                throw new InvalidOperationException("Un partage de type même bâtiment doit contenir au moins deux membres.");
+                return PartageErrors.NombreMembresMemeBatimentInvalide();
              // Todo : les membres doivent résider à la meme addresse ! + le périmetre est d'office A --> à ajouter dans point d'accès
         
+            return Result.Success();
         }
 
-        public void VerifierMethodeRepartition(MethodeRepartitionInjection? methode)
+        public Result VerifierMethodeRepartition(MethodeRepartitionInjection? methode)
         {
             if (EnergieType == PartageEnergieType.PairToPair && methode is not null)
-                throw new InvalidOperationException("Une méthode de répartition n'est pas nécessaire pour un partage pair-à-pair.");
+                return PartageErrors.MethodeRepartitionInterditePourPairToPair();
 
             if (EnergieType != PartageEnergieType.PairToPair && methode is null)
-                throw new InvalidOperationException("Une méthode de répartition est requise pour ce type de partage.");
+                return PartageErrors.MethodeRepartitionRequise();
+       
+            return Result.Success();
         }
 
 
-        public void Renommer(string nouveauNom)
+        public Result Renommer(string nouveauNom)
         {
             if (Statut == PartageEnergieStatutType.EnCoursCloture)
-                throw new InvalidOperationException("Impossible de renommer un partage en cours de clôture.");
+                return PartageErrors.PartageEnCoursDeCloture();
 
             if (Statut == PartageEnergieStatutType.Cloture)
-                throw new InvalidOperationException("Impossible de renommer un partage clôturé.");
+                  return PartageErrors.PartageCloture();
 
             if (string.IsNullOrWhiteSpace(nouveauNom))
-                throw new ArgumentException("Le nom du partage ne peut pas être vide.", nameof(nouveauNom));
+                 return PartageErrors.NomObligatoire();
 
             Nom = nouveauNom.Trim();
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
         //Règles de Gestion RG-E031 à RG041  : statut du partage +cf. enum PartageEnergieStatutType :
 
         //Pour un nouveau partage
-        public void SoumettreNouveauPartageAuGrd()
+        public Result SoumettreNouveauPartageAuGrd()
         {
             if (Statut is not PartageEnergieStatutType.Inactif)
-                throw new InvalidOperationException("Seul un partage inactif peut être soumis au GRD.");
+                return PartageErrors.SoumissionGrdImpossible(Statut);
 
             Statut = PartageEnergieStatutType.EnAttenteValidation;
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
-        public void ValiderNouveauPartageParGrd()
+        public Result ValiderNouveauPartageParGrd()
         {
             if (Statut is not PartageEnergieStatutType.EnAttenteValidation)
-                throw new InvalidOperationException("Le partage doit être en attente de validation.");
+                return PartageErrors.ValidationGrdImpossible();
 
-            VerifierNombreMembres();
+            var validation = VerifierNombreMembres();
+            if (!validation.IsSuccess)
+                return validation;
+
 
             Statut = PartageEnergieStatutType.Actif;
             DateDebut = DateTime.UtcNow; // La date de début est fixée à la validation par le GRD
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
-        public void RefuserNouveauParGrd()
+        public Result RefuserNouveauParGrd()
         {
             if (Statut is not PartageEnergieStatutType.EnAttenteValidation)
-                throw new InvalidOperationException("Le partage doit être en attente de validation.");
+                return PartageErrors.ValidationGrdImpossible();
 
             Statut = PartageEnergieStatutType.Inactif;
+            UpdatedAt = DateTime.UtcNow;
+            return   Result.Success();
         }
          //Pour les modifications
-        public void DemanderModification()
+        public Result DemanderModification()
         {
             if (Statut != PartageEnergieStatutType.Actif)
-                throw new InvalidOperationException("Seul un partage actif peut passer en attente de modification.");
+                 return PartageErrors.ModificationImpossible();
 
             Statut = PartageEnergieStatutType.EnAttenteModification;
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
-        public void ValiderModificationPartageParGrd()
+        public Result ValiderModificationPartageParGrd()
         {
             if (Statut is not PartageEnergieStatutType.EnAttenteModification)
-                throw new InvalidOperationException("Le partage doit être en attente de modification.");
+                return PartageErrors.ValidationModificationGrdImpossible();
 
             Statut = PartageEnergieStatutType.Actif;
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
       
-        public void RefuserModificationPartageParGrd()  
+        public Result RefuserModificationPartageParGrd()  
         {
             if (Statut != PartageEnergieStatutType.EnAttenteModification)
-                throw new InvalidOperationException("Seul un partage en attente de modification peut être suspendu.");
+                return PartageErrors.ValidationModificationGrdImpossible();
 
             Statut = PartageEnergieStatutType.Suspendu;
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
         //Fin de vie
-        public void DemarrerCloture()   //Dès le début du délai de préavis de 3 semaines ou après la date de fin du partage si elle est connue et jusquà la validation de la clôture par le GRD, le partage est en cours de clôture. Pendant cette période, les participants peuvent continuer à consommer et produire de l'énergie, mais aucun nouveau participant ne peut rejoindre le partage et les membres existants ne peuvent pas augmenter leur volume de consommation ou de production.
+        public Result DemarrerCloture()   //Dès le début du délai de préavis de 3 semaines ou après la date de fin du partage si elle est connue et jusquà la validation de la clôture par le GRD, le partage est en cours de clôture. Pendant cette période, les participants peuvent continuer à consommer et produire de l'énergie, mais aucun nouveau participant ne peut rejoindre le partage et les membres existants ne peuvent pas augmenter leur volume de consommation ou de production.
         {
             if (Statut != PartageEnergieStatutType.Actif)
-                throw new InvalidOperationException("Seul un partage actif peut entrer en cours de clôture.");
+                return PartageErrors.DemarrageClotureImpossible();
 
             Statut = PartageEnergieStatutType.EnCoursCloture;
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
-        public void Cloturer()
+        public Result Cloturer()
         {
             if (Statut != PartageEnergieStatutType.EnCoursCloture)
-                throw new InvalidOperationException("Le partage doit être en cours de clôture.");
+                return PartageErrors.ClotureImpossible();
 
             Statut = PartageEnergieStatutType.Cloture;
             DateFin = DateTime.UtcNow; // La date de fin est fixée à la date de clôture effective
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
 

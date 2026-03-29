@@ -1,4 +1,7 @@
-﻿using EnergyShare_v3.Application.Interfaces;
+﻿using Ardalis.Result;
+using EnergyShare_v3.Application.Interfaces;
+using EnergyShare_v3.Domain.Entities.ProfilsEnergie;
+using Microsoft.EntityFrameworkCore;
 
 namespace EnergyShare_v3.Application.Features.ProfilEnergie
 {
@@ -23,12 +26,12 @@ namespace EnergyShare_v3.Application.Features.ProfilEnergie
             _context = context;
         }
         //cf. Ex complet 3.6 pour créer un partage 
-        public async Task<Guid> HandleAsync(
+        public async Task<Result<Guid>> HandleAsync(
             CreateProfilEnergieCommand command,
             CancellationToken cancellationToken = default)
         {
             
-            var profilEnergie = new Domain.Entities.ProfilEnergie(
+            var result = Domain.Entities.ProfilsEnergie.ProfilEnergie.Create(
                 command.DemandeEnergie_kWh,
                 command.OffreEnergie_kWh,
                 command.PrixAchatCible_Eur,
@@ -41,10 +44,19 @@ namespace EnergyShare_v3.Application.Features.ProfilEnergie
 
                 );
 
+
+            //Si erreur métier on s'arrête et on retourne l'erreur, sinon on continue
+            if (!result.IsSuccess)
+                return Result<Guid>.Invalid(result.ValidationErrors);
+
+            var profilEnergie = result.Value;
+
+            //persistance
             await _context.ProfilsEnergie.AddAsync(profilEnergie, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return profilEnergie.Id;
+            return Result.Success(profilEnergie.Id);
+
         }
 
     }

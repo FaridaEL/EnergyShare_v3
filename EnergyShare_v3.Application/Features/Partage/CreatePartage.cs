@@ -1,4 +1,6 @@
-﻿using EnergyShare_v3.Application.Interfaces;
+﻿using Ardalis.Result;
+using EnergyShare_v3.Application.Interfaces;
+using EnergyShare_v3.Domain.Entities.Partages;
 using EnergyShare_v3.Domain.Enums;
 
 namespace EnergyShare_v3.Application.Features.Partage
@@ -19,21 +21,28 @@ namespace EnergyShare_v3.Application.Features.Partage
             _context = context;
         }
 
-        public async Task<Guid> HandleAsync(
+        public async Task<Result<Guid>> HandleAsync(    //on ajoute le result pour gérer les erreurs métier définies dans le domaine
             CreatePartageCommand command,
             CancellationToken cancellationToken = default)
         {
-            var partage = new Domain.Entities.Partage(
+            
+            var result = Domain.Entities.Partages.Partage.Create(
                 command.Nom,
                 command.EnergieType,
                 command.DataTransmissionType,
                 command.VendeurId
             );
+            //Si erreur métier on s'arrête et on retourne l'erreur, sinon on continue
+            if (!result.IsSuccess)
+                return Result<Guid>.Invalid(result.ValidationErrors); 
 
+            var partage = result.Value;
+
+            //persistance
             await _context.Partages.AddAsync(partage, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return partage.Id;
+            return Result.Success(partage.Id);
         }
     }
 }

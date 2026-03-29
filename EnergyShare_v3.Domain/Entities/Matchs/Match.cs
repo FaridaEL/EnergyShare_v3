@@ -1,7 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Ardalis.Result;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EnergyShare_v3.Domain.Entities
+namespace EnergyShare_v3.Domain.Entities.Matchs.Match
 {
     public class Match
     {
@@ -32,17 +33,28 @@ namespace EnergyShare_v3.Domain.Entities
             PointAccessVendeurId = pointAccessVendeurId;
             PointAccessAcheteurId = pointAccessAcheteurId;
             DistanceCalculee = distanceCalculee;
-            VerifierCohérence();
+            VerifierCoherence();
         }
 
         //Règle de gestion 
-        public void VerifierCohérence()
+        /* Avant implementation de Result :
+         public void VerifierCoherence()
+            {
+                if (PointAccessVendeurId == PointAccessAcheteurId)
+                    throw new InvalidOperationException("Un point d'accès ne peut pas être mis en relation avec lui-même.");
+
+                if (DistanceCalculee < 0)
+                    throw new InvalidOperationException("La distance calculée ne peut pas être négative.");
+            }*/
+
+        public Result VerifierCoherence()
         {
             if (PointAccessVendeurId == PointAccessAcheteurId)
-                throw new InvalidOperationException("Un point d'accès ne peut pas être mis en relation avec lui-même.");
+               return MatchErros.SameAccessPoint(PointAccessVendeurId, PointAccessAcheteurId);
 
             if (DistanceCalculee < 0)
-                throw new InvalidOperationException("La distance calculée ne peut pas être négative.");
+                return MatchErros.DistanceNegative(DistanceCalculee);
+            return Result.Success();
         }
 
     }

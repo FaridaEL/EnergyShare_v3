@@ -1,4 +1,5 @@
 ﻿using EnergyShare_v3.Domain.Entities;
+using EnergyShare_v3.Domain.Entities.ProfilsEnergie;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;

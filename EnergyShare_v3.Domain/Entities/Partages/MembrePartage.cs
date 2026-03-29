@@ -1,8 +1,10 @@
-﻿using EnergyShare_v3.Domain.Enums;
+﻿using Ardalis.Result;
+using EnergyShare_v3.Domain.Entities.Users;
+using EnergyShare_v3.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EnergyShare_v3.Domain.Entities
+namespace EnergyShare_v3.Domain.Entities.Partages
 {
     public class MembrePartage
     {
@@ -36,15 +38,29 @@ namespace EnergyShare_v3.Domain.Entities
 
         //interlocuteur unique : le vendeur-producteur est l'interlocuteur unique du partage, il est le seul à pouvoir créer le partage et à communiquer le préavis de sortie du partage.
 
-        public void DefinirCommeInterlocuteurUnique()
+        /*  pour info avant result : 
+         public void DefinirCommeInterlocuteurUnique()
+      {
+          if (UserRolePartage != UserRolePartage.Vendeur)
+              throw new InvalidOperationException("Seul un vendeur peut être interlocuteur unique.");
+
+          if (!PointAccess.IsInjectionPoint)
+              throw new InvalidOperationException("L'interlocuteur unique doit disposer d'un point d'injection.");
+
+          IsInterlocuteurUnique = true;
+      }*/
+
+        public Result DefinirCommeInterlocuteurUnique()
         {
             if (UserRolePartage != UserRolePartage.Vendeur)
-                throw new InvalidOperationException("Seul un vendeur peut être interlocuteur unique.");
+               return MembrePartageErrors.InterlocuteurUniqueDoitEtreVendeur(UserId);
 
-            if (!PointAccess.IsInjectionPoint)
-                throw new InvalidOperationException("L'interlocuteur unique doit disposer d'un point d'injection.");
-
+           if (!PointAccess.IsInjectionPoint)
+                return MembrePartageErrors.PointInjectionRequis(PointAccessId);
+           
             IsInterlocuteurUnique = true;
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
 
@@ -52,27 +68,31 @@ namespace EnergyShare_v3.Domain.Entities
         //Impact pour un pair-to-pair  sur le statut du partage qui passe en Démarrer cloture dès que
         //le préavis de 3 semaines est communiqué par un membre du partage
         //--> MAis statut partage ne peut pas être géré ici car un risque de couplage fort -- <gestion dans l'appication
-        public void CommuniquerPreavis(DateTime dateCommunication)    
+        public Result CommuniquerPreavis(DateTime dateCommunication)    
         {
             if (ExitAt.HasValue)
-                throw new InvalidOperationException("Le membre a déjà quitté le partage.");
+               return MembrePartageErrors.MembreDejaSorti(UserId);
 
             if (dateCommunication < JoinedAt)
-                throw new InvalidOperationException("La date de préavis ne peut pas être antérieure à la date d'entrée.");
-
+                return MembrePartageErrors.DatePreavisAvantEntree(UserId);
+            
             DateCommunicationPreavis = dateCommunication;
             DateSortiePlanifiee = dateCommunication.AddDays(21);
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
-        public void Quitter(DateTime dateSortie)    //Impact pour un pair-to-pair  : le partage passe en clôturé dès que le membre quitte le partage après les 3 semaines de préavis.
+        public Result Quitter(DateTime dateSortie)    //Impact pour un pair-to-pair  : le partage passe en clôturé dès que le membre quitte le partage après les 3 semaines de préavis.
         {
             if (dateSortie < JoinedAt)
-                throw new InvalidOperationException("La date de sortie ne peut pas être antérieure à la date d'entrée.");
+                return MembrePartageErrors.DateSortieAvantEntree(UserId);
 
             if (DateSortiePlanifiee.HasValue && dateSortie < DateSortiePlanifiee.Value)
-                throw new InvalidOperationException("Le délai de préavis de 3 semaines n'est pas respecté.");
+                return MembrePartageErrors.PreavisNonRespecte(UserId);
 
             ExitAt = dateSortie;
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Success();
         }
 
         [NotMapped]

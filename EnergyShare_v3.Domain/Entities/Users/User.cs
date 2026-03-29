@@ -1,8 +1,11 @@
-﻿using EnergyShare_v3.Domain.Enums;
+﻿using Ardalis.Result;
+using EnergyShare_v3.Domain.Entities.Messages;
+using EnergyShare_v3.Domain.Entities.Partages;
+using EnergyShare_v3.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EnergyShare_v3.Domain.Entities
+namespace EnergyShare_v3.Domain.Entities.Users
 {
     public class User
     {
@@ -67,49 +70,70 @@ namespace EnergyShare_v3.Domain.Entities
 
         private User() { } // Constructeur sans parametre requis par Entity Framework Core.EF Core -->private pour empecher la creation d'un membre invalide.
 
-        public User(
+        private User(
             string email,
             string passwordHash,
             UserRole role,
             UserType userType)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException("L'email est obligatoire.", nameof(email));
+                {
+                    Id = Guid.NewGuid();
+                    Email = email.Trim().ToLowerInvariant();
+                    PasswordHash = passwordHash;
+                    Role = role;
+                    UserType = userType;
+                    Status = UserStatus.Actif;
+                    CreatedAt = DateTime.UtcNow;
+                    UpdatedAt = DateTime.UtcNow;
+                }
 
-            if (string.IsNullOrWhiteSpace(passwordHash))
-                throw new ArgumentException("Le mot de passe hashé est obligatoire.", nameof(passwordHash));
 
-            Email = email.Trim().ToLowerInvariant();
-            PasswordHash = passwordHash;
-            Role = role;
-            UserType = userType;
 
-            ValidateUser();
-        }
+
         //Méthodes 
-        private void ValidateUser()
+        private Result ValidateUser()
         {
             if (UserType == UserType.Residentiel && FormeLegaleType != null)
-                throw new InvalidOperationException("Un utilisateur résidentiel ne peut pas avoir de forme légale.");
+                return UserErrors.FormeLegaleInterditePourResidentiel();
 
             if (UserType == UserType.Professionnel && FormeLegaleType == null)
-                throw new InvalidOperationException("Un utilisateur professionnel doit avoir une forme légale.");
+                return UserErrors.FormeLegaleObligatoirePourProfessionnel();
 
             if (UserType != UserType.Professionnel && !string.IsNullOrWhiteSpace(SocieteName))
-                throw new InvalidOperationException("Seul un utilisateur professionnel peut avoir un nom de société.");
+                return UserErrors.SocieteReserveeAuProfessionnel();
 
             if (UserType != UserType.Professionnel && !string.IsNullOrWhiteSpace(NumeroEntreprise))
-                throw new InvalidOperationException("Seul un utilisateur professionnel peut avoir un numéro d’entreprise.");
+                return UserErrors.NumeroEntrepriseReserveAuProfessionnel();
 
-            if (UserType == UserType.Professionnel && FormeLegaleType != null && FormeLegaleType != FormeLegale.PersonnePhysique)
-            {
-                if (string.IsNullOrWhiteSpace(SocieteName))
-                    throw new InvalidOperationException("Le nom de société est obligatoire pour une personne morale.");
-            }
+            if (UserType == UserType.Professionnel &&
+                FormeLegaleType != null &&
+                FormeLegaleType != FormeLegale.PersonnePhysique &&
+                string.IsNullOrWhiteSpace(SocieteName))
+                return UserErrors.NomSocieteObligatoirePourPersonneMorale();
+
+            return Result.Success();
         }
 
+         public static Result<User> Create(
+                string email,
+                string passwordHash,
+                UserRole role,
+                UserType userType)
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                    return UserErrors.EmailObligatoire().Map();
 
-        
+                if (string.IsNullOrWhiteSpace(passwordHash))
+                    return UserErrors.PasswordHashObligatoire().Map();
+
+                var user = new User(email, passwordHash, role, userType);
+
+                var validation = user.ValidateUser();
+                if (!validation.IsSuccess)
+                    return Result<User>.Invalid(validation.ValidationErrors);
+
+                return Result.Success(user);
+            }
+
 
         public void UpdateUserIdentity(string? firstName, string? lastName, string? phoneNumber)
         {
@@ -119,7 +143,7 @@ namespace EnergyShare_v3.Domain.Entities
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void UpdateLegalInformation(
+        public Result UpdateLegalInformation(
             UserType userType,
             FormeLegale? formeLegale,
             string? societeName,
@@ -130,17 +154,23 @@ namespace EnergyShare_v3.Domain.Entities
                     SocieteName = societeName?.Trim();
                     NumeroEntreprise = numeroEntreprise?.Trim();
 
-                    ValidateUser();
+                    var validation = ValidateUser();
+                    if (!validation.IsSuccess)
+                        return validation;
+
                     UpdatedAt = DateTime.UtcNow;
+                    return Result.Success();
         }
 
-        public void ChangePassword(string newPasswordHash)
+        public Result ChangePassword(string newPasswordHash)
         {
             if (string.IsNullOrWhiteSpace(newPasswordHash))
-                throw new ArgumentException("Le hash du mot de passe est obligatoire.", nameof(newPasswordHash));
+                return UserErrors.PasswordHashObligatoire();
 
             PasswordHash = newPasswordHash;
             UpdatedAt = DateTime.UtcNow;
+
+            return Result.Success();
         }
 
         public void Deactivate()    //méthode pour l'administrateur pour désactiver un compte utilisateur (ex: en cas de non respect des règles de la plateforme ou d'inactivité prolongée)
