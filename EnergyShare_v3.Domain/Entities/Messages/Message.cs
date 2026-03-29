@@ -1,5 +1,5 @@
 ﻿using Ardalis.Result;
-using EnergyShare_v3.Domain.Entities.Matchs.Match;
+using EnergyShare_v3.Domain.Entities.Matchs;
 using EnergyShare_v3.Domain.Entities.Users;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;

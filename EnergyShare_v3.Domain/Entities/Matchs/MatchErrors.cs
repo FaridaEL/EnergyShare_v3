@@ -1,8 +1,8 @@
 ﻿using Ardalis.Result;
 
-namespace EnergyShare_v3.Domain.Entities.Matchs.Match
+namespace EnergyShare_v3.Domain.Entities.Matchs
 {
-    public static class MatchErros
+    public static class MatchErrors
     {
          /*Result Pattern -> quand l'utiliser ? 
           Si la méthode peut échouer  pour une raison métier attendue --> Result

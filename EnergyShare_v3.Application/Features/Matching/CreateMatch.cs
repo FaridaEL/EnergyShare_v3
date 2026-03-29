@@ -1,49 +1,67 @@
-﻿using EnergyShare_v3.Application.Interfaces;
-using EnergyShare_v3.Domain.Entities;
-using EnergyShare_v3.Domain.Entities.Matchs.Match;
+﻿using Ardalis.Result;
+using EnergyShare_v3.Application.Interfaces;
+using EnergyShare_v3.Domain.Entities.Matchs;
+using FluentValidation;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnergyShare_v3.Application.Features.Matching
 {
-    public record CreateMatchCommand(
+
+    public record CreateMatch(
         Guid PointAccessVendeurId,
         Guid PointAccessAcheteurId,
         decimal DistanceCalculee
-    );
+    ) : ICommand<Result<Guid>>;
 
-    public class CreateMatchHandler
+    public class CreateMatchValidator : AbstractValidator<CreateMatch>
     {
-        private readonly IApplicationDbContext _context;
-
-        public CreateMatchHandler(IApplicationDbContext context)
+        public CreateMatchValidator()
         {
-            _context = context;
+            RuleFor(x => x.PointAccessVendeurId)
+                .NotEmpty()
+                .WithMessage("Le point d'accès vendeur est requis.");
+
+            RuleFor(x => x.PointAccessAcheteurId)
+                .NotEmpty()
+                .WithMessage("Le point d'accès acheteur est requis.");
+
+            RuleFor(x => x.DistanceCalculee)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("La distance calculée doit être positive ou nulle.");
         }
+    }
 
-        public async Task<Guid> HandleAsync(
-            CreateMatchCommand command,
-            CancellationToken cancellationToken = default)
+    public class CreateMatchHandler(IApplicationDbContext context)
+        : ICommandHandler<CreateMatch, Result<Guid>>
+    {
+        public async ValueTask<Result<Guid>> Handle(
+            CreateMatch command,
+            CancellationToken cancellationToken)
         {
-            // on vérifie s'il existe déjà un match pour ces points d'accès pour éviter d'enregistrer des doublons
-            var existingMatch = await _context.Matches
+            var existingMatch = await context.Matches
                 .FirstOrDefaultAsync(
                     m => m.PointAccessVendeurId == command.PointAccessVendeurId
                       && m.PointAccessAcheteurId == command.PointAccessAcheteurId,
                     cancellationToken);
 
             if (existingMatch is not null)
-                return existingMatch.Id;
+                return Result.Success(existingMatch.Id);
 
-            var match = new Match(
+            var result = Match.Create(
                 command.PointAccessVendeurId,
                 command.PointAccessAcheteurId,
                 command.DistanceCalculee
             );
 
-            await _context.Matches.AddAsync(match, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
+            if (!result.IsSuccess)
+                return Result<Guid>.Invalid(result.ValidationErrors);
 
-            return match.Id;
+            var match = result.Value;
+
+            await context.Matches.AddAsync(match, cancellationToken);
+
+            return Result.Success(match.Id);
         }
     }
 
