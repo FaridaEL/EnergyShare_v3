@@ -1,4 +1,6 @@
-﻿using EnergyShare_v3.Domain.Enums;
+﻿using EnergyShare_v3.Domain.Entities.Partages;
+using EnergyShare_v3.Domain.Entities.Users;
+using EnergyShare_v3.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

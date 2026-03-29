@@ -1,5 +1,6 @@
 ﻿using EnergyShare_v3.Application.Interfaces;
 using EnergyShare_v3.Domain.Entities;
+using EnergyShare_v3.Domain.Entities.Matchs.Match;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnergyShare_v3.Application.Features.Matching

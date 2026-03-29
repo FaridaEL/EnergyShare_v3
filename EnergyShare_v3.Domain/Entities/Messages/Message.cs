@@ -1,7 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Ardalis.Result;
+using EnergyShare_v3.Domain.Entities.Matchs.Match;
+using EnergyShare_v3.Domain.Entities.Users;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EnergyShare_v3.Domain.Entities
+namespace EnergyShare_v3.Domain.Entities.Messages
 {
     public class Message
     {
@@ -44,18 +47,27 @@ namespace EnergyShare_v3.Domain.Entities
         //Constructeurs
         //Constructeur
         private Message() { } // Constructeur privé pour EF Core
-        public Message(string objet, string contenu, Guid expediteurId, Guid destinataire)
+        private Message(string objet, string contenu, Guid expediteurId, Guid destinataire)
         {
-            if (string.IsNullOrWhiteSpace(objet))
-                throw new ArgumentException("Veuillez renseigner un objet", nameof(objet));
-            if (string.IsNullOrWhiteSpace(contenu))
-                throw new ArgumentException("Veullez indiquer votre message", nameof(contenu));
+            Guid id = Guid.NewGuid();
             ObjetMessage = objet;
             Contenu = contenu;
             ExpediteurId = expediteurId;
             DestinataireId = destinataire;
 
         }
+
+        public static Result<Message> Create(string objet, string contenu, Guid expediteurId, Guid destinataireId)
+        {
+            if (string.IsNullOrWhiteSpace(objet))
+                return MessageErrors.ObjetObligatoire().Map();
+
+            if (string.IsNullOrWhiteSpace(contenu))
+                return MessageErrors.ContenuObligatoire().Map();
+
+            return Result.Success(new Message(objet, contenu, expediteurId, destinataireId));
+        }
+
 
     }
 
