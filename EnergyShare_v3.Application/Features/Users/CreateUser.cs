@@ -1,29 +1,48 @@
 ﻿using Ardalis.Result;
 using EnergyShare_v3.Application.Interfaces;
-using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Domain.Enums;
+using FluentValidation;
+using Mediator;
+using System.Windows.Input;
 
 namespace EnergyShare_v3.Application.Features.Users
 {       /*Service applicatif pour la gestion des utilisateurs.
 / Requete pour obtenir la liste de toutes les familles..*/
-    public record CreateUserCommand(string Email,string PasswordHash,UserRole Role, UserType UserType);
-    public class CreateUserHandler
-    {
-        private readonly IApplicationDbContext _context;
+    public record CreateUser(string Email,string PasswordHash,UserRole Role, UserType UserType):ICommand<Result<Guid>> ;
+    // public record CreateUserCommand(string Email,string PasswordHash,UserRole Role, UserType UserType);
 
-        public CreateUserHandler(IApplicationDbContext context)
+    public class CreateUserValidator : AbstractValidator<CreateUser>
+    {
+        public CreateUserValidator()
         {
-            _context = context;
+            RuleFor(x => x.Email)
+            .NotEmpty()
+            .WithMessage("L'email est requis");
+
+            RuleFor(x => x.PasswordHash)
+                .NotEmpty()
+                .WithMessage("Le mot de passe hashé est requis");
+
+            RuleFor(x => x.Role)
+                .IsInEnum();
+
+            RuleFor(x => x.UserType)
+                .IsInEnum();
+
         }
-        public async Task<Result<Guid>> HandleAsync(
-            CreateUserCommand command,
-            CancellationToken cancellationToken = default)
+    }
+
+
+    public class CreateUserHandler (IApplicationDbContext context) : ICommandHandler<CreateUser, Result<Guid>>
+    {
+        public async ValueTask<Result<Guid>> Handle(
+            CreateUser command,
+            CancellationToken cancellationToken )
         {    var result = Domain.Entities.Users.User.Create(
                 command.Email,
                 command.PasswordHash, 
                 command.Role, 
                 command.UserType );
-
 
             //Si erreur métier on s'arrête et on retourne l'erreur, sinon on continue
             if (!result.IsSuccess)
@@ -32,8 +51,8 @@ namespace EnergyShare_v3.Application.Features.Users
             var user = result.Value;
 
             //persistance
-            await _context.Users.AddAsync(user, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
+            //await _context.Users.AddAsync(user, cancellationToken);
+           // await _context.SaveChangesAsync(cancellationToken);
 
             return Result.Success(user.Id);
 

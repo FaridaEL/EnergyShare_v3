@@ -1,7 +1,6 @@
 ﻿using EnergyShare_v3.Application.Interfaces;
 using EnergyShare_v3.Domain.Entities;
 using EnergyShare_v3.Domain.Entities.Matchs;
-using EnergyShare_v3.Domain.Entities.Matchs.Match;
 using EnergyShare_v3.Domain.Entities.Messages;
 using EnergyShare_v3.Domain.Entities.Partages;
 using EnergyShare_v3.Domain.Entities.ProfilsEnergie;

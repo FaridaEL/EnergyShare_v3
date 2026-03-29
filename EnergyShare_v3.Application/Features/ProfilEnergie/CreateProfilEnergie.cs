@@ -1,36 +1,42 @@
 ﻿using Ardalis.Result;
 using EnergyShare_v3.Application.Interfaces;
 using EnergyShare_v3.Domain.Entities.ProfilsEnergie;
+using FluentValidation;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnergyShare_v3.Application.Features.ProfilEnergie
 {
-    public record CreateProfilEnergieCommand(
-        decimal DemandeEnergie_kWh,
-        decimal OffreEnergie_kWh,
-        decimal PrixAchatCible_Eur,
-        decimal PrixVenteCible_Eur,
-        decimal ConsommationAnnuelleEstime_kWh,
-        decimal ProductionAnnuelleEstime_kWh,
-        decimal PrixAchatEnergieFournisseur_Eur,
-        decimal PrixVenteInjectionFournisseurActuel_Eur,
+
+    public record CreateProfilEnergie(
+        decimal? DemandeEnergie_kWh,
+        decimal? OffreEnergie_kWh,
+        decimal? PrixAchatCible_Eur,
+        decimal? PrixVenteCible_Eur,
+        decimal? ConsommationAnnuelleEstime_kWh,
+        decimal? ProductionAnnuelleEstime_kWh,
+        decimal? PrixAchatEnergieFournisseur_Eur,
+        decimal? PrixVenteInjectionFournisseurActuel_Eur,
         Guid PointAccessId
-        );
+    ) : ICommand<Result<Guid>>;
 
-    public class CreateProfilEnergieHandler
+    public class CreateProfilEnergieValidator : AbstractValidator<CreateProfilEnergie>
     {
-        private readonly IApplicationDbContext _context;
-
-        public CreateProfilEnergieHandler(IApplicationDbContext context)
+        public CreateProfilEnergieValidator()    // vérifie les données d'entrée : guid vide, chaine vide, longeur max, format...
         {
-            _context = context;
+            RuleFor(x => x.PointAccessId)
+                .NotEmpty()
+                .WithMessage("Le point d'accès est requis");
         }
-        //cf. Ex complet 3.6 pour créer un partage 
-        public async Task<Result<Guid>> HandleAsync(
-            CreateProfilEnergieCommand command,
-            CancellationToken cancellationToken = default)
+    }
+
+    public class CreateProfilEnergieHandler(IApplicationDbContext context)
+        : ICommandHandler<CreateProfilEnergie, Result<Guid>>
+    {
+        public async ValueTask<Result<Guid>> Handle(   //Orchestre : appelle le domaine, persiste, et retourne le résultat
+            CreateProfilEnergie command,          // commande = intention métrier : créer un partage, ajouter un membre, etc.
+            CancellationToken cancellationToken)
         {
-            
             var result = Domain.Entities.ProfilsEnergie.ProfilEnergie.Create(
                 command.DemandeEnergie_kWh,
                 command.OffreEnergie_kWh,
@@ -40,24 +46,16 @@ namespace EnergyShare_v3.Application.Features.ProfilEnergie
                 command.ProductionAnnuelleEstime_kWh,
                 command.PrixAchatEnergieFournisseur_Eur,
                 command.PrixVenteInjectionFournisseurActuel_Eur,
-                command.PointAccessId
+                command.PointAccessId);
 
-                );
-
-
-            //Si erreur métier on s'arrête et on retourne l'erreur, sinon on continue
             if (!result.IsSuccess)
                 return Result<Guid>.Invalid(result.ValidationErrors);
 
-            var profilEnergie = result.Value;
+            var profil = result.Value;
 
-            //persistance
-            await _context.ProfilsEnergie.AddAsync(profilEnergie, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
+            await context.ProfilsEnergie.AddAsync(profil, cancellationToken);
 
-            return Result.Success(profilEnergie.Id);
-
+            return Result.Success(profil.Id);
         }
-
     }
 }

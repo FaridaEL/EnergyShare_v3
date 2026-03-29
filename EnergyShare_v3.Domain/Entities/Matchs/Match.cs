@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EnergyShare_v3.Domain.Entities.Matchs.Match
+namespace EnergyShare_v3.Domain.Entities.Matchs
 {
     public class Match
     {
@@ -27,13 +27,28 @@ namespace EnergyShare_v3.Domain.Entities.Matchs.Match
 
 
         //Constructeur
-        private Match() { } // Constructeur privé pour EF Core
-        public Match(Guid pointAccessVendeurId, Guid pointAccessAcheteurId, decimal distanceCalculee)
+        public Match() { } // Constructeur privé pour EF Core
+        private Match(Guid pointAccessVendeurId, Guid pointAccessAcheteurId, decimal distanceCalculee)
         {
             PointAccessVendeurId = pointAccessVendeurId;
             PointAccessAcheteurId = pointAccessAcheteurId;
             DistanceCalculee = distanceCalculee;
-            VerifierCoherence();
+            CreatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public static Result<Match> Create(
+           Guid pointAccessVendeurId,
+           Guid pointAccessAcheteurId,
+           decimal distanceCalculee)
+                {
+                    var match = new Match(pointAccessVendeurId, pointAccessAcheteurId, distanceCalculee);
+
+                    var validation = match.VerifierCoherence();
+                    if (!validation.IsSuccess)
+                        return Result<Match>.Invalid(validation.ValidationErrors);
+
+                    return Result.Success(match);
         }
 
         //Règle de gestion 
@@ -50,10 +65,10 @@ namespace EnergyShare_v3.Domain.Entities.Matchs.Match
         public Result VerifierCoherence()
         {
             if (PointAccessVendeurId == PointAccessAcheteurId)
-               return MatchErros.SameAccessPoint(PointAccessVendeurId, PointAccessAcheteurId);
+               return MatchErrors.SameAccessPoint(PointAccessVendeurId, PointAccessAcheteurId);
 
             if (DistanceCalculee < 0)
-                return MatchErros.DistanceNegative(DistanceCalculee);
+                return MatchErrors.DistanceNegative(DistanceCalculee);
             return Result.Success();
         }
 

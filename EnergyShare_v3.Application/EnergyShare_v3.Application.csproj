@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Folder Include="Features\Dashboard\" />
+    <Folder Include="Features\Messages\" />
   </ItemGroup>
 
 </Project>
