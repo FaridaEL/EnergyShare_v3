@@ -1,40 +1,79 @@
 ﻿using EnergyShare_v3.Application.Interfaces;
+using EnergyShare_v3.Infrastructure.Behaviors;
 using EnergyShare_v3.Infrastructure.Database;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Reflection;
 
 namespace EnergyShare_v3.Infrastructure
 {
     // Methode d'extension pour enregistrer les services de l'Infrastructure.
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddInfrastructure(
+        static readonly List<Assembly> s_assemblies = [
+            Assembly.Load("EnergyShare_v3.Application"),
+            Assembly.Load("EnergyShare_v3.Domain"),
+
+            ];
+
+
+        public static IServiceCollection AddEnergyShare(
             this IServiceCollection services,
             IConfiguration configuration)
-        {   // Enregistrer Entity Framework Core avec SQL Server
-            services.AddDbContext<ApplicationDBContext>(options =>
-            options.UseSqlServer(
-                configuration.GetConnectionString("DefaultConnection"),
-                sqlOptions =>
-                {
-                    //L'assembly des migrations est dansInfrastructure
-                    sqlOptions.MigrationsAssembly(
-                        typeof(IApplicationDbContext).Assembly.FullName);
-                }
-                ));
-            // // Enregistrer IApplicationDbContext -> ApplicationDbContext
-            // Quand quelqu'un demande IApplicationDbContext,
-            // le conteneur DI fournit ApplicationDbContext
+        {
+            return services
+                .ConfigureMediator()
+                .ConfigureFluentValidation()
+                .ConfigureEntityFramework(
+                   configuration.GetConnectionString("EnergyShare")!);
 
-            services.AddScoped<IApplicationDbContext>(provider =>
-                provider.GetRequiredService<ApplicationDBContext>());
+        }
+        static IServiceCollection ConfigureMediator(
+            this IServiceCollection services)
+        {
+            return services.AddMediator(options =>
+            {
+                options.ServiceLifetime = ServiceLifetime.Scoped;
+                options.PipelineBehaviors = [
+                    typeof(LoggingBehavior<,>),
+                    typeof(ValidationBehavior<,>),
+                    typeof(TransactionBehavior<,>),
+                    typeof(UnitOfWorkBehavior<,>)
+                    ];
+            });
+        }
+
+        static IServiceCollection ConfigureFluentValidation(
+      this IServiceCollection services)
+        {
+            foreach (var result in AssemblyScanner
+                .FindValidatorsInAssemblies(s_assemblies))
+            {
+                services.AddTransient(
+                    result.InterfaceType,
+                    result.ValidatorType);
+            }
+
+            ValidatorOptions.Global.DefaultRuleLevelCascadeMode =
+                CascadeMode.Stop;
+
             return services;
+        }
 
+        static IServiceCollection ConfigureEntityFramework(
+            this IServiceCollection services,
+            string connectionString)
+        {
+            services.AddDbContext<ApplicationDbContext>(options =>
+            {
+                options.UseSqlServer(connectionString);
+            });
 
+            services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
+
+            return services;
         }
     }
 }

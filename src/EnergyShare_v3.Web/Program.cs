@@ -13,7 +13,7 @@ builder.Services.AddRazorComponents()
 
 //Ajout l'infrastructure (EF Core, DbContext)
 // Un seul appel qui cache toute la complexite grace a la methode d'extension
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddEnergyShare(builder.Configuration);
 
 //Enregistrer les handlers de l'application 
 /*à vérifier ça me semble peu et contradiction entre le projet et les exos */
@@ -29,7 +29,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDBContext>();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await context.Database.EnsureCreatedAsync(); // Todo à remplacer par MigrateAsync() lorsque je fais mes migrations
 }
 
