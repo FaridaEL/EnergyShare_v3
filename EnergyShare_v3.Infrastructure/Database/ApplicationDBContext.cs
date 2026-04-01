@@ -12,9 +12,9 @@ namespace EnergyShare_v3.Infrastructure.Database
 {   
     // Implementation concrete de IApplicationDbContext avec Entity Framework Core.
 
-    public class ApplicationDBContext : DbContext, IApplicationDbContext
+    public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
-        public ApplicationDBContext(DbContextOptions<ApplicationDBContext> options)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
           : base(options) { 
         
         }
