@@ -28,7 +28,7 @@ namespace EnergyShare_v3.Application.Features.Partage
                     p.Membres.Count(m => m.ExitAt == null),
                     p.DateDebut,
                     p.DateFin,
-                    p.CreatedAt
+                    p.Audit.CreatedAt
                 ))
                 .FirstOrDefaultAsync(cancellationToken);
         }

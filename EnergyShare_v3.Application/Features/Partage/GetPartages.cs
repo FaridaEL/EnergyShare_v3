@@ -23,7 +23,7 @@ namespace EnergyShare_v3.Application.Features.Partage
                     p.Id,
                     p.Nom,
                     p.Membres.Count(m => m.ExitAt == null),
-                    p.CreatedAt
+                    p.Audit.CreatedAt
                 ))
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync(cancellationToken);

@@ -63,6 +63,8 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
                 .WithMany()
                 .HasForeignKey(u => u.OrganismePublicId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.OwnsOne(u => u.Audit);
         }
 
       

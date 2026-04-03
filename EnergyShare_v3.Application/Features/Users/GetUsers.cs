@@ -28,7 +28,7 @@ namespace EnergyShare_v3.Application.Features.Users
                     u.Email,
                     u.Role,
                     u.UserType,
-                    u.CreatedAt
+                    u.Audit.CreatedAt
                 ))
                 .OrderBy(u => u.FirstName)
                 .ToListAsync(cancellationToken); 

@@ -23,6 +23,8 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
                 .IsRequired()
                 .HasConversion<string>()
                 .HasMaxLength(30);
+
+            builder.OwnsOne(op => op.Audit);
         }
     }
 }

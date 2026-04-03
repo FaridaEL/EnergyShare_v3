@@ -1,4 +1,5 @@
-﻿using EnergyShare_v3.Domain.Entities.Matchs;
+﻿using EnergyShare_v3.Bricks.Model;
+using EnergyShare_v3.Domain.Entities.Matchs;
 using EnergyShare_v3.Domain.Entities.Partages;
 using EnergyShare_v3.Domain.Entities.ProfilsEnergie;
 using EnergyShare_v3.Domain.Entities.Users;
@@ -11,7 +12,7 @@ namespace EnergyShare_v3.Domain.Entities
           * car un même point d’accès peut changer de titulaire au cours du temps ( déménagement, reprise de contrat).
           * En revanche, un même EAN / point d’accès actif ne peut être rattaché qu’à un seul utilisateur actif à la fois,
           * ni participer à plusieurs partages actifs simultanément.*/
-    public class PointAccess
+    public class PointAccess  :IAuditable
     {
         [Key]    
         public Guid Id { get; set; } 
@@ -60,9 +61,8 @@ namespace EnergyShare_v3.Domain.Entities
         public ICollection<Match> MatchsVendeurs { get; set; } = [];
 
         //Données d'audit
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-              
+        public AuditInfo Audit { get; private set; } = new AuditInfo();
+
         //Methodes
 
         public bool estCompletPourPartage()

@@ -1,10 +1,11 @@
 ﻿using Ardalis.Result;
+using EnergyShare_v3.Bricks.Model;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EnergyShare_v3.Domain.Entities.Matchs
 {
-    public class Match
+    public class Match :IAuditable
     {
         
         [Key]
@@ -21,20 +22,23 @@ namespace EnergyShare_v3.Domain.Entities.Matchs
         [ForeignKey("PointAccessAcheteurId")]
         public PointAccess PointAccessAcheteur { get; set; } = null!;
 
+
+
         // Données d'audit
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public AuditInfo Audit { get; private set; } = new AuditInfo();
+
+        //public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        //public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
 
         //Constructeur
-        public Match() { } // Constructeur privé pour EF Core
+        private Match() { } // Constructeur privé pour EF Core
         private Match(Guid pointAccessVendeurId, Guid pointAccessAcheteurId, decimal distanceCalculee)
         {
             PointAccessVendeurId = pointAccessVendeurId;
             PointAccessAcheteurId = pointAccessAcheteurId;
             DistanceCalculee = distanceCalculee;
-            CreatedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
+            
         }
 
         public static Result<Match> Create(

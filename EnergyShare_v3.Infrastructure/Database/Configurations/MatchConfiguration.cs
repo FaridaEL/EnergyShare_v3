@@ -32,6 +32,8 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
 
             builder.HasIndex(m => new { m.PointAccessVendeurId, m.PointAccessAcheteurId })
                 .IsUnique();
+
+            builder.OwnsOne(m => m.Audit);
         }
     }
 }

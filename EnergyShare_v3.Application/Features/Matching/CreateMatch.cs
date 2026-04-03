@@ -6,7 +6,8 @@ using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnergyShare_v3.Application.Features.Matching
-{
+{     //Adoption d'une organisation par features (vertical slice) tout en gardant des DTO mutualisés
+      //pour éviter la duplication et améliorer la lisibilité.
 
     public record CreateMatch(
         Guid PointAccessVendeurId,

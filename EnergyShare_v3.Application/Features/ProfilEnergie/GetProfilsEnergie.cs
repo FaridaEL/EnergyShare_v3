@@ -31,7 +31,7 @@ namespace EnergyShare_v3.Application.Features.ProfilEnergie
                     pe.PointAccess.UserId,     //scalaire très pratique pour récupérer l'info user utile
                     pe.PointAccess.User.Role,
                     pe.PointAccess.User.UserType,
-                    pe.CreatedAt
+                    pe.Audit.CreatedAt
 
                 ) )
                 .OrderBy(pe => pe.CreatedAt)

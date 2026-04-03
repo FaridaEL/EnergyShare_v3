@@ -39,7 +39,7 @@ namespace EnergyShare_v3.Application.Features.ProfilEnergie
                 pe.PointAccess.UserId,
                 pe.PointAccess.User.Role,
                 pe.PointAccess.User.UserType,
-                pe.CreatedAt
+                pe.Audit.CreatedAt
             ))
             .FirstOrDefaultAsync(cancellationToken);
 

@@ -40,6 +40,8 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
 
             builder.HasIndex(mp => new { mp.PartageId, mp.PointAccessId })
                 .IsUnique();
+
+            builder.OwnsOne(mp => mp.Audit);
         }
     }
 }

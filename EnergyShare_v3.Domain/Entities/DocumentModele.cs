@@ -1,9 +1,10 @@
-﻿using EnergyShare_v3.Domain.Enums;
+﻿using EnergyShare_v3.Bricks.Model;
+using EnergyShare_v3.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace EnergyShare_v3.Domain.Entities
 {
-    public class DocumentModele
+    public class DocumentModele :IAuditable
     {
         /*Convention Type, fichier Excel de facturation et simulateur avancés à mettre à disposition des utilisateurs*/
         [Key]
@@ -18,11 +19,12 @@ namespace EnergyShare_v3.Domain.Entities
         public string TemplatePath { get; set; } = null!; // Chemin vers le fichier
 
         //Enumérations
-        public DocumentType? DocumentType { get; set; }         
+        public DocumentType? DocumentType { get; set; }
 
         //Données d'audit
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public AuditInfo Audit { get; private set; } = new AuditInfo();
+        //public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        //public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
 
     }

@@ -1,4 +1,5 @@
 ﻿using Ardalis.Result;
+using EnergyShare_v3.Bricks.Model;
 using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
@@ -6,7 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EnergyShare_v3.Domain.Entities.Partages
 {
-    public class Partage
+    public class Partage  :IAuditable
     {
         //Seul l'interlocuteur unique, càd le vendeur, peut créer un partage.
         [Key]
@@ -19,6 +20,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         public DateTime? DateFin { get; private set; }
         public bool RecevoirDataParticipant { get; set; } = false;   //permet de demander des fichiers détaillés par participant --> Message à ajouter sur l'interface: "Chaque mois, Sibelga vous enverra un fichier contenant les données vous permettant de connaitre le volume local mensuel (la consommation qui vient du partage) de chaque participant et le montant des tarifs réseau associés. Si vous le souhaitez, vous pouvez également recevoir un fichier contenant les données de chaque participant sous forme quart horaire(= par quart d’heure) en cochant la cases ci-dessous.
 
+        
         //énumération 
         //private set --> ref. entité riche --> meilleure controle de la modification : à  utiliser dès que la propriété ne doit pas
         //être modifiée librement, mais uniquement via des méthodes métier 
@@ -52,11 +54,10 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         public ICollection<DdeValidationPartage> Validations { get; set; }   = [];
         public ICollection<DdeInfoPerimetre> DemandesInfos { get; set; }    = [];
 
-        
+
 
         // Données d'audit
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public AuditInfo Audit { get; private set; } = new AuditInfo();
 
         //Données calculées
         [NotMapped]
@@ -116,8 +117,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 Membres.Remove(membre);
                 return validation;
             }
-            UpdatedAt = DateTime.UtcNow;
-
+            Audit.Touch(null);
             return Result.Success();
         }
 
@@ -132,7 +132,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 return PartageErrors.PartageCloture();
 
             Documents.Add(document);
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return Result.Success();
         }
 
@@ -146,7 +146,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 return validation;
 
             HistoriqueMethodes.Add(methode);
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return Result.Success();
         }
 
@@ -190,7 +190,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                  return PartageErrors.NomObligatoire();
 
             Nom = nouveauNom.Trim();
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return Result.Success();
         }
 
@@ -203,7 +203,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 return PartageErrors.SoumissionGrdImpossible(Statut);
 
             Statut = PartageEnergieStatutType.EnAttenteValidation;
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return Result.Success();
         }
 
@@ -219,7 +219,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
 
             Statut = PartageEnergieStatutType.Actif;
             DateDebut = DateTime.UtcNow; // La date de début est fixée à la validation par le GRD
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return Result.Success();
         }
 
@@ -229,7 +229,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 return PartageErrors.ValidationGrdImpossible();
 
             Statut = PartageEnergieStatutType.Inactif;
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return   Result.Success();
         }
          //Pour les modifications
@@ -239,7 +239,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                  return PartageErrors.ModificationImpossible();
 
             Statut = PartageEnergieStatutType.EnAttenteModification;
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return Result.Success();
         }
 
@@ -249,7 +249,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 return PartageErrors.ValidationModificationGrdImpossible();
 
             Statut = PartageEnergieStatutType.Actif;
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return Result.Success();
         }
 
@@ -260,7 +260,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 return PartageErrors.ValidationModificationGrdImpossible();
 
             Statut = PartageEnergieStatutType.Suspendu;
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return Result.Success();
         }
 
@@ -271,7 +271,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 return PartageErrors.DemarrageClotureImpossible();
 
             Statut = PartageEnergieStatutType.EnCoursCloture;
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return Result.Success();
         }
 
@@ -282,7 +282,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
 
             Statut = PartageEnergieStatutType.Cloture;
             DateFin = DateTime.UtcNow; // La date de fin est fixée à la date de clôture effective
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return Result.Success();
         }
 

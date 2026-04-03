@@ -47,6 +47,8 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
                 .WithOne(pa => pa.ProfilEnergie)
                 .HasForeignKey<ProfilEnergie>(pe => pe.PointAccessId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.OwnsOne(pe => pe.Audit);
         }
     }
 }

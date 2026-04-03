@@ -26,7 +26,7 @@ namespace EnergyShare_v3.Application.Features.Users
                 .Select(u => new UserDetailsDto(
                     u.Id,
                     u.FirstName,
-                    u.CreatedAt
+                    u.Audit.CreatedAt
                 ))
                 .FirstAsync(cancellationToken);
         }
