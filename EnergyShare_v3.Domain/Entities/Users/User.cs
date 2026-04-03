@@ -1,21 +1,24 @@
 ﻿using Ardalis.Result;
+using EnergyShare_v3.Bricks.Model;
 using EnergyShare_v3.Domain.Entities.Messages;
 using EnergyShare_v3.Domain.Entities.Partages;
 using EnergyShare_v3.Domain.Enums;
+using EnergyShare_v3.Domain.ValueObjects;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+
 namespace EnergyShare_v3.Domain.Entities.Users
 {
-    public class User
+    public class User : IAuditable
     {
         [Key]    
         public Guid Id { get; set; } //Globally Unique Identifier
 
         public UserStatus Status { get; private set; } = UserStatus.Actif; //Statut du membre (Actif, Inactif)  ( ex après un délai d'inactivité passerait automatiquement en inactif..)
         //Obligatoire à l'inscription : uniquement mail + password pour faciliter l'inscription
-        [Required, EmailAddress]
-        public string Email { get; private set; } = null!;  //null indique qu'il ne faut pas envoyer d'avertissement de non-nullabilité 
+        [Required]
+        public Email Email { get; private set; } = null!;  //null indique qu'il ne faut pas envoyer d'avertissement de non-nullabilité 
         [Required]
         public string PasswordHash { get; private set; } = null!; //hash du mot de passe pour l'authentification du membre
 
@@ -55,38 +58,35 @@ namespace EnergyShare_v3.Domain.Entities.Users
         public ICollection<Partage> PartagesGeres { get; set; } = [];
 
         //Données d'audit
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-               
-
-        /// <summary>Nom complet (propriete calculee, logique metier dans le domaine)</summary>
+        // Infos de traçabilité de l'entité.
+        public AuditInfo Audit { get; private set; } = new AuditInfo();
         
+        /// <summary>Nom complet (propriete calculee, logique metier dans le domaine)</summary>
+
         public string? FullName => string.IsNullOrWhiteSpace(FirstName) && string.IsNullOrWhiteSpace(LastName)
                                   ? Email
                                   : $"{FirstName} {LastName}".Trim();
 
-        //Constructeur
+        
 
+        //Constructeur
 
         private User() { } // Constructeur sans parametre requis par Entity Framework Core.EF Core -->private pour empecher la creation d'un membre invalide.
 
         private User(
-            string email,
+            Email email,
             string passwordHash,
             UserRole role,
             UserType userType)
                 {
                     Id = Guid.NewGuid();
-                    Email = email.Trim().ToLowerInvariant();
+                    Email = email;
                     PasswordHash = passwordHash;
                     Role = role;
                     UserType = userType;
                     Status = UserStatus.Actif;
-                    CreatedAt = DateTime.UtcNow;
-                    UpdatedAt = DateTime.UtcNow;
-                }
-
-
+                    Audit.Touch(null);
+        }
 
 
         //Méthodes 
@@ -119,13 +119,16 @@ namespace EnergyShare_v3.Domain.Entities.Users
                 UserRole role,
                 UserType userType)
             {
-                if (string.IsNullOrWhiteSpace(email))
-                    return UserErrors.EmailObligatoire().Map();
+                var emailResult = Email.Create(email);
+                 if (!emailResult.IsSuccess)
+                     return Result<User>.Invalid(emailResult.ValidationErrors);
+            //if (string.IsNullOrWhiteSpace(email))
+            //  return UserErrors.EmailObligatoire().Map();
 
-                if (string.IsNullOrWhiteSpace(passwordHash))
+                 if (string.IsNullOrWhiteSpace(passwordHash))
                     return UserErrors.PasswordHashObligatoire().Map();
 
-                var user = new User(email, passwordHash, role, userType);
+                var user = new User(emailResult.Value, passwordHash, role, userType);
 
                 var validation = user.ValidateUser();
                 if (!validation.IsSuccess)
@@ -140,7 +143,7 @@ namespace EnergyShare_v3.Domain.Entities.Users
             FirstName = firstName?.Trim();
             LastName = lastName?.Trim();
             PhoneNumber = phoneNumber?.Trim();
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
         }
 
         public Result UpdateLegalInformation(
@@ -158,8 +161,8 @@ namespace EnergyShare_v3.Domain.Entities.Users
                     if (!validation.IsSuccess)
                         return validation;
 
-                    UpdatedAt = DateTime.UtcNow;
-                    return Result.Success();
+                    Audit.Touch(null);
+            return Result.Success();
         }
 
         public Result ChangePassword(string newPasswordHash)
@@ -168,7 +171,7 @@ namespace EnergyShare_v3.Domain.Entities.Users
                 return UserErrors.PasswordHashObligatoire();
 
             PasswordHash = newPasswordHash;
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
 
             return Result.Success();
         }
@@ -176,7 +179,7 @@ namespace EnergyShare_v3.Domain.Entities.Users
         public void Deactivate()    //méthode pour l'administrateur pour désactiver un compte utilisateur (ex: en cas de non respect des règles de la plateforme ou d'inactivité prolongée)
         {
             Status = UserStatus.Inactif;
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
         }
 
     }

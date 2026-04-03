@@ -1,10 +1,11 @@
 ﻿using Ardalis.Result;
+using EnergyShare_v3.Bricks.Model;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EnergyShare_v3.Domain.Entities.ProfilsEnergie
 {
-    public class ProfilEnergie
+    public class ProfilEnergie : IAuditable
     {
         /* utilisé pour le matching et la simulation de l'économie d'énergie réalisée grâce au partage d'énergie,
          * en comparant le prix d'achat cible de l'acheteur avec le prix de vente cible du vendeur
@@ -36,8 +37,9 @@ namespace EnergyShare_v3.Domain.Entities.ProfilsEnergie
         public PointAccess PointAccess { get; set; } = null!;
 
         //Données d'audit
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public AuditInfo Audit { get; private set; } = new AuditInfo();
+        //public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        //public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         //Constructeurs
         public ProfilEnergie() { }    //constructeur par défaut nécessaire pour EF Core
@@ -71,8 +73,8 @@ namespace EnergyShare_v3.Domain.Entities.ProfilsEnergie
             AccordConsentement = true;
             DateAccordConsentement = DateTime.UtcNow;
             DateRetraitConsentement = null;
-            CreatedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
+            Audit.SetCreated(null); 
+            
         }
 
         public static Result<ProfilEnergie> Create(
@@ -138,8 +140,10 @@ namespace EnergyShare_v3.Domain.Entities.ProfilsEnergie
                 PrixVenteInjectionFournisseurActuel_Eur = prixVenteInjection,
                 AccordConsentement = true,
                 DateAccordConsentement = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+
+                Audit = new AuditInfo()
+                //CreatedAt = DateTime.UtcNow,
+                //UpdatedAt = DateTime.UtcNow
             });
         }
 

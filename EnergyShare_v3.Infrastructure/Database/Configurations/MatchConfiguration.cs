@@ -1,10 +1,6 @@
 ﻿using EnergyShare_v3.Domain.Entities.Matchs;
-using EnergyShare_v3.Domain.Entities.Matchs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace EnergyShare_v3.Infrastructure.Database.Configurations
 {
@@ -32,6 +28,8 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
 
             builder.HasIndex(m => new { m.PointAccessVendeurId, m.PointAccessAcheteurId })
                 .IsUnique();
+
+            builder.OwnsOne(m => m.Audit);
         }
     }
 }

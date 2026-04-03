@@ -54,6 +54,8 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
                 .WithMany(u => u.PartagesGeres)
                 .HasForeignKey(p => p.GestionnairePartageId)
                 .OnDelete(DeleteBehavior.Restrict);
+            
+            builder.OwnsOne(p => p.Audit);
         }
     }
 }

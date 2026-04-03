@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EnergyShare_v3.Bricks\EnergyShare_v3.Bricks.csproj" />
     <ProjectReference Include="..\EnergyShare_v3.Domain\EnergyShare_v3.Domain.csproj" />
   </ItemGroup>
 

@@ -1,10 +1,11 @@
-﻿using EnergyShare_v3.Domain.Entities.Users;
+﻿using EnergyShare_v3.Bricks.Model;
+using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace EnergyShare_v3.Domain.Entities
 {
-    public class OrganismePublic
+    public class OrganismePublic   :IAuditable
     {
 
         [Key]    
@@ -20,10 +21,9 @@ namespace EnergyShare_v3.Domain.Entities
         public ICollection<DdeInfoPerimetre> DdesInfosPerimetre { get; set; } = new List<DdeInfoPerimetre>();
         public ICollection<User> Employes {  get; set; } = new List<User>();
 
-        
+
         //Données d'audit
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public AuditInfo Audit { get; private set; } = new AuditInfo();
     }
 
    

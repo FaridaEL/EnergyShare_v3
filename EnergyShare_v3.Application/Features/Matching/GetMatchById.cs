@@ -29,7 +29,7 @@ namespace EnergyShare_v3.Application.Features.Matching
                     m.PointAccessVendeurId,
                     m.PointAccessAcheteurId,
                     m.DistanceCalculee,
-                    m.CreatedAt
+                    m.Audit.CreatedAt
                 ))
                 .FirstOrDefaultAsync(cancellationToken);
         }

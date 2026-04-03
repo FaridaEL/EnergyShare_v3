@@ -1,4 +1,5 @@
 ﻿using Ardalis.Result;
+using EnergyShare_v3.Bricks.Model;
 using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
@@ -6,7 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EnergyShare_v3.Domain.Entities.Partages
 {
-    public class MembrePartage
+    public class MembrePartage :IAuditable
     {
         //règle 1 point EAN ne peut appartenir qu'a un seul partage à la fois.
         [Key]
@@ -30,10 +31,9 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         public PointAccess PointAccess { get; set; } = null!;
 
 
-    
+
         // Données d'audit
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public AuditInfo Audit { get; private set; } = new AuditInfo();
 
 
         //interlocuteur unique : le vendeur-producteur est l'interlocuteur unique du partage, il est le seul à pouvoir créer le partage et à communiquer le préavis de sortie du partage.
@@ -59,7 +59,8 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 return MembrePartageErrors.PointInjectionRequis(PointAccessId);
            
             IsInterlocuteurUnique = true;
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
+            //UpdatedAt = DateTime.UtcNow;
             return Result.Success();
         }
 
@@ -78,7 +79,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
             
             DateCommunicationPreavis = dateCommunication;
             DateSortiePlanifiee = dateCommunication.AddDays(21);
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return Result.Success();
         }
 
@@ -91,7 +92,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 return MembrePartageErrors.PreavisNonRespecte(UserId);
 
             ExitAt = dateSortie;
-            UpdatedAt = DateTime.UtcNow;
+            Audit.Touch(null);
             return Result.Success();
         }
 
