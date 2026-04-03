@@ -25,7 +25,7 @@ namespace EnergyShare_v3.Application.Features.Users
                     u.Id,
                     u.FirstName,
                     u.LastName,
-                    u.Email,
+                    u.Email.Value,//Email est un value Object, on accède donc + facilement à sa valeur avec .Value
                     u.Role,
                     u.UserType,
                     u.Audit.CreatedAt

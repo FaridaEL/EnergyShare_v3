@@ -3,7 +3,6 @@ using EnergyShare_v3.Application.Interfaces;
 using EnergyShare_v3.Domain.Enums;
 using FluentValidation;
 using Mediator;
-using System.Windows.Input;
 
 namespace EnergyShare_v3.Application.Features.Users
 {       /*Service applicatif pour la gestion des utilisateurs.
@@ -51,7 +50,7 @@ namespace EnergyShare_v3.Application.Features.Users
             var user = result.Value;
 
             //persistance
-            //await _context.Users.AddAsync(user, cancellationToken);
+            await context.Users.AddAsync(user, cancellationToken);
            // await _context.SaveChangesAsync(cancellationToken);
 
             return Result.Success(user.Id);

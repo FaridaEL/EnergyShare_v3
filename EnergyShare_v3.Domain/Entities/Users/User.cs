@@ -3,8 +3,10 @@ using EnergyShare_v3.Bricks.Model;
 using EnergyShare_v3.Domain.Entities.Messages;
 using EnergyShare_v3.Domain.Entities.Partages;
 using EnergyShare_v3.Domain.Enums;
+using EnergyShare_v3.Domain.ValueObjects;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
 
 namespace EnergyShare_v3.Domain.Entities.Users
 {
@@ -15,8 +17,8 @@ namespace EnergyShare_v3.Domain.Entities.Users
 
         public UserStatus Status { get; private set; } = UserStatus.Actif; //Statut du membre (Actif, Inactif)  ( ex après un délai d'inactivité passerait automatiquement en inactif..)
         //Obligatoire à l'inscription : uniquement mail + password pour faciliter l'inscription
-        [Required, EmailAddress]
-        public string Email { get; private set; } = null!;  //null indique qu'il ne faut pas envoyer d'avertissement de non-nullabilité 
+        [Required]
+        public Email Email { get; private set; } = null!;  //null indique qu'il ne faut pas envoyer d'avertissement de non-nullabilité 
         [Required]
         public string PasswordHash { get; private set; } = null!; //hash du mot de passe pour l'authentification du membre
 
@@ -69,25 +71,22 @@ namespace EnergyShare_v3.Domain.Entities.Users
 
         //Constructeur
 
-
         private User() { } // Constructeur sans parametre requis par Entity Framework Core.EF Core -->private pour empecher la creation d'un membre invalide.
 
         private User(
-            string email,
+            Email email,
             string passwordHash,
             UserRole role,
             UserType userType)
                 {
                     Id = Guid.NewGuid();
-                    Email = email.Trim().ToLowerInvariant();
+                    Email = email;
                     PasswordHash = passwordHash;
                     Role = role;
                     UserType = userType;
                     Status = UserStatus.Actif;
                     Audit.Touch(null);
         }
-
-
 
 
         //Méthodes 
@@ -120,13 +119,16 @@ namespace EnergyShare_v3.Domain.Entities.Users
                 UserRole role,
                 UserType userType)
             {
-                if (string.IsNullOrWhiteSpace(email))
-                    return UserErrors.EmailObligatoire().Map();
+                var emailResult = Email.Create(email);
+                 if (!emailResult.IsSuccess)
+                     return Result<User>.Invalid(emailResult.ValidationErrors);
+            //if (string.IsNullOrWhiteSpace(email))
+            //  return UserErrors.EmailObligatoire().Map();
 
-                if (string.IsNullOrWhiteSpace(passwordHash))
+                 if (string.IsNullOrWhiteSpace(passwordHash))
                     return UserErrors.PasswordHashObligatoire().Map();
 
-                var user = new User(email, passwordHash, role, userType);
+                var user = new User(emailResult.Value, passwordHash, role, userType);
 
                 var validation = user.ValidateUser();
                 if (!validation.IsSuccess)
