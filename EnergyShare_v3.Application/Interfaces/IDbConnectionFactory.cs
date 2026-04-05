@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Text;
+﻿using System.Data.Common;
 
 namespace EnergyShare_v3.Application.Interfaces
 {        /* Le CDC prévoit EF Core pour l’écriture et Dapper pour certaines lectures rapides

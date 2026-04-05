@@ -16,7 +16,8 @@ namespace EnergyShare_v3.Domain.Entities.Users
         public Guid Id { get; set; } //Globally Unique Identifier
 
         public UserStatus Status { get; private set; } = UserStatus.Actif; //Statut du membre (Actif, Inactif)  ( ex après un délai d'inactivité passerait automatiquement en inactif..)
-        //Obligatoire à l'inscription : uniquement mail + password pour faciliter l'inscription
+                                                                           //Obligatoire à l'inscription : uniquement mail + password pour faciliter l'inscription
+        public UserRole Role { get; private set; }   //Role : User(Acheteur, Vendeur), OrganismePublic, Administrateur.
         [Required]
         public Email Email { get; private set; } = null!;  //null indique qu'il ne faut pas envoyer d'avertissement de non-nullabilité 
         [Required]
@@ -29,7 +30,6 @@ namespace EnergyShare_v3.Domain.Entities.Users
         public string? PhoneNumber { get; set; }
 
         //Si société 
-        
         public string? SocieteName { get; private set; }  // Null si particulier  ou client protégé, obligatoire si professionnel
 
         [RegularExpression(@"^BE\d{10}$", ErrorMessage = "Format invalide (BE + 10 chiffres)")]             
@@ -40,34 +40,25 @@ namespace EnergyShare_v3.Domain.Entities.Users
         public Guid? OrganismePublicId { get; set; }
         [ForeignKey("OrganismePublicId")]
         public OrganismePublic? OrganismePublic { get; set; }
-
-        //Enumérations
-       
-        public UserRole Role { get; private set; }   //Role : User(Acheteur, Vendeur), OrganismePublic, Administrateur.
-        public UserType UserType { get; private set; }    // professionnel ou particulier ou client protégé
-        public FormeLegale? FormeLegaleType { get; private set; } //Forme légale : indépendant, SPRL, asbl
-
-        //naviguation
         public ICollection<Message> MessagesEnvoyes { get; set; } = [];
         public ICollection<Message> MessagesRecus { get; set; } = [];
-
         public ICollection<PointAccess> PointsAccess { get; set; } = [];   //1 user peut avoir plusieurs points d'accès Mais un même point d'accès ne peut être rattaché qu'à un seul partage atif à la fois
-
-        public ICollection<MembrePartage> MembresPartage { get; set; } = [];
         public ICollection<Partage> PartagesCrees { get; set; } = [];
         public ICollection<Partage> PartagesGeres { get; set; } = [];
 
         //Données d'audit
-        // Infos de traçabilité de l'entité.
         public AuditInfo Audit { get; private set; } = new AuditInfo();
-        
-        /// <summary>Nom complet (propriete calculee, logique metier dans le domaine)</summary>
 
+        
+        [NotMapped]   //Nom complet (propriete calculee, logique metier dans le domaine)
         public string? FullName => string.IsNullOrWhiteSpace(FirstName) && string.IsNullOrWhiteSpace(LastName)
-                                  ? Email
+                                  ? Email.Value
                                   : $"{FirstName} {LastName}".Trim();
 
-        
+        [NotMapped]
+        public bool IsSociety =>
+                !string.IsNullOrWhiteSpace(SocieteName) ||
+                !string.IsNullOrWhiteSpace(NumeroEntreprise);
 
         //Constructeur
 
@@ -76,48 +67,30 @@ namespace EnergyShare_v3.Domain.Entities.Users
         private User(
             Email email,
             string passwordHash,
-            UserRole role,
-            UserType userType)
+            UserRole role
+            )
                 {
                     Id = Guid.NewGuid();
                     Email = email;
                     PasswordHash = passwordHash;
                     Role = role;
-                    UserType = userType;
                     Status = UserStatus.Actif;
                     Audit.Touch(null);
         }
 
-
         //Méthodes 
         private Result ValidateUser()
         {
-            if (UserType == UserType.Residentiel && FormeLegaleType != null)
-                return UserErrors.FormeLegaleInterditePourResidentiel();
-
-            if (UserType == UserType.Professionnel && FormeLegaleType == null)
-                return UserErrors.FormeLegaleObligatoirePourProfessionnel();
-
-            if (UserType != UserType.Professionnel && !string.IsNullOrWhiteSpace(SocieteName))
-                return UserErrors.SocieteReserveeAuProfessionnel();
-
-            if (UserType != UserType.Professionnel && !string.IsNullOrWhiteSpace(NumeroEntreprise))
-                return UserErrors.NumeroEntrepriseReserveAuProfessionnel();
-
-            if (UserType == UserType.Professionnel &&
-                FormeLegaleType != null &&
-                FormeLegaleType != FormeLegale.PersonnePhysique &&
-                string.IsNullOrWhiteSpace(SocieteName))
-                return UserErrors.NomSocieteObligatoirePourPersonneMorale();
+            if (string.IsNullOrWhiteSpace(SocieteName) && !string.IsNullOrWhiteSpace(NumeroEntreprise))
+                return UserErrors.NomSocieteRequisSiNumeroEntreprise();
 
             return Result.Success();
         }
 
-         public static Result<User> Create(
+        public static Result<User> Create(
                 string email,
                 string passwordHash,
-                UserRole role,
-                UserType userType)
+                UserRole role)
             {
                 var emailResult = Email.Create(email);
                  if (!emailResult.IsSuccess)
@@ -128,7 +101,7 @@ namespace EnergyShare_v3.Domain.Entities.Users
                  if (string.IsNullOrWhiteSpace(passwordHash))
                     return UserErrors.PasswordHashObligatoire().Map();
 
-                var user = new User(emailResult.Value, passwordHash, role, userType);
+                var user = new User(emailResult.Value, passwordHash, role);
 
                 var validation = user.ValidateUser();
                 if (!validation.IsSuccess)
@@ -147,13 +120,9 @@ namespace EnergyShare_v3.Domain.Entities.Users
         }
 
         public Result UpdateLegalInformation(
-            UserType userType,
-            FormeLegale? formeLegale,
             string? societeName,
             string? numeroEntreprise)
                 {
-                    UserType = userType;
-                    FormeLegaleType = formeLegale;
                     SocieteName = societeName?.Trim();
                     NumeroEntreprise = numeroEntreprise?.Trim();
 

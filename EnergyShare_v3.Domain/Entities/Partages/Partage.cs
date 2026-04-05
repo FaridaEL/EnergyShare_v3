@@ -18,20 +18,17 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         public string? Description { get; set; }
         public DateTime? DateDebut { get; private set; }
         public DateTime? DateFin { get; private set; }
-        public bool RecevoirDataParticipant { get; set; } = false;   //permet de demander des fichiers détaillés par participant --> Message à ajouter sur l'interface: "Chaque mois, Sibelga vous enverra un fichier contenant les données vous permettant de connaitre le volume local mensuel (la consommation qui vient du partage) de chaque participant et le montant des tarifs réseau associés. Si vous le souhaitez, vous pouvez également recevoir un fichier contenant les données de chaque participant sous forme quart horaire(= par quart d’heure) en cochant la cases ci-dessous.
-
+      
         
         //énumération 
         //private set --> ref. entité riche --> meilleure controle de la modification : à  utiliser dès que la propriété ne doit pas
         //être modifiée librement, mais uniquement via des méthodes métier 
         public PartageEnergieStatutType Statut { get; private set; } = PartageEnergieStatutType.Inactif; // au moment de la création est en inactif  Mais comment gérer cela avec l'historique des statuts?
         public PartageEnergieType EnergieType { get; private set; }
-        public DataTransmissionType DataTransmissionType { get; private set; }   //SFTP ou SharepointLink , pour envoi de données de consommation du partage et le montant des tarifs réseau associés chaque mois
 
-        //Lien tables et clés étrangères
-        public Guid? PerimetreId { get; set; } //connu qu'après dde d'infos auprès de Sibelga --> null au moment de la création du partage  ou A si même batiment
-        [ForeignKey("PerimetreId")]
-        public PerimetrePartageReglementaire? Perimetre { get; set; }
+        public PerimetreType? Perimetre { get; set; } //A pour même batiment, sinon connu après dde info aurpès de Sibelga
+                                                                      //Lien tables et clés étrangères
+
         public Guid VendeurId { get; set; } // L'ID du créateur
         [ForeignKey("VendeurId")]
         public User Vendeur { get; set; } = null!;
@@ -41,20 +38,12 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         public User? GestionnairePartage { get; set; } 
 
 
-        public ICollection<MembrePartage> Membres { get; set; } = []; // On suppose que chaque membre ajouté à signer la convention  et/ou le fera avant la validation vers Sibelga
+        public ICollection<ParticipationPartage> Membres { get; set; } = []; // On suppose que chaque membre ajouté à signer la convention  et/ou le fera avant la validation vers Sibelga
 
-        public  ICollection<TarifAccord> TarifsAccord { get; set; } = [];
-
-        public ICollection<FraisComptageMesurage> HistoriqueFraisComptage { get; set; } = [];
-
-        public ICollection<MethodeRepartitionInjection> HistoriqueMethodes { get; set; } = [];
-        public ICollection<HistoriquePartageStatut> HistoriqueStatut { get; set; } = [];
+        public  ICollection<TarifAccord> TarifsAccord { get; set; } = []; 
         public ICollection<DataPartage> RelevesSibelga { get; set; } = [];
         public ICollection<DocumentPartage> Documents { get; set; } = [];
-        public ICollection<DdeValidationPartage> Validations { get; set; }   = [];
-        public ICollection<DdeInfoPerimetre> DemandesInfos { get; set; }    = [];
-
-
+        public ICollection<DemandeGRD> DemandesGrd { get; set; }   = [];
 
         // Données d'audit
         public AuditInfo Audit { get; private set; } = new AuditInfo();
@@ -68,39 +57,39 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         //Constructeur
         private Partage() { } // Constructeur privé pour EF Core
         //constructeur privé métier  à utiliser avec public Static Result <Partage> Create() pour valider les règles métier avant de créer une instance de Partage
-        private Partage(string nom, PartageEnergieType energieType, DataTransmissionType dataTransmissionType, Guid vendeurId)
+        private Partage(string nom, PartageEnergieType energieType, Guid vendeurId)
         {
             //if (string.IsNullOrWhiteSpace(nom))
               //  throw new ArgumentException("Le nom du partage ne peut pas être vide.", nameof(nom));
             Id = Guid.NewGuid();
             Nom = nom.Trim();
             EnergieType = energieType;
-            DataTransmissionType = dataTransmissionType;
             VendeurId = vendeurId;
             Statut = PartageEnergieStatutType.Inactif; // Un nouveau partage commence toujours en statut Inactif
         }
         public static Result<Partage> Create(
             string nom,
             PartageEnergieType energieType,
-            DataTransmissionType dataTransmissionType,
             Guid vendeurId)
                 {
                     if (string.IsNullOrWhiteSpace(nom))
                         return PartageErrors.NomObligatoire().Map();
+                    if (vendeurId == Guid.Empty)
+                        return PartageErrors.VendeurObligatoire().Map();
 
                     return Result.Success(new Partage(
                         nom,
                         energieType,
-                        dataTransmissionType,
                         vendeurId));
         }
 
         //Méthodes : ajouter membres, document, supprimer
 
-        public Result AjouterMembre(MembrePartage membre)
+        public Result AjouterMembre(ParticipationPartage membre)
         {
-            if (membre is null)
-                throw new ArgumentNullException(nameof(membre));
+            ArgumentNullException.ThrowIfNull(membre);
+            //if (membre is null)
+              //  throw new ArgumentNullException(nameof(membre));
 
             if (Statut == PartageEnergieStatutType.EnCoursCloture)
               return PartageErrors.PartageEnCoursDeCloture();
@@ -123,8 +112,9 @@ namespace EnergyShare_v3.Domain.Entities.Partages
 
         public Result AjouterDocument(DocumentPartage document)
         {
-            if (document is null)
-                throw new ArgumentNullException(nameof(document));
+            ArgumentNullException.ThrowIfNull(document);
+           // if (document is null)
+             //   throw new ArgumentNullException(nameof(document));
             if (Statut == PartageEnergieStatutType.EnCoursCloture)
                 return PartageErrors.PartageEnCoursDeCloture();
 
@@ -132,20 +122,6 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 return PartageErrors.PartageCloture();
 
             Documents.Add(document);
-            Audit.Touch(null);
-            return Result.Success();
-        }
-
-        public Result AjouterMethodeRepartition(MethodeRepartitionInjection methode)
-        {
-            if (methode is null)
-                throw new ArgumentNullException(nameof(methode));
-
-            var validation = VerifierMethodeRepartition(methode);
-            if (!validation.IsSuccess)
-                return validation;
-
-            HistoriqueMethodes.Add(methode);
             Audit.Touch(null);
             return Result.Success();
         }
@@ -165,18 +141,6 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         
             return Result.Success();
         }
-
-        public Result VerifierMethodeRepartition(MethodeRepartitionInjection? methode)
-        {
-            if (EnergieType == PartageEnergieType.PairToPair && methode is not null)
-                return PartageErrors.MethodeRepartitionInterditePourPairToPair();
-
-            if (EnergieType != PartageEnergieType.PairToPair && methode is null)
-                return PartageErrors.MethodeRepartitionRequise();
-       
-            return Result.Success();
-        }
-
 
         public Result Renommer(string nouveauNom)
         {
@@ -200,7 +164,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         public Result SoumettreNouveauPartageAuGrd()
         {
             if (Statut is not PartageEnergieStatutType.Inactif)
-                return PartageErrors.SoumissionGrdImpossible(Statut);
+                return PartageErrors.SoumissionGrdImpossible();
 
             Statut = PartageEnergieStatutType.EnAttenteValidation;
             Audit.Touch(null);
@@ -253,7 +217,6 @@ namespace EnergyShare_v3.Domain.Entities.Partages
             return Result.Success();
         }
 
-      
         public Result RefuserModificationPartageParGrd()  
         {
             if (Statut != PartageEnergieStatutType.EnAttenteModification)

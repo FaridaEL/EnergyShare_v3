@@ -6,48 +6,48 @@ using System.Text;
 
 namespace EnergyShare_v3.Domain.Entities.Partages
 {
-    public static class MembrePartageErrors
+    public static class ParticipationPartageErrors
     {
-        public static Result InterlocuteurUniqueDoitEtreVendeur(Guid userId) =>
-    Result.Invalid(new ValidationError(
-        userId.ToString(),
-        "Seul un vendeur peut être interlocuteur unique.",
-        "MembrePartage.InterlocuteurUniqueDoitEtreVendeur",
-        ValidationSeverity.Error));
+        public static Result InterlocuteurUniqueDoitEtreVendeur(Guid pointAccessId) =>
+            Result.Invalid(new ValidationError(
+                pointAccessId.ToString(),
+                "Seul un vendeur peut être interlocuteur unique.",
+                "ParticipationPartage.InterlocuteurUniqueDoitEtreVendeur",
+                ValidationSeverity.Error));
 
         public static Result PointInjectionRequis(Guid pointAccessId) =>
           Result.Invalid(new ValidationError(
               pointAccessId.ToString(),
               "L'interloctueur unique doit disposer d'un point d'injection.",
-              "MembrePartage.PointInjectionRequis",
+              "ParticipationPartage.PointInjectionRequis",
               ValidationSeverity.Error));
 
         public static Result MembreDejaSorti(Guid membreId) =>
         Result.Invalid(new ValidationError(
             membreId.ToString(),
             "Le membre a déjà quitté le partage.",
-            "MembrePartage.MembreDejaSorti",
+            "ParticipationPartage.MembreDejaSorti",
             ValidationSeverity.Error));
 
         public static Result DatePreavisAvantEntree(Guid membreId) =>
            Result.Invalid(new ValidationError(
                membreId.ToString(),
                "La date de préavis ne peut pas être antérieure à la date d'entrée.",
-               "MembrePartage.DatePreavisAvantEntree",
+               "ParticipationPartage.DatePreavisAvantEntree",
                ValidationSeverity.Error));
 
         public static Result DateSortieAvantEntree(Guid membreId) =>
             Result.Invalid(new ValidationError(
                 membreId.ToString(),
                 "La date de sortie ne peut pas être antérieure à la date d'entrée.",
-                "MembrePartage.DateSortieAvantEntree",
+                "ParticipationPartage.DateSortieAvantEntree",
                 ValidationSeverity.Error));
 
         public static Result PreavisNonRespecte(Guid membreId) =>
             Result.Invalid(new ValidationError(
                 membreId.ToString(),
                 "Le délai de préavis de 3 semaines n'est pas respecté.",
-                "MembrePartage.PreavisNonRespecte",
+                "ParticipationPartage.PreavisNonRespecte",
                 ValidationSeverity.Error));
 
         //Todo Cette erreur sert surtout à être utilisée dans le handler / service applicatif qui ajoute un membre à un partage
@@ -59,7 +59,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
            Result.Invalid(new ValidationError(
                pointAccessId.ToString(),
                "Ce point d'accès participe déjà à un partage actif.",
-               "MembrePartage.PointAccessDejaDansUnPartageActif",
+               "ParticipationPartage.PointAccessDejaDansUnPartageActif",
                ValidationSeverity.Error));
 
 

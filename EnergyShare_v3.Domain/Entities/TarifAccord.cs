@@ -1,10 +1,11 @@
-﻿using EnergyShare_v3.Domain.Entities.Partages;
+﻿using EnergyShare_v3.Bricks.Model;
+using EnergyShare_v3.Domain.Entities.Partages;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EnergyShare_v3.Domain.Entities
 {
-    public class TarifAccord
+    public class TarifAccord   :IAuditable
     {
         /*Tarif sur lequel le vendeur et l'acheteur se sont accordés
          Ce tarif peut évoluer chaque année ou  le long du partage ou être fixe tout le long du partagee*/
@@ -14,15 +15,14 @@ namespace EnergyShare_v3.Domain.Entities
         public decimal Montant { get; set; }
 
         public DateOnly DateDebut { get; set; }
-        public DateOnly DateFin {  get; set; }
+        public DateOnly? DateFin {  get; set; }
 
         public Guid PartageId { get; set; }
         [ForeignKey("PartageId")]
         public Partage Partage { get; set; } = null!;
 
         //Données d'audit
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public AuditInfo Audit { get; private set; } = new AuditInfo();
 
 
     }

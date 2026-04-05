@@ -1,8 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Xml.Linq;
 
 namespace EnergyShare_v3.Domain.Enums
 {
-    public enum DdeGRDType
+    public enum DemandeGRDType
     {
 
         [Display(Name = "Nouvelle activation")]
@@ -10,8 +11,10 @@ namespace EnergyShare_v3.Domain.Enums
         [Display(Name = "Modification d'un partage existant")]
         ModificationPartageExistant = 2,
         [Display(Name = "Cloture d'un partage existant")]
-        CloturePartageExistant = 3
+        CloturePartageExistant = 3,
+        [Display(Name = "Demande information périmetre")]
+        DdeInfoPerimetre = 4
 
-        
+
     }
 }

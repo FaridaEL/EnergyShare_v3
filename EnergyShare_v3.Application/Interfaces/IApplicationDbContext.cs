@@ -18,26 +18,20 @@ namespace EnergyShare_v3.Application.Interfaces
     public interface IApplicationDbContext
     {   //Acces aux utilisateurs
         DbSet<DataPartage> DataPartages { get; }
-        DbSet<DdeInfoPerimetre> DdesInfoPerimetre { get; }
-        DbSet<DdeValidationPartage> DdesValidationPartage { get; }
-        DbSet<DocumentModele> DocumentsModele { get; }
+        public DbSet<DemandeGRD> DemandesGRD { get; } 
         DbSet<DocumentPartage> DocumentsPartage { get; }
-        DbSet<FournisseurEnergie> FournisseursEnergie { get; }
-        DbSet<FraisComptageMesurage> FraisComptageMesurage { get; }
-        DbSet<HistoriquePartageStatut> HistoriquesPartageStatut { get; }
         DbSet<Match> Matches { get; }
-        DbSet<MembrePartage> MembresPartage { get; }
+        DbSet<ParticipationPartage> MembresPartage { get; }
         DbSet<Message> Messages { get; }
-        DbSet<MethodeRepartitionInjection> MethodesRepartitionInjection { get; }
         DbSet<OrganismePublic> OrganismesPublics { get; }
-        DbSet<ParametreSysteme> ParametresSysteme { get; }
         DbSet<Partage> Partages { get; }
-        DbSet<PerimetrePartageReglementaire> PerimetresPartageReglementaire { get; }
         DbSet<PointAccess> PointAccesses { get; }
         DbSet<ProfilEnergie> ProfilsEnergie { get; }
-        DbSet<ProfilFacturation> ProfilsFacturation { get; }
         DbSet<TarifAccord> TarifsAccord { get; }
         DbSet<User> Users { get; }
+        //à implémenter dans une v2 -> hors MVP
+        //DbSet<FraisComptageMesurage> FraisComptageMesurage { get; }
+        //DbSet<ProfilFacturation> ProfilsFacturation { get; }
 
         /// <summary>Sauvegarde les changements en base de donnees.</summary>
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

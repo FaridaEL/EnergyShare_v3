@@ -7,7 +7,7 @@ using Mediator;
 namespace EnergyShare_v3.Application.Features.Users
 {       /*Service applicatif pour la gestion des utilisateurs.
 / Requete pour obtenir la liste de toutes les familles..*/
-    public record CreateUser(string Email,string PasswordHash,UserRole Role, UserType UserType):ICommand<Result<Guid>> ;
+    public record CreateUser(string Email,string PasswordHash,UserRole Role):ICommand<Result<Guid>> ;
     // public record CreateUserCommand(string Email,string PasswordHash,UserRole Role, UserType UserType);
 
     public class CreateUserValidator : AbstractValidator<CreateUser>
@@ -25,8 +25,6 @@ namespace EnergyShare_v3.Application.Features.Users
             RuleFor(x => x.Role)
                 .IsInEnum();
 
-            RuleFor(x => x.UserType)
-                .IsInEnum();
 
         }
     }
@@ -40,8 +38,7 @@ namespace EnergyShare_v3.Application.Features.Users
         {    var result = Domain.Entities.Users.User.Create(
                 command.Email,
                 command.PasswordHash, 
-                command.Role, 
-                command.UserType );
+                command.Role );
 
             //Si erreur métier on s'arrête et on retourne l'erreur, sinon on continue
             if (!result.IsSuccess)
