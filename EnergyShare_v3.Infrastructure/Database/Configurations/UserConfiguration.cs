@@ -1,9 +1,6 @@
 ﻿using EnergyShare_v3.Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace EnergyShare_v3.Infrastructure.Database.Configurations
 {
@@ -40,16 +37,7 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
 
             builder.Property(u => u.Role)
                 .IsRequired()
-                .HasConversion<string>()
-                .HasMaxLength(50);
-
-            builder.Property(u => u.UserType)
-                .IsRequired()
-                .HasConversion<string>()   // Stocke l'enum en tant que texte
-                .HasMaxLength(50);
-
-            builder.Property(u => u.FormeLegaleType)
-                .HasConversion<string>()
+                .HasConversion<string>()  // Stocke l'enum en tant que texte
                 .HasMaxLength(50);
 
             // builder.HasIndex(u => u.Email)      //email unique au sein de l'application
@@ -67,14 +55,12 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
             });
 
             builder.HasOne(u => u.OrganismePublic)
-                .WithMany()
+                .WithMany(op => op.Employes)
                 .HasForeignKey(u => u.OrganismePublicId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.OwnsOne(u => u.Audit);
-        }
-
-      
+        } 
           
     }
 }

@@ -23,14 +23,9 @@ namespace EnergyShare_v3.Application.Features.ProfilEnergie
                     pe.OffreEnergie_kWh,
                     pe.PrixAchatCible_Eur,
                     pe.PrixVenteCible_Eur,
-                    pe.ConsommationAnnuelleEstime_kWh,
-                    pe.ProductionAnnuelleEstime_kWh,
-                    pe.PrixAchatEnergieFournisseur_Eur,
-                    pe.PrixVenteInjectionFournisseurActuel_Eur,
                     pe.PointAccessId,
                     pe.PointAccess.UserId,     //scalaire très pratique pour récupérer l'info user utile
                     pe.PointAccess.User.Role,
-                    pe.PointAccess.User.UserType,
                     pe.Audit.CreatedAt
 
                 ) )

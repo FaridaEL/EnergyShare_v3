@@ -6,22 +6,17 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EnergyShare_v3.Domain.Entities
 {
-    public class DdeValidationPartage
+    public class DemandeGRD
     {
         [Key]
         public Guid Id { get; set; }
 
         [Required]
         public DateTime DateDemande { get; set; } = DateTime.UtcNow;
-
-        public string? ReponseSibelga { get; set; }  // Champ libre pour que l'agent Sibelga puisse répondre.  
-        public DateTime? DateReponseSibelga { get; set; }   //  RÉPONSE DE SIBELGA 
-        public string? MotifRefusSibelga { get; set; }
-        
-      
-        public Guid PartageId { get; set; }
-        [ForeignKey("PartageId")]
-        public Partage Partage { get; set; } = null!;
+        public DateTime? DateReponse { get; set; }   //  RÉPONSE DE SIBELGA 
+        public string? DetailsDemande { get; set; }  // Informations complémentaires fournies par le demandeur, ex. adresses des membres ou précisions sur la demande.
+        public string? CommentaireReponseGRD { get; set; }  // Champ libre pour que l'agent Sibelga puisse répondre ; ex : modifications attendues, périmetre précision,  ou tout commentaire.  
+                
 
         // StatutDemande : EnAttente, Valide, Refus
         // Gestion statut partage :
@@ -31,14 +26,21 @@ namespace EnergyShare_v3.Domain.Entities
 
         //Enumérations
         public DdeGRDResponseStatus ResponseStatus { get; set; } = DdeGRDResponseStatus.EnAttente;
-        public DdeGRDType? DemandeType { get; set; } // NouvelleActivation, ModificationPartageExistant, clôturePartage, etc.
+        public DemandeGRDType DemandeType { get; set; } // NouvelleActivation, ModificationPartageExistant, clôturePartage, DdeInfos etc.
 
-         //Lien vers l'esace documentaire ou 1 ou pls document ?
-        public string? PathConventionSignee { get; set; }   // On stocke le chemin vers le fichier (ex: /uploads/conventions/...) --> Mais si pls conventions?
+        public PerimetreType? PerimetreConfirme { get; set; } /// Si dde infos : Réponse attendue : A, B, C ou D. 
+        
 
+        //FK
+        public Guid DemandeurId { get; set; }   // Lien vers l'initiateur (le Vendeur) de la demande
+        [ForeignKey("DemandeurId")]
+        public User Demandeur { get; set; } = null!;
         public Guid? OrganismePublicId { get; set; }
         [ForeignKey("OrganismePublicId")]
         public OrganismePublic? OrganismePublic { get; set; }
+        public Guid? PartageId { get; set; }
+        [ForeignKey("PartageId")]
+        public Partage? Partage { get; set; }  //// Le partage n'existe pas forcément au moment de la dde d'infos --> le laisser en null?
         public Guid? AgentTraitantId { get; set; }
         [ForeignKey("AgentTraitantId")]
         public User? AgentTraitant { get; set; }

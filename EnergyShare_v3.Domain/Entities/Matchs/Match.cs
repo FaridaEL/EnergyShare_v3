@@ -6,9 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace EnergyShare_v3.Domain.Entities.Matchs
 {
     public class Match :IAuditable
-    {
-        
-        [Key]
+    {    [Key]
         public Guid Id { get; set; }
               
         public decimal DistanceCalculee { get; private set; } //données calcué ) à partir de la distance entre deux points
@@ -22,14 +20,8 @@ namespace EnergyShare_v3.Domain.Entities.Matchs
         [ForeignKey("PointAccessAcheteurId")]
         public PointAccess PointAccessAcheteur { get; set; } = null!;
 
-
-
         // Données d'audit
         public AuditInfo Audit { get; private set; } = new AuditInfo();
-
-        //public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        //public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
 
         //Constructeur
         private Match() { } // Constructeur privé pour EF Core
@@ -46,25 +38,22 @@ namespace EnergyShare_v3.Domain.Entities.Matchs
            Guid pointAccessAcheteurId,
            decimal distanceCalculee)
                 {
+
+                    if (pointAccessVendeurId == Guid.Empty)
+                        return MatchErrors.PointAccessVendeurObligatoire().Map();
+
+                    if (pointAccessAcheteurId == Guid.Empty)
+                        return MatchErrors.PointAccessAcheteurObligatoire().Map();
+                    
                     var match = new Match(pointAccessVendeurId, pointAccessAcheteurId, distanceCalculee);
 
+                    
                     var validation = match.VerifierCoherence();
                     if (!validation.IsSuccess)
                         return Result<Match>.Invalid(validation.ValidationErrors);
 
                     return Result.Success(match);
         }
-
-        //Règle de gestion 
-        /* Avant implementation de Result :
-         public void VerifierCoherence()
-            {
-                if (PointAccessVendeurId == PointAccessAcheteurId)
-                    throw new InvalidOperationException("Un point d'accès ne peut pas être mis en relation avec lui-même.");
-
-                if (DistanceCalculee < 0)
-                    throw new InvalidOperationException("La distance calculée ne peut pas être négative.");
-            }*/
 
         public Result VerifierCoherence()
         {

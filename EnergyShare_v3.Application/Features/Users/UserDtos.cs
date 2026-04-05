@@ -10,7 +10,6 @@ namespace EnergyShare_v3.Application.Features.Users
       string? LastName,
       string Email, // DTO : on utilise string pour simplifier le transport (pas de ValueObject ici)
       UserRole Role,
-      UserType UserType,
       DateTime CreatedAt
     );
     /// <summary>

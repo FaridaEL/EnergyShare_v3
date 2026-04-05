@@ -49,7 +49,7 @@ namespace EnergyShare_v3.Domain.Entities.Messages
         private Message() { } // Constructeur privé pour EF Core
         private Message(string objet, string contenu, Guid expediteurId, Guid destinataire)
         {
-            Guid id = Guid.NewGuid();
+            Id = Guid.NewGuid();
             ObjetMessage = objet;
             Contenu = contenu;
             ExpediteurId = expediteurId;
@@ -59,6 +59,15 @@ namespace EnergyShare_v3.Domain.Entities.Messages
 
         public static Result<Message> Create(string objet, string contenu, Guid expediteurId, Guid destinataireId)
         {
+            if (expediteurId == Guid.Empty)
+                return MessageErrors.ExpediteurObligatoire().Map();
+
+            if (destinataireId == Guid.Empty)
+                return MessageErrors.DestinataireObligatoire().Map();
+
+            if (expediteurId == destinataireId)
+                return MessageErrors.ExpediteurEgaleDestinataire().Map();
+
             if (string.IsNullOrWhiteSpace(objet))
                 return MessageErrors.ObjetObligatoire().Map();
 

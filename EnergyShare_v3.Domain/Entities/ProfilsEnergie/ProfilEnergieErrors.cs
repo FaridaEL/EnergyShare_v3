@@ -14,6 +14,7 @@ namespace EnergyShare_v3.Domain.Entities.ProfilsEnergie
                 "ProfilEnergie.OffreOuDemandeRequise",
                 ValidationSeverity.Error));
 
+        //A reprendre dans PointAccessErrors.cs
         public static Result ConsentementRequis() =>
             Result.Invalid(new ValidationError(
                 "",

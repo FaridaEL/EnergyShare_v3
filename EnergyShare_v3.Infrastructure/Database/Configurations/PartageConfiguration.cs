@@ -22,9 +22,6 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
             builder.Property(p => p.Description)
                 .HasMaxLength(2000);
 
-            builder.Property(p => p.RecevoirDataParticipant)
-                .IsRequired();
-
             builder.Property(p => p.Statut)
                 .IsRequired()
                 .HasConversion<string>()
@@ -35,15 +32,9 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
                 .HasConversion<string>()
                 .HasMaxLength(40);
 
-            builder.Property(p => p.DataTransmissionType)
-                .IsRequired()
+            builder.Property(p => p.Perimetre)
                 .HasConversion<string>()
                 .HasMaxLength(40);
-
-            builder.HasOne(p => p.Perimetre)
-                .WithMany()
-                .HasForeignKey(p => p.PerimetreId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(p => p.Vendeur)
                 .WithMany(u => u.PartagesCrees)

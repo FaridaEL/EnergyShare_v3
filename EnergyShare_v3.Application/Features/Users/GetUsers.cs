@@ -27,7 +27,6 @@ namespace EnergyShare_v3.Application.Features.Users
                     u.LastName,
                     u.Email.Value,//Email est un value Object, on accède donc + facilement à sa valeur avec .Value
                     u.Role,
-                    u.UserType,
                     u.Audit.CreatedAt
                 ))
                 .OrderBy(u => u.FirstName)

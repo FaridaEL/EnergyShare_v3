@@ -1,4 +1,5 @@
-﻿using EnergyShare_v3.Bricks.Model;
+﻿using Ardalis.Result;
+using EnergyShare_v3.Bricks.Model;
 using EnergyShare_v3.Domain.Entities.Matchs;
 using EnergyShare_v3.Domain.Entities.Partages;
 using EnergyShare_v3.Domain.Entities.ProfilsEnergie;
@@ -24,38 +25,32 @@ namespace EnergyShare_v3.Domain.Entities
          * --> public async Task<(double lat, double lng)> GetCoordinates(string AdresseLine1, string codePostal)*/
         public double? Latitude { get; set; }  
         public double? Longitude { get; set; }
-        //permet de déterminer si le point injecte sur le résau et donc est un producteur/vendeur
-        //seul un point d'injection peut être désigné comme interlocuteur unique du partage et vendre de l'énergie
-        public bool IsInjectionPoint { get; set; } = false;  
         
-        //règle métier : compteur intelligent obligatoire, commence par 1SJ et longueur maximale 20 caractères
-        
+        public bool IsInjectionPoint { get; set; } = false; //permet de déterminer si le point injecte sur le résau et donc est un producteur/vendeur  -->    //seul un point d'injection peut être désigné comme interlocuteur unique du partage et vendre de l'énergie
+
+        [Required]    //règle métier : point d'accès couvert par un contrat d'énergie
+        public string Fournisseur { get; set; } =null!; //liste définie en UI
+
         [MaxLength(20)]
-        [RegularExpression(@"^1SJ.{0,17}$")]
+        [RegularExpression(@"^1SJ.{0,17}$")]  //règle métier : compteur intelligent obligatoire, commence par 1SJ et longueur maximale 20 caractères
         public string? SmartMeter_Encrypted { get; set; } //numéro de compteur intelligent chiffré pour garantir la confidentialité des données de consommation/production d'énergie
         
-        //règle métier : commence par 5414489 et comporte 18 chiffres
-        
-        [RegularExpression(@"^5414489\d{11}$")]
+        [RegularExpression(@"^5414489\d{11}$")]   //règle métier : commence par 5414489 et comporte 18 chiffres
         public string? EAN_Encrypted { get; set; } //numéro EAN chiffré pour garantir la confidentialité des données de consommation/production d'énergie
-        
-
-        public ICollection<MembrePartage> Membres { get; set; } = [];
+   
+        public ICollection<ParticipationPartage> Membres { get; set; } = [];
 
         [Required]
         public Guid UserId { get; set; }
         [ForeignKey("UserId")]
         public User User { get; set; } = null!;  //règle métier : point d'accès rattaché à un utilisateur actif
 
-        [Required]    //règle métier : point d'accès couvert par un contrat d'énergie
-        public Guid FournisseurId { get; set; }
-        [ForeignKey("FournisseurId")]
-        public FournisseurEnergie Fournisseur { get; set; } = null!;
+        [Required] //rgèle métier :  l'utlisateur doit donner son consentement pour le partage de ses données.
+        public bool AccordConsentement { get; private set; } = true;
+        public DateTime DateAccordConsentement { get; private set; } = DateTime.UtcNow;
+        public DateTime? DateRetraitConsentement { get; private set; }
 
-        //enumérations
-        public SourceRenouvelable? Source { get; set; }
         //Naviguation 
-        
         public ProfilEnergie? ProfilEnergie { get; set; }
         public ICollection<Match> MatchsAcheteurs { get; set; } = [];
         public ICollection<Match> MatchsVendeurs { get; set; } = [];
@@ -64,19 +59,45 @@ namespace EnergyShare_v3.Domain.Entities
         public AuditInfo Audit { get; private set; } = new AuditInfo();
 
         //Methodes
-
-        public bool estCompletPourPartage()
+        public bool EstCompletPourPartage()
         {
-            //Un point d'accès est considéré comme complet pour le partage
-            //s'il dispose d'une adresse complète (AdresseLine1 et CodePostal),
-            //d'un numéro de compteur intelligent chiffré, d'un numéro EAN chiffré,
+            //Un point d'accès est considéré comme complet pour le partage si il dispoe :
+            //d'une adresse complète (AdresseLine1 et CodePostal),
+            //d'un numéro de compteur intelligent et un numéro EAN, de préférence chiffré,
             //et s'il est rattaché à un utilisateur actif et à un fournisseur d'énergie.
-            return !string.IsNullOrEmpty(AdresseLine1) 
-                && !string.IsNullOrEmpty(CodePostal) 
-                && !string.IsNullOrEmpty(SmartMeter_Encrypted) 
-                && !string.IsNullOrEmpty(EAN_Encrypted) 
+            return !string.IsNullOrEmpty(AdresseLine1)
+                && !string.IsNullOrEmpty(CodePostal)
+                && !string.IsNullOrEmpty(SmartMeter_Encrypted)
+                && !string.IsNullOrEmpty(EAN_Encrypted)
+                &&!string.IsNullOrWhiteSpace(Fournisseur)
                 && User != null && User.Status == UserStatus.Actif
-                && Fournisseur != null;
+                && AccordConsentement;
+        }
+
+       /* public Result VerifierEligibilitePartage()
+        {
+            if (!AccordConsentement)
+                return ProfilEnergieErrors.ConsentementRequis();
+
+            var aUneOffre = OffreEnergie_kWh.HasValue && OffreEnergie_kWh.Value > 0;
+            var aUneDemande = DemandeEnergie_kWh.HasValue && DemandeEnergie_kWh.Value > 0;
+
+            if (!aUneOffre && !aUneDemande)
+                return ProfilEnergieErrors.OffreOuDemandeRequise();
+
+            return Result.Success();
+        }*/
+
+        public void RetirerConsentement()  //par défaut le consentement est donnée   //Quid de la date de retrait du consentement?  
+        {
+            AccordConsentement = false;
+            DateRetraitConsentement = DateTime.UtcNow;
+        }
+        public void DonnerConsentement()
+        {
+            AccordConsentement = true;
+            DateAccordConsentement = DateTime.UtcNow;
+            DateRetraitConsentement = null;
         }
 
     }

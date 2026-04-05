@@ -1,8 +1,5 @@
 ﻿using Ardalis.Result;
 using EnergyShare_v3.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace EnergyShare_v3.Domain.Entities.Partages
 {
@@ -44,21 +41,7 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 "Partage.NombreMembresMemeBatimentInvalide",
                 ValidationSeverity.Error));
 
-        public static Result MethodeRepartitionInterditePourPairToPair() =>
-            Result.Invalid(new ValidationError(
-                nameof(Partage.HistoriqueMethodes),
-                "Une méthode de répartition n'est pas nécessaire pour un partage pair-à-pair.",
-                "Partage.MethodeRepartitionInterditePourPairToPair",
-                ValidationSeverity.Error));
-
-        public static Result MethodeRepartitionRequise() =>
-            Result.Invalid(new ValidationError(
-                nameof(Partage.HistoriqueMethodes),
-                "Une méthode de répartition est requise pour ce type de partage.",
-                "Partage.MethodeRepartitionRequise",
-                ValidationSeverity.Error));
-
-        public static Result SoumissionGrdImpossible(PartageEnergieStatutType statut) =>
+        public static Result SoumissionGrdImpossible() =>
             Result.Invalid(new ValidationError(
                 nameof(Partage.Statut),
                 "Seul un partage inactif peut être soumis au GRD.",
@@ -99,9 +82,16 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 "Seul un partage actif peut entrer en cours de clôture.",
                 "Partage.DemarrageClotureImpossible",
                 ValidationSeverity.Error));
-        
-      
 
-    
+        public static Result VendeurObligatoire() =>
+            Result.Invalid(new ValidationError(
+                nameof(Partage.VendeurId),
+                "Le vendeur est obligatoire pour créer un partage.",
+                "Partage.VendeurObligatoire",
+                ValidationSeverity.Error));
+
+
+
+
     }
 }

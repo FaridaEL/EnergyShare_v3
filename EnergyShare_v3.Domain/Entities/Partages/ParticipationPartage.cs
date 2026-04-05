@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EnergyShare_v3.Domain.Entities.Partages
 {
-    public class MembrePartage :IAuditable
+    public class ParticipationPartage :IAuditable
     {
         //règle 1 point EAN ne peut appartenir qu'a un seul partage à la fois.
         [Key]
@@ -19,44 +19,27 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         public DateTime? DateCommunicationPreavis { get; private set; }
         public DateTime? DateSortiePlanifiee { get; private set; } //peut être calculé à partir de datePravisDonnées + 3 semaines? 
 
-        //Enumérations
-        public Guid UserId { get; set; } 
-        [ForeignKey("UserId")]
-        public User User { get; set; } = null!;
+       //naviguation
+        
         public Guid PartageId { get; set; } 
         [ForeignKey("PartageId")]
         public Partage Partage { get; set; } = null!;
         public Guid PointAccessId { get; set; }
         [ForeignKey("PointAccessId")]
-        public PointAccess PointAccess { get; set; } = null!;
-
-
-
+        public PointAccess PointAccess { get; set; } = null!;  
         // Données d'audit
         public AuditInfo Audit { get; private set; } = new AuditInfo();
 
 
         //interlocuteur unique : le vendeur-producteur est l'interlocuteur unique du partage, il est le seul à pouvoir créer le partage et à communiquer le préavis de sortie du partage.
 
-        /*  pour info avant result : 
-         public void DefinirCommeInterlocuteurUnique()
-      {
-          if (UserRolePartage != UserRolePartage.Vendeur)
-              throw new InvalidOperationException("Seul un vendeur peut être interlocuteur unique.");
-
-          if (!PointAccess.IsInjectionPoint)
-              throw new InvalidOperationException("L'interlocuteur unique doit disposer d'un point d'injection.");
-
-          IsInterlocuteurUnique = true;
-      }*/
-
         public Result DefinirCommeInterlocuteurUnique()
         {
             if (UserRolePartage != UserRolePartage.Vendeur)
-               return MembrePartageErrors.InterlocuteurUniqueDoitEtreVendeur(UserId);
+               return ParticipationPartageErrors.InterlocuteurUniqueDoitEtreVendeur(PointAccessId);
 
            if (!PointAccess.IsInjectionPoint)
-                return MembrePartageErrors.PointInjectionRequis(PointAccessId);
+                return ParticipationPartageErrors.PointInjectionRequis(PointAccessId);
            
             IsInterlocuteurUnique = true;
             Audit.Touch(null);
@@ -72,10 +55,10 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         public Result CommuniquerPreavis(DateTime dateCommunication)    
         {
             if (ExitAt.HasValue)
-               return MembrePartageErrors.MembreDejaSorti(UserId);
+               return ParticipationPartageErrors.MembreDejaSorti(PointAccessId);
 
             if (dateCommunication < JoinedAt)
-                return MembrePartageErrors.DatePreavisAvantEntree(UserId);
+                return ParticipationPartageErrors.DatePreavisAvantEntree(PointAccessId);
             
             DateCommunicationPreavis = dateCommunication;
             DateSortiePlanifiee = dateCommunication.AddDays(21);
@@ -86,10 +69,10 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         public Result Quitter(DateTime dateSortie)    //Impact pour un pair-to-pair  : le partage passe en clôturé dès que le membre quitte le partage après les 3 semaines de préavis.
         {
             if (dateSortie < JoinedAt)
-                return MembrePartageErrors.DateSortieAvantEntree(UserId);
+                return ParticipationPartageErrors.DateSortieAvantEntree(PointAccessId);
 
             if (DateSortiePlanifiee.HasValue && dateSortie < DateSortiePlanifiee.Value)
-                return MembrePartageErrors.PreavisNonRespecte(UserId);
+                return ParticipationPartageErrors.PreavisNonRespecte(PointAccessId);
 
             ExitAt = dateSortie;
             Audit.Touch(null);

@@ -7,7 +7,8 @@ namespace EnergyShare_v3.Domain.Entities
     public class DataPartage 
     {
             /*Doit correspondre aux champs du fichier sibelga qui est envoyé chaque mois avec les données réelles du partage
-             Servira aussi au Dashboard statistique*/
+             Servira aussi au Dashboard statistique
+            Dans ce MVP, je simplifie volontairement les champs car je ne traite pas de la facturation*/
         [Key]
         public Guid Id { get; set; }
 
@@ -16,41 +17,18 @@ namespace EnergyShare_v3.Domain.Entities
         [ForeignKey("PartageId")]
         public Partage PartageEnergie { get; set; } = null!;
 
-        // Identifiant de la période (souvent un mois ou un quart d'heure selon  besoin)
         [Required]
-        public DateTime DateDebut { get; set; }     //FromDate
+        public DateTime DateDebut { get; set; }     //FromDate  // Identifiant de la période (souvent un mois ou un quart d'heure selon  besoin)
         [Required]
         public DateTime DateFin { get; set; }      //ToDate
 
-        public string?  EAN { get; set; }
-        public string? Compteur { get; set; }
-       
-        public decimal Tarif { get; set; }
         
         [Column(TypeName = "decimal(18,4)")]
         public decimal? VolumePartage_kWh { get; set; } // "Volume local" dans le fichier Sibelga
 
-        [Column(TypeName = "decimal(18,4)")]
-        public decimal? VolumeComplementaire { get; set; } // "Volume local" dans le fichier Sibelga
 
-        [Column(TypeName = "decimal(18,4)")]
-        public decimal? InjectionPartage { get; set; } // Ce que le vendeur a produit au total
-
-        public decimal GridfeeTotal { get; set; }
-
-       
-        
         // Métadonnées d'importation
         public DateTime ImportedAt { get; set; } = DateTime.UtcNow;
-
-
-
-        // Données calculées (Getters)
-        /* --> ces donénes seront calculés sur base de l'ensemble des tables 
-        public decimal MontantVenteBrut => VolumePartage_kWh * GridfeeTotal;
-        public decimal MontantFraisReseau => VolumePartage_kWh * GridfeeTotal;
-        public decimal MontantTotalFacture => MontantVenteBrut + MontantFraisReseau;   */
-
 
     }
     

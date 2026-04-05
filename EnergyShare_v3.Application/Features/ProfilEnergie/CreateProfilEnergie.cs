@@ -13,10 +13,6 @@ namespace EnergyShare_v3.Application.Features.ProfilEnergie
         decimal? OffreEnergie_kWh,
         decimal? PrixAchatCible_Eur,
         decimal? PrixVenteCible_Eur,
-        decimal? ConsommationAnnuelleEstime_kWh,
-        decimal? ProductionAnnuelleEstime_kWh,
-        decimal? PrixAchatEnergieFournisseur_Eur,
-        decimal? PrixVenteInjectionFournisseurActuel_Eur,
         Guid PointAccessId
     ) : ICommand<Result<Guid>>;
 
@@ -42,10 +38,6 @@ namespace EnergyShare_v3.Application.Features.ProfilEnergie
                 command.OffreEnergie_kWh,
                 command.PrixAchatCible_Eur,
                 command.PrixVenteCible_Eur,
-                command.ConsommationAnnuelleEstime_kWh,
-                command.ProductionAnnuelleEstime_kWh,
-                command.PrixAchatEnergieFournisseur_Eur,
-                command.PrixVenteInjectionFournisseurActuel_Eur,
                 command.PointAccessId);
 
             if (!result.IsSuccess)

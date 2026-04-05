@@ -21,5 +21,26 @@ namespace EnergyShare_v3.Domain.Entities.Messages
                 "Message.ContenuObligatoire",
                 ValidationSeverity.Error));
 
+        public static Result ExpediteurObligatoire() =>
+    Result.Invalid(new ValidationError(
+        nameof(Message.ExpediteurId),
+        "L'expéditeur est obligatoire.",
+        "Message.ExpediteurObligatoire",
+        ValidationSeverity.Error));
+
+        public static Result DestinataireObligatoire() =>
+            Result.Invalid(new ValidationError(
+                nameof(Message.DestinataireId),
+                "Le destinataire est obligatoire.",
+                "Message.DestinataireObligatoire",
+                ValidationSeverity.Error));
+
+        public static Result ExpediteurEgaleDestinataire() =>
+            Result.Invalid(new ValidationError(
+                nameof(Message.ExpediteurId),
+                "Un utilisateur ne peut pas s'envoyer un message à lui-même.",
+                "Message.ExpediteurEgaleDestinataire",
+                ValidationSeverity.Error));
+
     }
 }

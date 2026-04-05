@@ -10,7 +10,6 @@ namespace EnergyShare_v3.Application.Features.Partage
     public record CreatePartage(
      string Nom,
      PartageEnergieType EnergieType,
-     DataTransmissionType DataTransmissionType,
      Guid VendeurId
  ) : ICommand<Result<Guid>>;
 
@@ -39,7 +38,6 @@ namespace EnergyShare_v3.Application.Features.Partage
             var result = Domain.Entities.Partages.Partage.Create(
                 command.Nom,
                 command.EnergieType,
-                command.DataTransmissionType,
                 command.VendeurId);
 
             if (!result.IsSuccess)

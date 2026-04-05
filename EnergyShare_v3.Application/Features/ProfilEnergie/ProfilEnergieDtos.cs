@@ -8,14 +8,9 @@ namespace EnergyShare_v3.Application.Features.ProfilEnergie
       decimal? OffreEnergie_kWh,
       decimal? PrixAchatCible_Eur,
       decimal? PrixVenteCible_Eur,
-      decimal? ConsommationAnnuelleEstime_kWh,
-      decimal? ProductionAnnuelleEstime_kWh,
-      decimal? PrixAchatEnergieFournisseur_Eur,
-      decimal? PrixVenteInjectionFournisseurActuel_Eur,
       Guid PointAccessId,
       Guid UserId,
       UserRole UserRole,
-      UserType UserType,
       DateTime CreatedAt
     );
 }

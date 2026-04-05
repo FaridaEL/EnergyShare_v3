@@ -2,9 +2,7 @@
 using EnergyShare_v3.Domain.Entities.ProfilsEnergie;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 
 namespace EnergyShare_v3.Infrastructure.Database.Configurations
 {
@@ -31,19 +29,16 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
 
             builder.Property(pa => pa.IsInjectionPoint)
                 .IsRequired();
+           
+            builder.Property(pa => pa.Fournisseur)
+                 .IsRequired();
 
-            builder.Property(pa => pa.Source)
-                .HasConversion<string>()
-                .HasMaxLength(30);
+            builder.Property(pa => pa.AccordConsentement)
+                .IsRequired();
 
             builder.HasOne(pa => pa.User)
                 .WithMany(u => u.PointsAccess)
                 .HasForeignKey(pa => pa.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasOne(pa => pa.Fournisseur)
-                .WithMany(f => f.PointsAccess)
-                .HasForeignKey(pa => pa.FournisseurId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(pa => pa.ProfilEnergie)

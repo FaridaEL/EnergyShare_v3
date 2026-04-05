@@ -32,6 +32,20 @@ namespace EnergyShare_v3.Domain.Entities.Matchs
                 "Matchs.DistanceNegative",
                 ValidationSeverity.Error));
 
+        public static Result PointAccessVendeurObligatoire() =>
+            Result.Invalid(new ValidationError(
+                nameof(Match.PointAccessVendeurId),
+                "Le point d'accès vendeur est obligatoire.",
+                "Match.PointAccessVendeurObligatoire",
+                ValidationSeverity.Error));
+
+        public static Result PointAccessAcheteurObligatoire() =>
+            Result.Invalid(new ValidationError(
+                nameof(Match.PointAccessAcheteurId),
+                "Le point d'accès acheteur est obligatoire.",
+                "Match.PointAccessAcheteurObligatoire",
+                ValidationSeverity.Error));
+
 
     }
 }
