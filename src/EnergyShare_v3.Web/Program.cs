@@ -5,6 +5,7 @@ using EnergyShare_v3.Infrastructure.Database;
 using EnergyShare_v3.Web.Components;
 using EnergyShare_v3.Web.Endpoints;
 using EnergyShare_v3.Web.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 //using Microsoft.OpenApi;
 
 
@@ -48,10 +49,11 @@ if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await context.Database.EnsureCreatedAsync(); // Todo à remplacer par MigrateAsync() lorsque je fais mes migrations
-
-   // app.UseSwagger();
-   // app.UseSwaggerUI();
+    //await context.Database.EnsureCreatedAsync(); // Todo à remplacer par MigrateAsync() lorsque je fais mes migrations
+    await context.Database.MigrateAsync();
+    await ApplicationDbContextSeeder.SeedAsync(context);
+    // app.UseSwagger();
+    // app.UseSwaggerUI();
 
 }
 

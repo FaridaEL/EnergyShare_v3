@@ -23,4 +23,8 @@
     <ProjectReference Include="..\EnergyShare_v3.Application\EnergyShare_v3.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Database\Migrations\" />
+  </ItemGroup>
+
 </Project>
