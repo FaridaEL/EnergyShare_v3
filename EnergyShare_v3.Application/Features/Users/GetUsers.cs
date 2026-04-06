@@ -19,8 +19,39 @@ namespace EnergyShare_v3.Application.Features.Users
        public async Task<IReadOnlyList<UserSummaryDto>> HandleAsync(
        CancellationToken cancellationToken = default) 
         {
-            return await _context.Users
+            var users = await _context.Users
+               .AsNoTracking()
+               .OrderBy(u => u.FirstName)
+               .ThenBy(u => u.LastName)
+               .ToListAsync(cancellationToken);
+
+            return users
+                .Select(u => new UserSummaryDto(
+                    u.Id,
+                    u.FirstName,
+                    u.LastName,
+                    u.Email.Value,
+                    u.Role,
+                    u.Audit.CreatedAt
+                ))
+                .ToList();
+
+            // Important : on récupère d'abord les entités en base (ToListAsync)
+            // puis on fait la projection en mémoire (.Select)
+            // Pourquoi ?
+            // EF Core ne sait pas toujours traduire certaines expressions complexes en SQL comme l'accès à des Value Objects (ex: u.Email.Value).
+            // Cela provoque une erreur à l'exécution (LINQ non traduisible).
+            // Solution :
+            // - on exécute la requête SQL simple (OrderBy + ToListAsync)
+            // - puis on transforme en DTO côté C#
+            // => plus robuste pour un MVP et évite les erreurs EF Core.
+
+
+            /* Ancienne version avec erreur d'exécution : LINQ non traduisible à cause de l'accès à un Value Object (u.Email.Value) dans la projection.
+             * return await _context.Users
                 .AsNoTracking()
+                .OrderBy(u => u.FirstName)
+                .ThenBy(u => u.LastName)
                 .Select(u => new UserSummaryDto(
                     u.Id,
                     u.FirstName,
@@ -29,12 +60,8 @@ namespace EnergyShare_v3.Application.Features.Users
                     u.Role,
                     u.Audit.CreatedAt
                 ))
-                .OrderBy(u => u.FirstName)
-                .ToListAsync(cancellationToken); 
+                .ToListAsync(cancellationToken);    */
         }
-
-
-
 
     }
 }

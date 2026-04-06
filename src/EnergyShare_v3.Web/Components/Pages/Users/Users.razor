@@ -1,0 +1,30 @@
+﻿@page "/users"
+@using EnergyShare_v3.Application.Features.Users
+@inject GetUsersHandler UsersHandler
+
+<PageTitle>EnergyShare - Utilisateurs</PageTitle>
+
+<h1>Utilisateurs</h1>
+
+@if (_users is null)
+{
+    <p>Chargement...</p>
+}
+else
+{
+    <ul>
+        @foreach (var user in _users)
+        {
+            <li>@user.FirstName @user.LastName - @user.Email</li>
+        }
+    </ul>
+}
+
+@code {
+    private IReadOnlyList<UserSummaryDto>? _users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _users = await UsersHandler.HandleAsync();
+    }
+}
