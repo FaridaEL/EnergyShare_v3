@@ -6,4 +6,8 @@
     <Project Path="EnergyShare_v3.Infrastructure/EnergyShare_v3.Infrastructure.csproj" Id="d47e83b4-f03e-4547-a770-2632d6c282ce" />
     <Project Path="src/EnergyShare_v3.Web/EnergyShare_v3.Web.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="EnergyShare_v3.IntegrationTests/EnergyShare_v3.IntegrationTests.csproj" Id="9d04613a-e3cf-4b56-b6c0-b84f701161b8" />
+    <Project Path="tests/EnergyShare_v3.Backend.Tests/EnergyShare_v3.Backend.Tests.csproj" Id="53d5456d-f839-41a8-a5a6-178fac3022a7" />
+  </Folder>
 </Solution>

@@ -81,3 +81,5 @@ app.MapRazorComponents<App>()
 app.MapUsers();
 
 app.Run();
+
+public partial class Program { }

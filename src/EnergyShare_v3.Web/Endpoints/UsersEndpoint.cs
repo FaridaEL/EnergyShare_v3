@@ -10,12 +10,19 @@ namespace EnergyShare_v3.Web.Endpoints
         public static IEndpointRouteBuilder MapUsers(
             this IEndpointRouteBuilder app)
         {
-            var group = app.MapGroup("/users")
+            var group = app.MapGroup("/api/users")
                 .WithTags("Users");
 
+            group.MapGet("/", GetUsers); 
             group.MapPost("/", CreateUser);
             //ajouter les autre après ici updateUser, etc.
             return app;
+        }
+
+        internal static async Task<IResult> GetUsers(GetUsersHandler handler)
+        {
+            var users = await handler.HandleAsync();
+            return Results.Ok(users);
         }
 
         internal static async Task<IResult> CreateUser(
