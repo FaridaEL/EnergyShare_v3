@@ -7,19 +7,19 @@ namespace EnergyShare_v3.Domain.Entities.Users
 {
     public static class UserErrors
     {
-        public static Result EmailObligatoire() =>
-           Result.Invalid(new ValidationError(
-               nameof(User.Email),
-               "L'email est obligatoire.",
-               "User.EmailObligatoire",
-               ValidationSeverity.Error));
+        public static Result<User> EmailObligatoire() =>  //la méthode create doit renvoyer un Result<User>  
+            Result<User>.Invalid(new ValidationError(
+                "Email",
+                "L'email est obligatoire.",
+                "User.EmailObligatoire",
+                ValidationSeverity.Error));
 
-        public static Result PasswordHashObligatoire() =>
+        /*public static Result PasswordHashObligatoire() =>
             Result.Invalid(new ValidationError(
                 nameof(User.PasswordHash),
                 "Le mot de passe hashé est obligatoire.",
                 "User.PasswordHashObligatoire",
-                ValidationSeverity.Error));
+                ValidationSeverity.Error));    */
 
         public static Result SocieteReserveeAuProfessionnel() =>
             Result.Invalid(new ValidationError(

@@ -1,7 +1,9 @@
 ﻿using EnergyShare_v3.Application.Interfaces;
+using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Infrastructure.Behaviors;
 using EnergyShare_v3.Infrastructure.Database;
 using FluentValidation;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +29,8 @@ namespace EnergyShare_v3.Infrastructure
                 .ConfigureMediator()
                 .ConfigureFluentValidation()
                 .ConfigureEntityFramework(
-                   configuration.GetConnectionString("EnergyShare")!);
+                   configuration.GetConnectionString("EnergyShare")!)
+                .ConfigureIdentity(); ;
 
         }
         static IServiceCollection ConfigureMediator(
@@ -72,6 +75,31 @@ namespace EnergyShare_v3.Infrastructure
             });
 
             services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
+
+            return services;
+        }
+
+
+        static IServiceCollection ConfigureIdentity(
+           this IServiceCollection services)
+        {
+            services
+                .AddIdentity<User, IdentityRole<Guid>>(options =>
+                {
+                    options.Password.RequiredLength = 8;
+                    options.Password.RequireUppercase = true;
+                    options.Password.RequireDigit = true;
+                    options.Password.RequireLowercase = false;
+                    options.Password.RequireNonAlphanumeric = false;
+
+                    options.Lockout.MaxFailedAccessAttempts = 5;
+                    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                    options.Lockout.AllowedForNewUsers = true;
+
+                    options.User.RequireUniqueEmail = true;
+                })
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();
 
             return services;
         }

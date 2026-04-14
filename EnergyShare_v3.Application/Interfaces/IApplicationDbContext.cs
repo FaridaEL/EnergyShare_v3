@@ -18,7 +18,7 @@ namespace EnergyShare_v3.Application.Interfaces
     public interface IApplicationDbContext
     {   //Acces aux utilisateurs
         DbSet<DataPartage> DataPartages { get; }
-        public DbSet<DemandeGRD> DemandesGRD { get; } 
+        DbSet<DemandeGRD> DemandesGRD { get; } 
         DbSet<DocumentPartage> DocumentsPartage { get; }
         DbSet<Match> Matches { get; }
         DbSet<ParticipationPartage> MembresPartage { get; }

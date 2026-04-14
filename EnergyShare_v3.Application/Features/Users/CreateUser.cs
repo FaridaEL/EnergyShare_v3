@@ -37,7 +37,6 @@ namespace EnergyShare_v3.Application.Features.Users
             CancellationToken cancellationToken )
         {    var result = Domain.Entities.Users.User.Create(
                 command.Email,
-                command.PasswordHash, 
                 command.Role );
 
             //Si erreur métier on s'arrête et on retourne l'erreur, sinon on continue

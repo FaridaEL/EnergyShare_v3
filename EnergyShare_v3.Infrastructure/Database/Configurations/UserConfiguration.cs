@@ -12,8 +12,8 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
 
             builder.HasKey(u => u.Id);
 
-            builder.Property(u => u.PasswordHash)
-                .IsRequired();
+           // builder.Property(u => u.PasswordHash)
+            //    .IsRequired();
 
             builder.Property(u => u.FirstName)
                 .HasMaxLength(100);
@@ -43,6 +43,7 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
             // builder.HasIndex(u => u.Email)      //email unique au sein de l'application
             //    .IsUnique();       //Doit se faire sur un index , pas sur une propriété simple, d'où l'utilisation d'une propriété de valeur (Owned Entity) pour l'email dans la v2 ci-dessous
 
+            /*
             builder.OwnsOne(u => u.Email, owned =>
             {
                 owned.Property(e => e.Value)
@@ -52,7 +53,9 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
                     .IsRequired();
 
                 owned.HasIndex(e => e.Value).IsUnique();//L'unicité se définit sur un index, pas sur une propriété
-            });
+            }); */
+            builder.HasIndex(u => u.Email)
+                .IsUnique();
 
             builder.HasOne(u => u.OrganismePublic)
                 .WithMany(op => op.Employes)

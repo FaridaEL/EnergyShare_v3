@@ -30,7 +30,7 @@ namespace EnergyShare_v3.Application.Features.Users
                     u.Id,
                     u.FirstName,
                     u.LastName,
-                    u.Email.Value,
+                    u.Email,
                     u.Role,
                     u.Audit.CreatedAt
                 ))

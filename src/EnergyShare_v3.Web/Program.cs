@@ -1,10 +1,12 @@
 using EnergyShare_v3.Application.Features.Partage;
 using EnergyShare_v3.Application.Features.Users;
+using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Infrastructure;
 using EnergyShare_v3.Infrastructure.Database;
 using EnergyShare_v3.Web.Components;
 using EnergyShare_v3.Web.Endpoints;
 using EnergyShare_v3.Web.Infrastructure;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 //using Microsoft.OpenApi;
 
@@ -13,7 +15,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents(options =>
+    {
+        options.DetailedErrors = true;
+    });
 
 //Ajout l'infrastructure (EF Core, DbContext)
 // Un seul appel qui cache toute la complexite grace a la methode d'extension
@@ -50,8 +55,12 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     //await context.Database.EnsureCreatedAsync(); // Todo à remplacer par MigrateAsync() lorsque je fais mes migrations
+
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+
     await context.Database.MigrateAsync();
-    await ApplicationDbContextSeeder.SeedAsync(context);
+    await ApplicationDbContextSeeder.SeedAsync(context, userManager, roleManager);
     // app.UseSwagger();
     // app.UseSwaggerUI();
 
@@ -71,6 +80,8 @@ else {
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();

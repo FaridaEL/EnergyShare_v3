@@ -2,70 +2,103 @@
 using EnergyShare_v3.Domain.Entities.ProfilsEnergie;
 using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Domain.Enums;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnergyShare_v3.Infrastructure.Database
 {
     public static class ApplicationDbContextSeeder
-    {
-        public static async Task SeedAsync(ApplicationDbContext context)
+    {     // Mot de passe de test pour tous les users : Test1234
+        public static async Task SeedAsync(
+            ApplicationDbContext context,
+            UserManager<User> userManager,
+            RoleManager<IdentityRole<Guid>> roleManager)
         {
-            if (await context.Users.AnyAsync())
+            await SeedRolesAsync(roleManager);
+
+            if (await context.PointAccesses.AnyAsync())
                 return;
 
-            var sibelga = new OrganismePublic
+            var sibelga = await context.OrganismesPublics
+                .FirstOrDefaultAsync(x => x.Nom == "Sibelga");
+
+            if (sibelga is null)
             {
-                Id = Guid.NewGuid(),
-                Nom = "Sibelga"
-            };
+                sibelga = new OrganismePublic
+                {
+                    Id = Guid.NewGuid(),
+                    Nom = "Sibelga"
+                };
 
-            context.OrganismesPublics.Add(sibelga);
+                context.OrganismesPublics.Add(sibelga);
+                await context.SaveChangesAsync();
+            }
 
-            var vendeur1 = User.Create(
+            var vendeur1 = await CreateUserIfNotExistsAsync(
+                userManager,
                 "sarah.dupont@example.com",
-                "HASH_TEMPORAIRE",
-                UserRole.Utilisateur).Value;
+                "Test1234",
+                UserRole.Utilisateur,
+                "Sarah",
+                "Dupont",
+                "0470000001",
+                "Utilisateur");
 
-            vendeur1.UpdateUserIdentity("Sarah", "Dupont", "0470000001");
-
-            var vendeur2 = User.Create(
+            var vendeur2 = await CreateUserIfNotExistsAsync(
+                userManager,
                 "julien.martin@example.com",
-                "HASH_TEMPORAIRE",
-                UserRole.Utilisateur).Value;
+                "Test1234",
+                UserRole.Utilisateur,
+                "Julien",
+                "Martin",
+                "0470000002",
+                "Utilisateur");
 
-            vendeur2.UpdateUserIdentity("Julien", "Martin", "0470000002");
-
-            var acheteur1 = User.Create(
+            var acheteur1 = await CreateUserIfNotExistsAsync(
+                userManager,
                 "lea.bernard@example.com",
-                "HASH_TEMPORAIRE",
-                UserRole.Utilisateur).Value;
+                "Test1234",
+                UserRole.Utilisateur,
+                "Léa",
+                "Bernard",
+                "0470000003",
+                "Utilisateur");
 
-            acheteur1.UpdateUserIdentity("Léa", "Bernard", "0470000003");
-
-            var acheteur2 = User.Create(
+            var acheteur2 = await CreateUserIfNotExistsAsync(
+                userManager,
                 "hugo.lambert@example.com",
-                "HASH_TEMPORAIRE",
-                UserRole.Utilisateur).Value;
+                "Test1234",
+                UserRole.Utilisateur,
+                "Hugo",
+                "Lambert",
+                "0470000004",
+                "Utilisateur");
 
-            acheteur2.UpdateUserIdentity("Hugo", "Lambert", "0470000004");
-
-            var boulangerie = User.Create(
+            var boulangerie = await CreateUserIfNotExistsAsync(
+                userManager,
                 "contact@boulangerie-dupain.be",
-                "HASH_TEMPORAIRE",
-                UserRole.Utilisateur).Value;
+                "Test1234",
+                UserRole.Utilisateur,
+                null,
+                null,
+                "0220000010",
+                "Utilisateur");
 
-            boulangerie.UpdateUserIdentity(null, null, "0220000010");
             boulangerie.UpdateLegalInformation("Boulangerie Du Pain", "BE0123456789");
+            await userManager.UpdateAsync(boulangerie);
 
-            var agentSibelga = User.Create(
+            var agentSibelga = await CreateUserIfNotExistsAsync(
+                userManager,
                 "agent.sibelga@example.com",
-                "HASH_TEMPORAIRE",
-                UserRole.OrganismePublic).Value;
+                "Test1234",
+                UserRole.OrganismePublic,
+                "Nadia",
+                "Vermeulen",
+                "0220000099",
+                "OrganismePublic");
 
-            agentSibelga.UpdateUserIdentity("Nadia", "Vermeulen", "0220000099");
             agentSibelga.OrganismePublicId = sibelga.Id;
-
-            context.Users.AddRange(vendeur1, vendeur2, acheteur1, acheteur2, boulangerie, agentSibelga);
+            await userManager.UpdateAsync(agentSibelga);
 
             var paVendeur1 = new PointAccess
             {
@@ -144,40 +177,11 @@ namespace EnergyShare_v3.Infrastructure.Database
                 paAcheteur2,
                 paBoulangerie);
 
-            var profilVendeur1 = ProfilEnergie.Create(
-                demande: null,
-                offre: 3200,
-                prixAchatCible: null,
-                prixVenteCible: 0.12m,
-                pointAccessId: paVendeur1.Id).Value;
-
-            var profilVendeur2 = ProfilEnergie.Create(
-                demande: null,
-                offre: 4200,
-                prixAchatCible: null,
-                prixVenteCible: 0.11m,
-                pointAccessId: paVendeur2.Id).Value;
-
-            var profilAcheteur1 = ProfilEnergie.Create(
-                demande: 1800,
-                offre: null,
-                prixAchatCible: 0.16m,
-                prixVenteCible: null,
-                pointAccessId: paAcheteur1.Id).Value;
-
-            var profilAcheteur2 = ProfilEnergie.Create(
-                demande: 2400,
-                offre: null,
-                prixAchatCible: 0.15m,
-                prixVenteCible: null,
-                pointAccessId: paAcheteur2.Id).Value;
-
-            var profilBoulangerie = ProfilEnergie.Create(
-                demande: 5200,
-                offre: null,
-                prixAchatCible: 0.18m,
-                prixVenteCible: null,
-                pointAccessId: paBoulangerie.Id).Value;
+            var profilVendeur1 = ProfilEnergie.Create(null, 3200, null, 0.12m, paVendeur1.Id).Value;
+            var profilVendeur2 = ProfilEnergie.Create(null, 4200, null, 0.11m, paVendeur2.Id).Value;
+            var profilAcheteur1 = ProfilEnergie.Create(1800, null, 0.16m, null, paAcheteur1.Id).Value;
+            var profilAcheteur2 = ProfilEnergie.Create(2400, null, 0.15m, null, paAcheteur2.Id).Value;
+            var profilBoulangerie = ProfilEnergie.Create(5200, null, 0.18m, null, paBoulangerie.Id).Value;
 
             context.ProfilsEnergie.AddRange(
                 profilVendeur1,
@@ -187,6 +191,63 @@ namespace EnergyShare_v3.Infrastructure.Database
                 profilBoulangerie);
 
             await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedRolesAsync(RoleManager<IdentityRole<Guid>> roleManager)
+        {
+            string[] roles = ["Administrateur", "OrganismePublic", "Utilisateur"];
+
+            foreach (var role in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new IdentityRole<Guid>
+                    {
+                        Name = role
+                    });
+                }
+            }
+        }
+
+        private static async Task<User> CreateUserIfNotExistsAsync(
+            UserManager<User> userManager,
+            string email,
+            string password,
+            UserRole businessRole,
+            string? firstName,
+            string? lastName,
+            string? phoneNumber,
+            string? identityRole = null)
+        {
+            var existingUser = await userManager.FindByEmailAsync(email);
+            if (existingUser is not null)
+                return existingUser;
+
+            var result = User.Create(email, businessRole);
+            if (!result.IsSuccess)
+                throw new InvalidOperationException($"Impossible de créer l'utilisateur {email}");
+
+            var user = result.Value;
+            user.UpdateUserIdentity(firstName, lastName, phoneNumber);
+
+            var createResult = await userManager.CreateAsync(user, password);
+            if (!createResult.Succeeded)
+            {
+                var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Erreur création utilisateur {email}: {errors}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(identityRole))
+            {
+                var roleResult = await userManager.AddToRoleAsync(user, identityRole);
+                if (!roleResult.Succeeded)
+                {
+                    var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+                    throw new InvalidOperationException($"Erreur rôle utilisateur {email}: {errors}");
+                }
+            }
+
+            return user;
         }
     }
 }
