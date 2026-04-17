@@ -8,6 +8,7 @@ using EnergyShare_v3.Web.Endpoints;
 using EnergyShare_v3.Web.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 //using Microsoft.OpenApi;
 
 
@@ -20,6 +21,43 @@ builder.Services.AddRazorComponents()
         options.DetailedErrors = true;
     });
 builder.Services.AddCascadingAuthenticationState();
+
+builder.Services.AddAuthorization(options =>
+{        //Il s'agit de sipmle policies, les policies plus complexes sont définies dans le handler
+         //cf. tableau des autorisations définies dans le cdc
+    // Admin uniquement
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Administrateur"));
+
+    // Admin ou OrganismePublic
+    options.AddPolicy("AdminOrOrganismePublic", policy =>
+        policy.RequireRole("Administrateur", "OrganismePublic"));
+
+    // Tous les utilisateurs connectés
+    options.AddPolicy("AuthenticatedUser", policy =>
+        policy.RequireAuthenticatedUser());
+
+    // Utilisateur standard ou admin
+    options.AddPolicy("StandardUserOnly", policy =>
+        policy.RequireRole("Utilisateur", "Administrateur"));
+
+    // Voir toutes les demandes GRD
+    options.AddPolicy("CanViewAllValidationRequests", policy =>
+        policy.RequireRole("Administrateur", "OrganismePublic"));
+
+    // Voir tous les users
+    options.AddPolicy("CanViewAllUsers", policy =>
+        policy.RequireRole("Administrateur"));
+
+    // Créer un partage
+    //Attention il faudra également vérifier via conditions métier que le profil énergie existe, point access existe, rolepartage est vendeur ou mixte
+    options.AddPolicy("CanCreatePartage", policy =>
+        policy.RequireRole("Utilisateur", "Administrateur"));
+
+    // Ajouter un point d’accès / profil énergie
+    options.AddPolicy("CanManageEnergyProfile", policy =>
+        policy.RequireRole("Utilisateur", "Administrateur"));
+});
 
 //Ajout l'infrastructure (EF Core, DbContext)
 // Un seul appel qui cache toute la complexite grace a la methode d'extension
