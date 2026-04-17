@@ -1,0 +1,26 @@
+﻿@using EnergyShare_v3.Domain.Entities.Users
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<User> UserManager
+
+@if (!string.IsNullOrWhiteSpace(_displayName))
+{
+    <span>Bienvenue, @_displayName !</span>
+}
+
+@code {
+    private string? _displayName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var principal = authState.User;
+
+        if (principal.Identity?.IsAuthenticated != true)
+            return;
+
+        var user = await UserManager.GetUserAsync(principal);
+        _displayName = user?.FirstName ?? principal.Identity?.Name ?? "utilisateur";
+    }
+}

@@ -19,6 +19,7 @@ builder.Services.AddRazorComponents()
     {
         options.DetailedErrors = true;
     });
+builder.Services.AddCascadingAuthenticationState();
 
 //Ajout l'infrastructure (EF Core, DbContext)
 // Un seul appel qui cache toute la complexite grace a la methode d'extension
@@ -74,9 +75,9 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-else { 
-    app.UseExceptionHandler();
-}
+//else { 
+//    app.UseExceptionHandler();
+//}
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
@@ -90,6 +91,22 @@ app.MapRazorComponents<App>()
 
 //Minimal API
 app.MapUsers();
+
+app.MapPost("/logout", async (SignInManager<User> signInManager) =>
+{
+    try
+    {
+        await signInManager.SignOutAsync();
+        return Results.Redirect("/login");
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(
+            title: "Erreur logout",
+            detail: ex.ToString(),
+            statusCode: 500);
+    }
+});
 
 app.Run();
 
