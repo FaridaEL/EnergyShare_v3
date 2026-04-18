@@ -46,7 +46,7 @@ namespace EnergyShare_v3.Domain.Entities.Users
         public ICollection<PointAccess> PointsAccess { get; set; } = [];   //1 user peut avoir plusieurs points d'accès Mais un même point d'accès ne peut être rattaché qu'à un seul partage atif à la fois
         public ICollection<Partage> PartagesCrees { get; set; } = [];
         public ICollection<Partage> PartagesGeres { get; set; } = [];
-
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
         //Données d'audit
         public AuditInfo Audit { get; private set; } = new AuditInfo();
 

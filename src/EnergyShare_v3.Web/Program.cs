@@ -1,14 +1,22 @@
 using EnergyShare_v3.Application.Features.Partage;
 using EnergyShare_v3.Application.Features.Users;
+using EnergyShare_v3.Application.Interfaces;
 using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Infrastructure;
+using EnergyShare_v3.Infrastructure.Authentication;
 using EnergyShare_v3.Infrastructure.Database;
+using EnergyShare_v3.Infrastructure.Services;
 using EnergyShare_v3.Web.Components;
 using EnergyShare_v3.Web.Endpoints;
 using EnergyShare_v3.Web.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
+using System.Net;
+using System.Text;
+
 //using Microsoft.OpenApi;
 
 
@@ -21,6 +29,56 @@ builder.Services.AddRazorComponents()
         options.DetailedErrors = true;
     });
 builder.Services.AddCascadingAuthenticationState();
+
+// Configuration JWT (pour l'API uniquement)
+// Ce projet utilise DEUX mécanismes d'authentification :
+// - ASP.NET Identity (cookies) → pour l'interface Blazor Server
+// - JWT Bearer → pour sécuriser les endpoints API (/api/*)
+//
+// Important :
+// On n'utilise PAS JWT comme schéma par défaut afin de ne pas casser
+// l'authentification cookie utilisée par Blazor.
+// JWT est utilisé uniquement pour les appels API (Postman, mobile, etc.)
+
+//L’application utilise ASP.NET Identity pour gérer l’authentification côté interface Blazor Server(basée sur cookies).
+//En parallèle, une authentification JWT est mise en place pour sécuriser les endpoints API, permettant une utilisation future par des clients externes (mobile, SPA, etc.).
+//Cette séparation permet de combiner confort d’utilisation côté web et extensibilité côté API.
+
+builder.Services.Configure<JwtSettings>(
+    builder.Configuration.GetSection("Jwt"));
+
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var secretKey = jwtSection["SecretKey"]
+    ?? throw new InvalidOperationException("Jwt:SecretKey est manquante.");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = jwtSection["Issuer"],
+
+        ValidateAudience = true,
+        ValidAudience = jwtSection["Audience"],
+
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(secretKey)),
+
+        ClockSkew = TimeSpan.FromMinutes(1)
+    };
+});
+
+
 
 builder.Services.AddAuthorization(options =>
 {        //Il s'agit de sipmle policies, les policies plus complexes sont définies dans le handler

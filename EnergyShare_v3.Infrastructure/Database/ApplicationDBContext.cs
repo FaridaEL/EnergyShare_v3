@@ -33,6 +33,8 @@ namespace EnergyShare_v3.Infrastructure.Database
         public DbSet<ProfilEnergie> ProfilsEnergie { get; set; } = null!;
         
         public DbSet<TarifAccord> TarifsAccord { get; set; } = null!;
+
+        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
         //public DbSet<User> Users { get; set; } = null! ;
 
         //à implémenter dans une v2

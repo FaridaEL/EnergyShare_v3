@@ -6,6 +6,8 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using EnergyShare_v3.Domain.Entities.Users;
+using Microsoft.AspNetCore.Identity;
 
 namespace EnergyShare_v3.IntegrationTests
 {
@@ -40,9 +42,13 @@ namespace EnergyShare_v3.IntegrationTests
 
                 using var scope = sp.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
 
                 db.Database.EnsureCreated();
-                ApplicationDbContextSeeder.SeedAsync(db).GetAwaiter().GetResult();
+                ApplicationDbContextSeeder.SeedAsync(db,userManager, roleManager)
+                     .GetAwaiter()
+                     .GetResult();
             });
         }
 

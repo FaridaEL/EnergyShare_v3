@@ -29,6 +29,8 @@ namespace EnergyShare_v3.Application.Interfaces
         DbSet<ProfilEnergie> ProfilsEnergie { get; }
         DbSet<TarifAccord> TarifsAccord { get; }
         DbSet<User> Users { get; }
+
+        DbSet<RefreshToken> RefreshTokens { get; }
         //à implémenter dans une v2 -> hors MVP
         //DbSet<FraisComptageMesurage> FraisComptageMesurage { get; }
         //DbSet<ProfilFacturation> ProfilsFacturation { get; }
