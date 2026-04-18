@@ -1,0 +1,89 @@
+﻿@page "/register"
+@using EnergyShare_v3.Domain.Entities.Users
+@using EnergyShare_v3.Domain.Enums
+@using EnergyShare_v3.Web.Models.Auth
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<User> UserManager
+@inject NavigationManager Navigation
+
+<PageTitle>Inscription</PageTitle>
+
+<h3>Créer un compte</h3>
+
+<EditForm Model="Model" OnValidSubmit="HandleRegister" FormName="registerForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger">@_errorMessage</div>
+    }
+
+    <div class="mb-3">
+        <label for="firstName" class="form-label">Prénom</label>
+        <InputText id="firstName" @bind-Value="Model.FirstName" class="form-control" />
+        <ValidationMessage For="@(() => Model.FirstName)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="lastName" class="form-label">Nom</label>
+        <InputText id="lastName" @bind-Value="Model.LastName" class="form-control" />
+        <ValidationMessage For="@(() => Model.LastName)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <InputText id="email" @bind-Value="Model.Email" class="form-control" />
+        <ValidationMessage For="@(() => Model.Email)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="password" class="form-label">Mot de passe</label>
+        <InputText id="password" type="password" @bind-Value="Model.Password" class="form-control" />
+        <ValidationMessage For="@(() => Model.Password)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="confirmPassword" class="form-label">Confirmation du mot de passe</label>
+        <InputText id="confirmPassword" type="password" @bind-Value="Model.ConfirmPassword" class="form-control" />
+        <ValidationMessage For="@(() => Model.ConfirmPassword)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">S’inscrire</button>
+    <a class="btn btn-link" href="/login">Déjà un compte ? Se connecter</a>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm(FormName = "registerForm")]
+    public RegisterFormModel Model { get; set; } = new();
+
+    private string? _errorMessage;
+
+    private async Task HandleRegister()
+    {
+        _errorMessage = null;
+
+        var userResult = User.Create(Model.Email, UserRole.Utilisateur);
+        if (!userResult.IsSuccess)
+        {
+            _errorMessage = "Impossible de créer le compte.";
+            return;
+        }
+
+        var user = userResult.Value;
+        user.UpdateUserIdentity(Model.FirstName, Model.LastName, null);
+
+        var result = await UserManager.CreateAsync(user, Model.Password);
+
+        if (!result.Succeeded)
+        {
+            _errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+            return;
+        }
+
+        await UserManager.AddToRoleAsync(user, "Utilisateur");
+
+        Navigation.NavigateTo("/login", forceLoad: true);
+    }
+}

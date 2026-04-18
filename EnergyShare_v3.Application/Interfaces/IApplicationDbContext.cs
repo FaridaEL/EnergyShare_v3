@@ -18,7 +18,7 @@ namespace EnergyShare_v3.Application.Interfaces
     public interface IApplicationDbContext
     {   //Acces aux utilisateurs
         DbSet<DataPartage> DataPartages { get; }
-        public DbSet<DemandeGRD> DemandesGRD { get; } 
+        DbSet<DemandeGRD> DemandesGRD { get; } 
         DbSet<DocumentPartage> DocumentsPartage { get; }
         DbSet<Match> Matches { get; }
         DbSet<ParticipationPartage> MembresPartage { get; }
@@ -29,6 +29,8 @@ namespace EnergyShare_v3.Application.Interfaces
         DbSet<ProfilEnergie> ProfilsEnergie { get; }
         DbSet<TarifAccord> TarifsAccord { get; }
         DbSet<User> Users { get; }
+
+        DbSet<RefreshToken> RefreshTokens { get; }
         //à implémenter dans une v2 -> hors MVP
         //DbSet<FraisComptageMesurage> FraisComptageMesurage { get; }
         //DbSet<ProfilFacturation> ProfilsFacturation { get; }

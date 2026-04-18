@@ -1,19 +1,21 @@
 ﻿using EnergyShare_v3.Application.Interfaces;
+using EnergyShare_v3.Bricks.Model;
 using EnergyShare_v3.Domain.Entities;
 using EnergyShare_v3.Domain.Entities.Matchs;
 using EnergyShare_v3.Domain.Entities.Messages;
 using EnergyShare_v3.Domain.Entities.Partages;
 using EnergyShare_v3.Domain.Entities.ProfilsEnergie;
 using EnergyShare_v3.Domain.Entities.Users;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
-using EnergyShare_v3.Bricks.Model;
 
 namespace EnergyShare_v3.Infrastructure.Database
 {   
     // Implementation concrete de IApplicationDbContext avec Entity Framework Core.
 
-    public class ApplicationDbContext : DbContext, IApplicationDbContext
+    public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>,  IApplicationDbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
           : base(options) { 
@@ -31,7 +33,9 @@ namespace EnergyShare_v3.Infrastructure.Database
         public DbSet<ProfilEnergie> ProfilsEnergie { get; set; } = null!;
         
         public DbSet<TarifAccord> TarifsAccord { get; set; } = null!;
-        public DbSet<User> Users { get; set; } = null! ;
+
+        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+        //public DbSet<User> Users { get; set; } = null! ;
 
         //à implémenter dans une v2
         //public DbSet<ProfilFacturation> ProfilsFacturation { get; set; } = null!;

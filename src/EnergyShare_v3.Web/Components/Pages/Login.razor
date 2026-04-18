@@ -1,0 +1,73 @@
+﻿@page "/login"
+@using EnergyShare_v3.Domain.Entities.Users
+@using EnergyShare_v3.Web.Models.Auth
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<User> SignInManager
+@inject NavigationManager Navigation
+
+<PageTitle>Connexion</PageTitle>
+
+<h3>Connexion</h3>
+
+<EditForm Model="Model" OnValidSubmit="HandleLogin" FormName="loginForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger">@_errorMessage</div>
+    }
+
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <InputText id="email" @bind-Value="Model.Email" class="form-control" />
+        <ValidationMessage For="@(() => Model.Email)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="password" class="form-label">Mot de passe</label>
+        <InputText id="password" type="password" @bind-Value="Model.Password" class="form-control" />
+        <ValidationMessage For="@(() => Model.Password)" />
+    </div>
+
+    <div class="form-check mb-3">
+        <InputCheckbox id="rememberMe" @bind-Value="Model.RememberMe" class="form-check-input" />
+        <label for="rememberMe" class="form-check-label">Se souvenir de moi</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Se connecter</button>
+    <a class="btn btn-link" href="/register">Créer un compte</a>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm(FormName = "loginForm")]
+    public LoginFormModel Model { get; set; } = new();
+
+    private string? _errorMessage;
+
+    private async Task HandleLogin()
+    {
+        _errorMessage = null;
+
+        var result = await SignInManager.PasswordSignInAsync(
+            Model.Email,
+            Model.Password,
+            Model.RememberMe,
+            lockoutOnFailure: true);
+
+        if (result.Succeeded)
+        {
+            Navigation.NavigateTo("/monprofil", forceLoad: true);
+            return;
+        }
+
+        if (result.IsLockedOut)
+        {
+            _errorMessage = "Compte verrouillé. Réessayez plus tard.";
+            return;
+        }
+
+        _errorMessage = "Email ou mot de passe incorrect.";
+    }
+}

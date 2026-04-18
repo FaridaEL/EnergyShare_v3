@@ -1,0 +1,49 @@
+﻿@page "/debug-claims"
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Debug Claims</PageTitle>
+
+<h1>Debug Claims</h1>
+
+@if (_isAuthenticated is null)
+{
+    <p>Chargement...</p>
+}
+else
+{
+    <p><strong>Authentifié :</strong> @_isAuthenticated</p>
+    <p><strong>Nom :</strong> @_name</p>
+
+    <h3>Claims</h3>
+
+    @if (_claims.Count == 0)
+    {
+        <p>Aucun claim trouvé.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var claim in _claims)
+            {
+                <li><strong>@claim.Type</strong> = @claim.Value</li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    private bool? _isAuthenticated;
+    private string? _name;
+    private List<System.Security.Claims.Claim> _claims = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        _isAuthenticated = user.Identity?.IsAuthenticated ?? false;
+        _name = user.Identity?.Name;
+        _claims = user.Claims.ToList();
+    }
+}
