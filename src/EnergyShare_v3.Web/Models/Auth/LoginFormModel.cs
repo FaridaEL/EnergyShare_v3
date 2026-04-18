@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
 namespace EnergyShare_v3.Web.Models.Auth
-{
+{              /*Blazor IU formulaire*/
     public class LoginFormModel
     {
         [Required(ErrorMessage = "L'email est requis.")]

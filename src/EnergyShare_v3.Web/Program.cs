@@ -187,6 +187,7 @@ app.MapRazorComponents<App>()
 
 //Minimal API
 app.MapUsers();
+app.MapAuth();
 
 app.MapPost("/logout", async (SignInManager<User> signInManager) =>
 {

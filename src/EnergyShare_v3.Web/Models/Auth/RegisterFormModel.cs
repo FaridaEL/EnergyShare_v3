@@ -2,7 +2,7 @@
 
 namespace EnergyShare_v3.Web.Models.Auth
 {
-
+         /*Blazor UI*/
     public class RegisterFormModel
     {
         [Required(ErrorMessage = "Le prénom est requis.")]
