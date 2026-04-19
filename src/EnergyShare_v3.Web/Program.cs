@@ -78,6 +78,9 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+//user-context --> facilite la récupération des informations du user connecté (ex: son Id) dans les handlers de l'application sans devoir injecter HttpContextAccessor partout
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserContext, CurrentUserContext>();
 
 
 builder.Services.AddAuthorization(options =>
@@ -188,6 +191,7 @@ app.MapRazorComponents<App>()
 //Minimal API
 app.MapUsers();
 app.MapAuth();
+app.MapDebug();
 
 app.MapPost("/logout", async (SignInManager<User> signInManager) =>
 {
