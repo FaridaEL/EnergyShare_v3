@@ -10,11 +10,10 @@ using EnergyShare_v3.Web.Components;
 using EnergyShare_v3.Web.Endpoints;
 using EnergyShare_v3.Web.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Net;
 using System.Text;
 
 //using Microsoft.OpenApi;
@@ -50,10 +49,14 @@ builder.Services.Configure<JwtSettings>(
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
-var secretKey = jwtSection["SecretKey"]
+var secretKey = jwtSection["SecretKey"]    //    La clé JWT est stockée via user-secrets en développement
     ?? throw new InvalidOperationException("Jwt:SecretKey est manquante.");
 
-builder.Services.AddAuthentication(options =>
+if (secretKey.Length < 32)
+    throw new InvalidOperationException("Jwt:SecretKey est trop courte. Minimum 32 caractères.");
+/*
+builder.Services.AddAuthentication(
+    options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -78,10 +81,55 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+*/
+
+builder.Services.AddAuthentication()
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtSection["Issuer"],
+
+            ValidateAudience = true,
+            ValidAudience = jwtSection["Audience"],
+
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(secretKey)),
+
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+
 //user-context --> facilite la récupération des informations du user connecté (ex: son Id) dans les handlers de l'application sans devoir injecter HttpContextAccessor partout
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContext, CurrentUserContext>();
 
+//audit-securité
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.SlidingExpiration = true;
+});
+
+//audit-secrité  : limite le nombre de tentatives de connexion pour prévenir les attaques par force brute sur les endpoints d'authentification
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("login", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 5;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueLimit = 0;
+    });
+
+    options.RejectionStatusCode = 429;
+});
 
 builder.Services.AddAuthorization(options =>
 {        //Il s'agit de sipmle policies, les policies plus complexes sont définies dans le handler
@@ -178,11 +226,22 @@ if (!app.Environment.IsDevelopment())
 //    app.UseExceptionHandler();
 //}
 
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    await next();
+});
+
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
+
+
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

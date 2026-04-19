@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace EnergyShare_v3.Web.Endpoints
 {          /*Jwt*/
@@ -20,10 +21,16 @@ namespace EnergyShare_v3.Web.Endpoints
                 .WithTags("Auth");
 
             group.MapPost("/register", Register).AllowAnonymous();   // crée le user+role identity+ token et refresh token 
-            group.MapPost("/login", Login).AllowAnonymous();   //vérifie email+pwd
+            group.MapPost("/login", Login)
+                .RequireRateLimiting("login") //audit-securité
+                .AllowAnonymous();   //vérifie email+pwd
             group.MapPost("/refresh", Refresh).AllowAnonymous();  //vérifie le refresh token, révoque l'ancien, en génère un nouveau + access token
-            group.MapPost("/logout", Logout).RequireAuthorization();  //récupère le user connecté viaJwt, révoque tout ses refreshtoken
-
+            //group.MapPost("/logout", Logout).RequireAuthorization();  
+            group.MapPost("/logout", Logout)
+                .RequireAuthorization(new AuthorizeAttribute       //récupère le user connecté viaJwt, révoque tout ses refreshtoken
+                {
+                    AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme
+                });
             return app;
         }
 
@@ -84,20 +91,58 @@ namespace EnergyShare_v3.Web.Endpoints
             SignInManager<User> signInManager,
             IJwtTokenService tokenService,
             IApplicationDbContext dbContext,
-            IOptions<JwtSettings> jwtOptions)
+            IOptions<JwtSettings> jwtOptions,
+            ILoggerFactory loggerFactory,
+            HttpContext httpContext)
         {
+            var logger = loggerFactory.CreateLogger("AuthEndpoint");
             var user = await userManager.FindByEmailAsync(request.Email);
 
             if (user is null)
-                return Results.Unauthorized();
+            {
+                logger.LogWarning("Login échoué pour {Email} depuis {IP}",
+                   request.Email,
+                   httpContext.Connection.RemoteIpAddress);
+
+                //return Results.Unauthorized();
+                return Results.Json(
+                   new { message = "Email ou mot de passe incorrect." },  // conforme sécurité pour ne pas révéler si l'email existe ou pas
+                   statusCode: StatusCodes.Status401Unauthorized);
+            }
 
             var passwordResult = await signInManager.CheckPasswordSignInAsync(
                 user,
                 request.Password,
                 lockoutOnFailure: true);
 
+            if (passwordResult.IsLockedOut)
+            {
+                logger.LogWarning("Compte verrouillé pour {Email} depuis {IP}",
+                    request.Email,
+                    httpContext.Connection.RemoteIpAddress);
+
+                return Results.Json(
+                    new { message = "Compte temporairement verrouillé." },
+                    statusCode: StatusCodes.Status423Locked);
+            }
+
+
             if (!passwordResult.Succeeded)
-                return Results.Unauthorized();
+            {
+                logger.LogWarning("Login échoué pour {Email} depuis {IP}",
+                    request.Email,
+                    httpContext.Connection.RemoteIpAddress);
+
+                // return Results.Unauthorized();
+                return Results.Json(
+                    new { message = "Email ou mot de passe incorrect." }, // conforme sécurité pour ne pas révéler si l'email existe ou pas
+                    statusCode: StatusCodes.Status401Unauthorized);
+            }
+            logger.LogInformation("Login réussi pour {Email} depuis {IP}",
+                request.Email,
+                httpContext.Connection.RemoteIpAddress);
+
+
 
             var roles = await userManager.GetRolesAsync(user);
 
