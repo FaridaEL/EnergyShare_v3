@@ -25,4 +25,8 @@
     <ProjectReference Include="..\..\EnergyShare_v3.Infrastructure\EnergyShare_v3.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\icons\" />
+  </ItemGroup>
+
 </Project>
