@@ -58,3 +58,22 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+.network-status {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: bold;
+    color: white;
+    z-index: 9999;
+}
+
+    .network-status.online {
+        background-color: #2ecc71; /* vert */
+    }
+
+    .network-status.offline {
+        background-color: #e74c3c; /* rouge */
+    }

@@ -1,0 +1,21 @@
+{
+  "name": "EnergyShare",
+  "short_name": "EnergyShare",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F1EA",
+  "theme_color": "#2C3E50",
+  "description": "Plateforme de mise en relation pour le partage d’énergie en Région bruxelloise.",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
