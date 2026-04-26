@@ -14,7 +14,7 @@ namespace EnergyShare_v3.Domain.Entities.ProfilsEnergie
                 "ProfilEnergie.OffreOuDemandeRequise",
                 ValidationSeverity.Error));
 
-        //A reprendre dans PointAccessErrors.cs
+        //TODO Cette erreur doit être reprise dans PointAccessErrors.cs qui reste à créer
         public static Result ConsentementRequis() =>
             Result.Invalid(new ValidationError(
                 "",
@@ -27,6 +27,13 @@ namespace EnergyShare_v3.Domain.Entities.ProfilsEnergie
                 champ,
                 "La valeur ne peut pas être négative.",
                 "ProfilEnergie.ValeurNegative",
+                ValidationSeverity.Error));
+
+        public static Result PointAccessObligatoire() =>
+            Result.Invalid(new ValidationError(
+                nameof(ProfilEnergie.PointAccessId),
+                "Le point d'accès est obligatoire.",
+                "ProfilEnergie.PointAccessObligatoire",
                 ValidationSeverity.Error));
     }
 }

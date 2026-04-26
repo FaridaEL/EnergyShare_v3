@@ -11,19 +11,19 @@ namespace EnergyShare_v3.Domain.Entities.ProfilsEnergie
          * en comparant le prix d'achat cible de l'acheteur avec le prix de vente cible du vendeur
          en comparant le prix de vente cible du vendeur avec le prix d'achat auprès de son fournisseur d'énergie actuel*/
         [Key]
-        public Guid Id { get; set; }
+        public Guid Id { get; private set; }
 
         [Column(TypeName = "decimal(18,4)")]
-        public decimal? DemandeEnergie_kWh { get; set; }
+        public decimal? DemandeEnergie_kWh { get; private set; }
 
         [Column(TypeName = "decimal(18,4)")]
-        public decimal? OffreEnergie_kWh { get; set; }
-        public decimal? PrixAchatCible_Eur { get; set; }
-        public decimal? PrixVenteCible_Eur { get; set; }
-        public Guid PointAccessId { get; set; }
+        public decimal? OffreEnergie_kWh { get; private set; }
+        public decimal? PrixAchatCible_Eur { get; private set; }
+        public decimal? PrixVenteCible_Eur { get; private set; }
+        public Guid PointAccessId { get; private set; }
 
         [ForeignKey("PointAccessId")]
-        public PointAccess PointAccess { get; set; } = null!;
+        public PointAccess PointAccess { get; private set; } = null!;
 
         // Audit
         public AuditInfo Audit { get; private set; } = new AuditInfo();
@@ -73,11 +73,14 @@ namespace EnergyShare_v3.Domain.Entities.ProfilsEnergie
 
             // règle 3 : pointAccess obligatoire
             if (pointAccessId == Guid.Empty)
+                return ProfilEnergieErrors.PointAccessObligatoire().Map();
+
+            /*if (pointAccessId == Guid.Empty)
                 return Result<ProfilEnergie>.Invalid(new ValidationError(
                     nameof(pointAccessId),
                     "Le point d'accès est obligatoire",
                     "ProfilEnergie.PointAccessObligatoire",
-                    ValidationSeverity.Error));
+                    ValidationSeverity.Error)); */
 
             return Result.Success(new ProfilEnergie(
                 demande,
@@ -87,6 +90,35 @@ namespace EnergyShare_v3.Domain.Entities.ProfilsEnergie
                 pointAccessId));
         }
 
+
+        public Result Update(
+            decimal? demande,
+            decimal? offre,
+            decimal? prixAchatCible,
+            decimal? prixVenteCible)
+        {
+            if (!demande.HasValue && !offre.HasValue)
+                return ProfilEnergieErrors.OffreOuDemandeRequise().Map();
+
+            if (demande.HasValue && demande.Value < 0)
+                return ProfilEnergieErrors.ValeurNegative(nameof(demande)).Map();
+
+            if (offre.HasValue && offre.Value < 0)
+                return ProfilEnergieErrors.ValeurNegative(nameof(offre)).Map();
+
+            if (prixAchatCible.HasValue && prixAchatCible.Value < 0)
+                return ProfilEnergieErrors.ValeurNegative(nameof(prixAchatCible)).Map();
+
+            if (prixVenteCible.HasValue && prixVenteCible.Value < 0)
+                return ProfilEnergieErrors.ValeurNegative(nameof(prixVenteCible)).Map();
+
+            DemandeEnergie_kWh = demande;
+            OffreEnergie_kWh = offre;
+            PrixAchatCible_Eur = prixAchatCible;
+            PrixVenteCible_Eur = prixVenteCible;
+
+            return Result.Success();
+        }
     }
    
 }

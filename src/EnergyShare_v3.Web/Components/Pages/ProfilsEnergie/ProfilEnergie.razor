@@ -1,0 +1,134 @@
+﻿@page "/profil-energie"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using EnergyShare_v3.Application.Features.ProfilEnergie
+@using EnergyShare_v3.Web.Models.ProfilEnergie
+@using Mediator
+
+@inject ISender Sender
+
+<PageTitle>Mon profil énergie</PageTitle>
+
+<h3>Mon profil énergie</h3>
+
+@if (isLoading)
+{
+    <p>Chargement...</p>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-warning">@errorMessage</div>
+}
+else if (model is not null)
+{
+    <EditForm Model="model" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label">Demande énergie (kWh)</label>
+            <InputNumber class="form-control" @bind-Value="model.DemandeEnergie_kWh" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Offre énergie (kWh)</label>
+            <InputNumber class="form-control" @bind-Value="model.OffreEnergie_kWh" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Prix achat cible (€)</label>
+            <InputNumber class="form-control" @bind-Value="model.PrixAchatCible_Eur" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Prix vente cible (€)</label>
+            <InputNumber class="form-control" @bind-Value="model.PrixVenteCible_Eur" />
+        </div>
+
+        <button class="btn btn-primary" type="submit">
+            Enregistrer
+        </button>
+    </EditForm>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success mt-3">@successMessage</div>
+}
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? successMessage;
+    private ProfilEnergieFormModel? model;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfilAsync();
+    }
+
+    private async Task LoadProfilAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        successMessage = null;
+
+        // Passage par Mediator :
+        // Page Blazor -> ISender -> Handler -> Pipeline behaviors -> UnitOfWork
+        var result = await Sender.Send(new GetMyProfilEnergie());
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Aucun profil énergie trouvé. Crée d'abord ton point d'accès puis ton profil énergie.";
+            isLoading = false;
+            return;
+        }
+
+        var dto = result.Value;
+
+        model = new ProfilEnergieFormModel
+        {
+            Id = dto.Id,
+            DemandeEnergie_kWh = dto.DemandeEnergie_kWh,
+            OffreEnergie_kWh = dto.OffreEnergie_kWh,
+            PrixAchatCible_Eur = dto.PrixAchatCible_Eur,
+            PrixVenteCible_Eur = dto.PrixVenteCible_Eur
+        };
+
+        isLoading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (model is null)
+            return;
+
+        errorMessage = null;
+        successMessage = null;
+
+        // Passage par Mediator pour déclencher :
+        // - validation behavior
+        // - exception behavior
+        // - unit of work behavior
+        var result = await Sender.Send(new UpdateProfilEnergie(
+            model.Id,
+            model.DemandeEnergie_kWh,
+            model.OffreEnergie_kWh,
+            model.PrixAchatCible_Eur,
+            model.PrixVenteCible_Eur
+        ));
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = result.Errors.Any()
+                ? string.Join(" ", result.Errors)
+                : "La mise à jour du profil énergie a échoué.";
+
+            return;
+        }
+
+        successMessage = "Profil énergie mis à jour avec succès.";
+    }
+}
