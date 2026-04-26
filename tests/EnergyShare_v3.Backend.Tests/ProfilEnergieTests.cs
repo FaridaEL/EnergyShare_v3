@@ -66,5 +66,21 @@ namespace EnergyShare_v3.Backend.Tests
             result.Value.OffreEnergie_kWh.Should().BeNull();
             result.Value.PrixAchatCible_Eur.Should().Be(0.16m);
         }
+
+        [Fact]
+        public void Update_ShouldFail_WhenBothDemandAndOfferAreNull()
+        {
+            var profil = ProfilEnergie.Create(
+                100,
+                null,
+                0.15m,
+                null,
+                Guid.NewGuid()
+            ).Value;
+
+            var result = profil.Update(null, null, 0.15m, null);
+
+            result.IsSuccess.Should().BeFalse();
+        }
     }
 }

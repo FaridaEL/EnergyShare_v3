@@ -325,6 +325,7 @@ app.MapRazorComponents<App>()
 
 //Minimal API
 app.MapUsers();
+app.MapProfilEnergie();
 app.MapAuth();
 app.MapDebug();
 

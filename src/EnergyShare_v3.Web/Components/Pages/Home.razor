@@ -1,6 +1,7 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
 
-<PageTitle>EnergyShare - Accueil </PageTitle>
+<PageTitle>EnergyShare - Accueil</PageTitle>
 
 <h1>Bienvenue sur EnergyShare</h1>
 
@@ -8,27 +9,181 @@
     L'application qui vous permet de vendre votre énergie durable et locale en toute simplicité à Bruxelles.
 </p>
 
-<div class="row mt-4">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Partage</h5>
-                <p class="card-text">
-                    Gerez votre partage d'énergie.
-                </p>
-                <a href="/Users" class="btn btn-primary">Voir les utilisateurs</a>
+<!-- ========================================================= -->
+<!-- ACCUEIL ADMINISTRATEUR                                   -->
+<!-- Objectif : supervision technique et gestion des comptes   -->
+<!-- ========================================================= -->
+<AuthorizeView Roles="Administrateur">
+    <Authorized>
+        <h3 class="mt-4">Espace administrateur</h3>
+
+        <div class="row mt-3">
+
+            <!-- Gestion des utilisateurs -->
+            <div class="col-md-4">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <h5 class="card-title">Utilisateurs</h5>
+                        <p class="card-text">
+                            Consultez et gérez les comptes utilisateurs.
+                        </p>
+                        <a href="/users" class="btn btn-primary">
+                            Voir les utilisateurs
+                        </a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">ACompleter</h5>
-                <p class="card-text">
-                    Creez et assignez des taches menageres aux membres.
-                </p>
-                <a href="/Users" class="btn btn-primary">Gerer les taches</a>
+
+            <!-- Supervision des partages -->
+            <div class="col-md-4">
+                <div class="card border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title">Partages d'énergie</h5>
+                        <p class="card-text">
+                            Consultez l'ensemble des partages créés sur la plateforme.
+                        </p>
+                        <a href="/partages" class="btn btn-outline-secondary">
+                            Voir les partages
+                        </a>
+                    </div>
+                </div>
             </div>
+
+            <!-- Module futur -->
+            <div class="col-md-4">
+                <div class="card border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title">Paramètres système</h5>
+                        <p class="card-text">
+                            Gérez les paramètres globaux de la plateforme.
+                        </p>
+                        <button class="btn btn-secondary" disabled>
+                            Bientôt disponible
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </div>
-    </div>
-</div>
+    </Authorized>
+</AuthorizeView>
+
+
+<!-- ========================================================= -->
+<!-- ACCUEIL ORGANISME PUBLIC / GRD                           -->
+<!-- Objectif : demandes, validations, suivi réglementaire     -->
+<!-- ========================================================= -->
+<AuthorizeView Roles="OrganismePublic">
+    <Authorized>
+        <h3 class="mt-4">Espace organisme public</h3>
+
+        <div class="row mt-3">
+
+            <!-- Demandes de validation -->
+            <div class="col-md-4">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <h5 class="card-title">Demandes en cours</h5>
+                        <p class="card-text">
+                            Consultez les demandes de validation de partage.
+                        </p>
+                        <button class="btn btn-warning" disabled>
+                            Bientôt disponible
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Partages à suivre -->
+            <div class="col-md-4">
+                <div class="card border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title">Partages d'énergie</h5>
+                        <p class="card-text">
+                            Visualisez les partages déclarés et leur statut.
+                        </p>
+                        <a href="/partages" class="btn btn-outline-secondary">
+                            Voir les partages
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div class="col-md-4">
+                <div class="card border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title">Messages</h5>
+                        <p class="card-text">
+                            Répondez aux demandes d'information des utilisateurs.
+                        </p>
+                        <button class="btn btn-secondary" disabled>
+                            Bientôt disponible
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+
+<!-- ========================================================= -->
+<!-- ACCUEIL UTILISATEUR STANDARD                             -->
+<!-- Objectif : profil énergie, matching, gestion du partage   -->
+<!-- ========================================================= -->
+<AuthorizeView Roles="Utilisateur">
+    <Authorized>
+        <h3 class="mt-4">Mon espace énergie</h3>
+
+        <div class="row mt-3">
+
+            <!-- Profil énergie -->
+            <div class="col-md-4">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <h5 class="card-title">Profil énergie</h5>
+                        <p class="card-text">
+                            Complétez votre consommation ou production pour préparer le matching énergétique.
+                        </p>
+                        <a href="/profil-energie" class="btn btn-success">
+                            Mon profil énergie
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Partage -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Partage</h5>
+                        <p class="card-text">
+                            Gérez vos partages d'énergie et suivez leur évolution.
+                        </p>
+                        <a href="/partages" class="btn btn-primary">
+                            Voir les partages
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matching -->
+            <div class="col-md-4">
+                <div class="card border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title">Matching</h5>
+                        <p class="card-text">
+                            Trouvez bientôt des partenaires compatibles pour partager votre énergie.
+                        </p>
+                        <button class="btn btn-secondary" disabled>
+                            Bientôt disponible
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </Authorized>
+</AuthorizeView>
