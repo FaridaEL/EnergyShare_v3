@@ -30,10 +30,12 @@ namespace EnergyShare_v3.Web.Infrastructure
         }
 
         public string? Email =>
-            User?.FindFirstValue(ClaimTypes.Email);
+            User?.FindFirstValue(ClaimTypes.Email)
+            ?? User?.FindFirstValue("email");
 
         public string? UserName =>
-            User?.FindFirstValue(ClaimTypes.Name);
+            User?.FindFirstValue(ClaimTypes.Name)
+            ?? User?.FindFirstValue("name");
 
         public bool IsAuthenticated =>
             User?.Identity?.IsAuthenticated ?? false;

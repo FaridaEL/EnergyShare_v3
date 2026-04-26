@@ -5,8 +5,7 @@ using FluentValidation;
 using Mediator;
 
 namespace EnergyShare_v3.Application.Features.Users
-{       /*Service applicatif pour la gestion des utilisateurs.
-/ Requete pour obtenir la liste de toutes les familles..*/
+{       /*Service applicatif pour la gestion des utilisateurs.*/
     public record CreateUser(string Email,string PasswordHash,UserRole Role):ICommand<Result<Guid>> ;
     // public record CreateUserCommand(string Email,string PasswordHash,UserRole Role, UserType UserType);
 
@@ -46,8 +45,11 @@ namespace EnergyShare_v3.Application.Features.Users
             var user = result.Value;
 
             //persistance
+            /*Attention : Remarquez que le handler n'appelle pas SaveChangesAsync(). 
+             * C'est le UnitOfWorkBehavior du pipeline qui s'en charge automatiquement. Cela garantit que le save se fait dans la transaction.*/
             await context.Users.AddAsync(user, cancellationToken);
            // await _context.SaveChangesAsync(cancellationToken);
+
 
             return Result.Success(user.Id);
 
