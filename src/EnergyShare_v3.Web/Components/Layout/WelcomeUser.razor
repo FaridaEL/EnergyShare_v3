@@ -1,8 +1,10 @@
 ﻿@using EnergyShare_v3.Domain.Entities.Users
-@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Authorization
+
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject UserManager<User> UserManager
+@inject IServiceScopeFactory ScopeFactory
+
 
 @if (!string.IsNullOrWhiteSpace(_displayName))
 {
@@ -20,7 +22,18 @@
         if (principal.Identity?.IsAuthenticated != true)
             return;
 
-        var user = await UserManager.GetUserAsync(principal);
-        _displayName = user?.FirstName ?? principal.Identity?.Name ?? "utilisateur";
+        //var user = await UserManager.GetUserAsync(principal);
+        using var scope = ScopeFactory.CreateScope();
+
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+
+        var user = await userManager.GetUserAsync(principal);
+
+        //_displayName = user?.FirstName ?? principal.Identity?.Name ?? "utilisateur";
+        _displayName = user?.FirstName
+                    //principal.FindFirst("given_name")?.Value
+                    //?? principal.FindFirst("FirstName")?.Value
+                    ?? principal.Identity?.Name
+                    ?? "utilisateur";
     }
 }

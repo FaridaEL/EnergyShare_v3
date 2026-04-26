@@ -9,11 +9,13 @@ using EnergyShare_v3.Infrastructure.Services;
 using EnergyShare_v3.Web.Components;
 using EnergyShare_v3.Web.Endpoints;
 using EnergyShare_v3.Web.Infrastructure;
+using EnergyShare_v3.Web.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 
 //using Microsoft.OpenApi;
@@ -35,8 +37,7 @@ builder.Services.AddCascadingAuthenticationState();
 // - JWT Bearer → pour sécuriser les endpoints API (/api/*)
 //
 // Important :
-// On n'utilise PAS JWT comme schéma par défaut afin de ne pas casser
-// l'authentification cookie utilisée par Blazor.
+// On n'utilise PAS JWT comme schéma par défaut afin de ne pas casser l'authentification cookie utilisée par Blazor.
 // JWT est utilisé uniquement pour les appels API (Postman, mobile, etc.)
 
 //L’application utilise ASP.NET Identity pour gérer l’authentification côté interface Blazor Server(basée sur cookies).
@@ -49,8 +50,26 @@ builder.Services.Configure<JwtSettings>(
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
-var secretKey = jwtSection["SecretKey"]    //    La clé JWT est stockée via user-secrets en développement
-    ?? throw new InvalidOperationException("Jwt:SecretKey est manquante.");
+
+if (builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Configuration["Jwt:Issuer"] = "EnergyShare.Tests";
+    builder.Configuration["Jwt:Audience"] = "EnergyShare.Tests";
+}
+
+
+var secretKey = jwtSection["SecretKey"];    //    La clé JWT est stockée via user-secrets en développement
+
+// En environnement de test, on fournit une clé JWT fictive.
+// Cela évite de dépendre des user-secrets pendant les tests d’intégration.
+if (builder.Environment.IsEnvironment("Testing"))
+{
+    secretKey = "TEST_SECRET_KEY_123456789012345678901234567890";
+}
+
+
+if (string.IsNullOrWhiteSpace(secretKey))    
+    throw new InvalidOperationException("Jwt:SecretKey est manquante.");
 
 if (secretKey.Length < 32)
     throw new InvalidOperationException("Jwt:SecretKey est trop courte. Minimum 32 caractères.");
@@ -116,6 +135,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
+    options.AccessDeniedPath = "/access-denied";
 });
 
 //audit-secrité  : limite le nombre de tentatives de connexion pour prévenir les attaques par force brute sur les endpoints d'authentification
@@ -178,6 +198,41 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "EnergyShare API",
+        Version = "v1",
+        Description = "Documentation des endpoints API du projet EnergyShare"
+    });
+
+    // Pour tester les endpoints protégés par JWT dans Swagger
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Entrez votre token JWT ici."
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 /*builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -188,17 +243,18 @@ builder.Services.AddEndpointsApiExplorer();
 });  */
 
 //Enregistrer les handlers de l'application 
-/*à vérifier ça me semble peu et contradiction entre le projet et les exos */
+/*à vérifier ça me semble peu et contradiction entre le projet et les exos
+ * TODO : comme on utilise MEdiator --> ces handlers ne devraient pas être enregistrés manuellement.*/
 builder.Services.AddScoped<GetUsersHandler>();
-builder.Services.AddScoped<GetPartagesHandler>();
-builder.Services.AddScoped<GetPartageByIdHandler>();
-builder.Services.AddScoped<CreatePartageHandler>();
+//builder.Services.AddScoped<GetPartagesHandler>();
+//builder.Services.AddScoped<GetPartageByIdHandler>();
+//builder.Services.AddScoped<CreatePartageHandler>();
 
 
 var app = builder.Build();
 
 // Creer la base de donnees automatiquement en developpement
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -214,11 +270,21 @@ if (app.Environment.IsDevelopment())
 
 }
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "EnergyShare API v1");
+        options.RoutePrefix = "swagger";
+    });
+}
 // Configure the HTTP request pipeline.
+app.UseExceptionHandler(); // Active le GlobalExceptionHandler --> centralise les exceptions non gérées et retourne des réponses propres.
 if (!app.Environment.IsDevelopment())
 {
     //app.UseDeveloperExceptionPage();
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+   // app.UseExceptionHandler("/Error", createScopeForErrors: true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
@@ -234,9 +300,19 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
+//app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseWhen(  //pour les pages Blazor utiliser not found et pour les routes api laisser les codes d’erreur standards (ex: 404 pour ressource introuvable) afin que les clients API puissent les gérer correctement.
+    context => !context.Request.Path.StartsWithSegments("/api"),
+    branch =>
+    {
+        branch.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+    });
+
+if (!app.Environment.IsEnvironment("Testing"))
+{ app.UseHttpsRedirection();   //en prod/dev on force le https, mais pas en test pour faciliter les tests d’intégration sans devoir gérer les certificats.
+}
 app.UseRateLimiter();
+app.UseMiddleware<CorrelationIdMiddelware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();

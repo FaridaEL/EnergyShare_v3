@@ -19,7 +19,9 @@ namespace EnergyShare_v3.Application.Features.Users
        public async Task<UserDetailsDto?> HandleAsync(
            GetUserByIdQuery query,
             CancellationToken cancellationToken = default)
-        {       
+        {
+            /*💡 Note : Les queries utilisent toujours AsNoTracking() pour de meilleures performances et font de la projection (Select)
+             * pour ne charger que les colonnes necessaires.*/
             return await _context.Users
                 .AsNoTracking()
                 .Where(u => u.Id == query.Id)
