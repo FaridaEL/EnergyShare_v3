@@ -44,6 +44,16 @@ builder.Services.AddCascadingAuthenticationState();
 //En parallèle, une authentification JWT est mise en place pour sécuriser les endpoints API, permettant une utilisation future par des clients externes (mobile, SPA, etc.).
 //Cette séparation permet de combiner confort d’utilisation côté web et extensibilité côté API.
 
+if (builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Configuration["Jwt:Issuer"] = "EnergyShare.Tests";
+    builder.Configuration["Jwt:Audience"] = "EnergyShare.Tests";
+    // En environnement de test, on fournit une clé JWT fictive.
+    // Cela évite de dépendre des user-secrets pendant les tests d’intégration.
+    builder.Configuration["Jwt:SecretKey"] = "TEST_SECRET_KEY_123456789012345678901234567890";
+}
+
+
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("Jwt"));
 
@@ -51,21 +61,7 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 
-if (builder.Environment.IsEnvironment("Testing"))
-{
-    builder.Configuration["Jwt:Issuer"] = "EnergyShare.Tests";
-    builder.Configuration["Jwt:Audience"] = "EnergyShare.Tests";
-}
-
-
 var secretKey = jwtSection["SecretKey"];    //    La clé JWT est stockée via user-secrets en développement
-
-// En environnement de test, on fournit une clé JWT fictive.
-// Cela évite de dépendre des user-secrets pendant les tests d’intégration.
-if (builder.Environment.IsEnvironment("Testing"))
-{
-    secretKey = "TEST_SECRET_KEY_123456789012345678901234567890";
-}
 
 
 if (string.IsNullOrWhiteSpace(secretKey))    
@@ -136,6 +132,32 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
     options.AccessDeniedPath = "/access-denied";
+
+    // Pour les routes API, on ne veut pas de redirection HTML vers /login ou /access-denied.
+    // Une API doit retourner un vrai code HTTP : 401 ou 403.
+    options.Events.OnRedirectToLogin = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
+        }
+
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
+
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return Task.CompletedTask;
+        }
+
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
 });
 
 //audit-secrité  : limite le nombre de tentatives de connexion pour prévenir les attaques par force brute sur les endpoints d'authentification
@@ -326,6 +348,7 @@ app.MapRazorComponents<App>()
 //Minimal API
 app.MapUsers();
 app.MapProfilEnergie();
+app.MapPointAccess();
 app.MapAuth();
 app.MapDebug();
 

@@ -14,13 +14,7 @@ namespace EnergyShare_v3.Domain.Entities.ProfilsEnergie
                 "ProfilEnergie.OffreOuDemandeRequise",
                 ValidationSeverity.Error));
 
-        //TODO Cette erreur doit être reprise dans PointAccessErrors.cs qui reste à créer
-        public static Result ConsentementRequis() =>
-            Result.Invalid(new ValidationError(
-                "",
-                "Le consentement est requis pour participer au matching.",
-                "ProfilEnergie.ConsentementRequis",
-                ValidationSeverity.Error));
+       
 
         public static Result ValeurNegative(string champ) =>
             Result.Invalid(new ValidationError(

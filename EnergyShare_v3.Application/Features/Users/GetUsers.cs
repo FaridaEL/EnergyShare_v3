@@ -1,5 +1,6 @@
 ﻿using EnergyShare_v3.Application.Interfaces;
 using EnergyShare_v3.Domain.Entities;
+using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,7 +31,7 @@ namespace EnergyShare_v3.Application.Features.Users
                     u.Id,
                     u.FirstName,
                     u.LastName,
-                    u.Email,
+                    u.Email ?? string.Empty,
                     u.Role,
                     u.Audit.CreatedAt
                 ))

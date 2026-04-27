@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace EnergyShare_v3.IntegrationTests
 {
@@ -24,7 +25,7 @@ namespace EnergyShare_v3.IntegrationTests
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["Jwt:SecretKey"] = "TEST_SECRET_KEY_12345678901234567890",
+                    ["Jwt:SecretKey"] = "TEST_SECRET_KEY_123456789012345678901234567890",
                     ["Jwt:Issuer"] = "EnergyShare.Tests",
                     ["Jwt:Audience"] = "EnergyShare.Tests",
                     ["Jwt:AccessTokenExpirationMinutes"] = "15",
@@ -61,6 +62,8 @@ namespace EnergyShare_v3.IntegrationTests
                 services.AddDbContext<ApplicationDbContext>(options =>
                 {
                     options.UseSqlite(_connection);
+                    options.ConfigureWarnings(warnings =>   // Ignore les warnings liés aux transactions ambiantes pour permettre les tests d'intégration, car SQLite en mémoire ne les supporte pas.
+                        warnings.Ignore(RelationalEventId.AmbientTransactionWarning));
                 });
 
                 services.AddScoped<IApplicationDbContext>(sp =>

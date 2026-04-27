@@ -1,4 +1,4 @@
-﻿using EnergyShare_v3.Domain.Entities;
+﻿using EnergyShare_v3.Domain.Entities.PointsAccesses;
 using EnergyShare_v3.Domain.Entities.ProfilsEnergie;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -35,6 +35,17 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
 
             builder.Property(pa => pa.AccordConsentement)
                 .IsRequired();
+
+            builder.Property(pa => pa.EstActif)
+        .IsRequired()
+        .HasDefaultValue(true);
+
+            builder.Property(pa => pa.DesactiveAt)
+                .IsRequired(false);
+
+            // Évite deux points actifs avec le même EAN.
+            // Attention : utile surtout tant que l'EAN n'est pas réellement chiffré.
+            builder.HasIndex(pa => new { pa.EAN_Encrypted, pa.EstActif }); //permet des recherches rapides d'EAN actifs 
 
             builder.HasOne(pa => pa.User)
                 .WithMany(u => u.PointsAccess)
