@@ -2,6 +2,7 @@
 using EnergyShare_v3.Bricks.Model;
 using EnergyShare_v3.Domain.Entities.Messages;
 using EnergyShare_v3.Domain.Entities.Partages;
+using EnergyShare_v3.Domain.Entities.PointsAccesses;
 using EnergyShare_v3.Domain.Enums;
 using EnergyShare_v3.Domain.ValueObjects;
 using Microsoft.AspNetCore.Identity;

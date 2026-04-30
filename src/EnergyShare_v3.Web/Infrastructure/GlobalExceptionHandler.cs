@@ -24,9 +24,14 @@ namespace EnergyShare_v3.Web.Infrastructure
         /*  Le logger est injecté par Dependency Injection. Il permet de conserver l’erreur complète côté serveur
          sans renvoyer la stack trace au client.    */
         private readonly ILogger<GlobalExceptionHandler> _logger;
-        public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
+
+        private readonly IHostEnvironment _environment; //permet d'avoir plus de détails en développement (ex : stack trace complète) et moins d'infos en production.
+        public GlobalExceptionHandler(
+            ILogger<GlobalExceptionHandler> logger,
+            IHostEnvironment environment)
         {
             _logger = logger;
+            _environment = environment;
         }
 
         public async ValueTask<bool> TryHandleAsync( //  TryHandleAsync est appelé automatiquement par ASP.NET Core lorsqu’une exception non gérée remonte dans le pipeline HTTP.
@@ -77,7 +82,10 @@ namespace EnergyShare_v3.Web.Infrastructure
                     Status = StatusCodes.Status500InternalServerError, // Erreur inattendue : 500 Internal Server Error
                     Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
                     Title = "Erreur serveur",
-                    Detail = "Une erreur inattendue est survenue."
+                    //Detail = "Une erreur inattendue est survenue."
+                    Detail = _environment.IsEnvironment("Testing")
+                        ? exception.ToString()
+                        : "Une erreur inattendue est survenue."
                 }
             };
 

@@ -1,4 +1,5 @@
 ﻿using EnergyShare_v3.Domain.Entities;
+using EnergyShare_v3.Domain.Entities.PointsAccesses;
 using EnergyShare_v3.Domain.Entities.ProfilsEnergie;
 using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Domain.Enums;
@@ -100,8 +101,17 @@ namespace EnergyShare_v3.Infrastructure.Database
             agentSibelga.OrganismePublicId = sibelga.Id;
             await userManager.UpdateAsync(agentSibelga);
 
-            var paVendeur1 = new PointAccess
-            {
+            var paVendeur1 = PointAccess.Create(
+                vendeur1.Id,
+                "Rue des Fleurs 12",
+                "1000",
+                "Engie",
+                "1SJ-VENDEUR-0001",
+                "541448900000000001",
+                true).Value;
+
+            paVendeur1.SetCoordinates(50.8466, 4.3528); 
+            /*{ // on passe désomrais par la factrory create car propriétés passées en private set
                 Id = Guid.NewGuid(),
                 AdresseLine1 = "Rue des Fleurs 12",
                 CodePostal = "1000",
@@ -112,63 +122,48 @@ namespace EnergyShare_v3.Infrastructure.Database
                 SmartMeter_Encrypted = "1SJ-VENDEUR-0001",
                 EAN_Encrypted = "541448900000000001",
                 UserId = vendeur1.Id
-            };
+            };*/
 
-            var paVendeur2 = new PointAccess
-            {
-                Id = Guid.NewGuid(),
-                AdresseLine1 = "Avenue Louise 210",
-                CodePostal = "1050",
-                Latitude = 50.8229,
-                Longitude = 4.3661,
-                IsInjectionPoint = true,
-                Fournisseur = "Luminus",
-                SmartMeter_Encrypted = "1SJ-VENDEUR-0002",
-                EAN_Encrypted = "541448900000000002",
-                UserId = vendeur2.Id
-            };
+            var paVendeur2 = PointAccess.Create(
+                vendeur2.Id,
+                "Avenue Louise 210",
+                "1050",
+                "Luminus",
+                "1SJ-VENDEUR-0002",
+                "541448900000000002",
+                true).Value;
+            paVendeur2.SetCoordinates(50.8229, 4.3661);
 
-            var paAcheteur1 = new PointAccess
-            {
-                Id = Guid.NewGuid(),
-                AdresseLine1 = "Chaussée de Wavre 88",
-                CodePostal = "1040",
-                Latitude = 50.8360,
-                Longitude = 4.3833,
-                IsInjectionPoint = false,
-                Fournisseur = "TotalEnergies",
-                SmartMeter_Encrypted = "1SJ-ACHETEUR-0001",
-                EAN_Encrypted = "541448900000000003",
-                UserId = acheteur1.Id
-            };
 
-            var paAcheteur2 = new PointAccess
-            {
-                Id = Guid.NewGuid(),
-                AdresseLine1 = "Rue Haute 155",
-                CodePostal = "1000",
-                Latitude = 50.8385,
-                Longitude = 4.3444,
-                IsInjectionPoint = false,
-                Fournisseur = "Mega",
-                SmartMeter_Encrypted = "1SJ-ACHETEUR-0002",
-                EAN_Encrypted = "541448900000000004",
-                UserId = acheteur2.Id
-            };
+            var paAcheteur1 = PointAccess.Create(
+    acheteur1.Id,
+    "Chaussée de Wavre 88",
+    "1040",
+    "TotalEnergies",
+    "1SJ-ACHETEUR-0001",
+    "541448900000000003",
+    false).Value;
+            paAcheteur1.SetCoordinates(50.8360, 4.3833);
 
-            var paBoulangerie = new PointAccess
-            {
-                Id = Guid.NewGuid(),
-                AdresseLine1 = "Rue du Pain 12",
-                CodePostal = "1000",
-                Latitude = 50.8478,
-                Longitude = 4.3495,
-                IsInjectionPoint = false,
-                Fournisseur = "Engie",
-                SmartMeter_Encrypted = "1SJ-BOULANGERIE-01",
-                EAN_Encrypted = "541448900000000005",
-                UserId = boulangerie.Id
-            };
+            var paAcheteur2 = PointAccess.Create(
+                acheteur2.Id,
+                "Rue Haute 155",
+                "1000",
+                "Mega",
+                "1SJ-ACHETEUR-0002",
+                "541448900000000004",
+                false).Value;
+            paAcheteur2.SetCoordinates(50.8385, 4.3444);
+
+            var paBoulangerie = PointAccess.Create(
+                boulangerie.Id,
+                "Rue du Pain 12",
+                "1000",
+                "Engie",
+                "1SJ-BOULANGERIE-01",
+                "541448900000000005",
+                false).Value;
+            paBoulangerie.SetCoordinates(50.8478, 4.3495);
 
             context.PointAccesses.AddRange(
                 paVendeur1,

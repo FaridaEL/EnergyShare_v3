@@ -1,5 +1,6 @@
 ﻿using EnergyShare_v3.Domain.Entities;
 using EnergyShare_v3.Domain.Entities.Partages;
+using EnergyShare_v3.Domain.Entities.PointsAccesses;
 using EnergyShare_v3.Domain.Enums;
 using FluentAssertions;
 
@@ -10,18 +11,22 @@ public class ParticipationPartageTests
     [Fact]
     public void DefinirCommeInterlocuteurUnique_ShouldFail_WhenRoleIsNotVendeur()
     {
+        var pointAccess = PointAccess.Create(
+        userId: Guid.NewGuid(),
+        adresseLine1: "Rue des Fleurs 12",
+        codePostal: "1000",
+        fournisseur: "Engie",
+        smartMeter: "1SJ-TEST-0001",
+        ean: "541448900000000001",
+        isInjectionPoint: true
+         ).Value;
+
         var participation = new ParticipationPartage
         {
             Id = Guid.NewGuid(),
             UserRolePartage = UserRolePartage.Acheteur,
-            PointAccessId = Guid.NewGuid(),
-            PointAccess = new PointAccess
-            {
-                Id = Guid.NewGuid(),
-                IsInjectionPoint = true,
-                Fournisseur = "Engie",
-                UserId = Guid.NewGuid()
-            }
+            PointAccessId = pointAccess.Id,
+            PointAccess = pointAccess
         };
 
         var result = participation.DefinirCommeInterlocuteurUnique();

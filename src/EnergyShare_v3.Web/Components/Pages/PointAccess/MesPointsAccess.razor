@@ -1,0 +1,268 @@
+﻿@page "/mes-points-access"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Mediator
+@using EnergyShare_v3.Application.Features.PointAccess
+@using EnergyShare_v3.Web.Models.PointAccess
+
+@inject ISender Sender
+
+<PageTitle>Mes points d'accès</PageTitle>
+
+<h3>Mes points d'accès</h3>
+
+<p class="text-muted">
+    Gérez les points de fourniture liés à vos compteurs d'énergie.
+</p>
+
+@if (isLoading)
+{
+    <p>Chargement...</p>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-warning">@errorMessage</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    <!-- Formulaire création / modification -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">
+                @(isEditMode ? "Modifier le point d'accès" : "Ajouter un point d'accès")
+            </h5>
+
+            <EditForm Model="formModel" OnValidSubmit="SaveAsync">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label class="form-label">Adresse</label>
+                    <InputText class="form-control" @bind-Value="formModel.AdresseLine1" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Code postal</label>
+                    <InputText class="form-control" @bind-Value="formModel.CodePostal" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Fournisseur</label>
+                    <InputText class="form-control" @bind-Value="formModel.Fournisseur" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Numéro compteur intelligent</label>
+                    <InputText class="form-control" @bind-Value="formModel.SmartMeter" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Code EAN</label>
+                    <InputText class="form-control" @bind-Value="formModel.EAN" />
+                </div>
+
+                <div class="form-check mb-3">
+                    <InputCheckbox class="form-check-input" @bind-Value="formModel.IsInjectionPoint" />
+                    <label class="form-check-label">
+                        Ce point injecte de l'énergie sur le réseau
+                    </label>
+                </div>
+
+                <button class="btn btn-primary" type="submit">
+                    @(isEditMode ? "Enregistrer les modifications" : "Ajouter")
+                </button>
+
+                @if (isEditMode)
+                {
+                    <button class="btn btn-outline-secondary ms-2" type="button" @onclick="ResetForm">
+                        Annuler
+                    </button>
+                }
+            </EditForm>
+        </div>
+    </div>
+
+    <!-- Liste des points d'accès -->
+    @if (pointsAccess.Count == 0)
+    {
+        <div class="alert alert-info">
+            Aucun point d'accès enregistré.
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var point in pointsAccess)
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="card @(point.EstActif ? "border-success" : "border-secondary")">
+                        <div class="card-body">
+                            <h5 class="card-title">@point.AdresseLine1</h5>
+
+                            <p class="card-text">
+                                <strong>Code postal :</strong> @point.CodePostal<br />
+                                <strong>Fournisseur :</strong> @point.Fournisseur<br />
+                                <strong>Type :</strong> @(point.IsInjectionPoint ? "Injection / production" : "Consommation")<br />
+                                <strong>Statut :</strong> @(point.EstActif ? "Actif" : "Désactivé")
+                            </p>
+
+                            @if (point.EstActif)
+                            {
+                                <button class="btn btn-outline-primary btn-sm me-2"
+                                        @onclick="() => EditAsync(point.Id)">
+                                    Modifier
+                                </button>
+
+                                <button class="btn btn-outline-danger btn-sm"
+                                        @onclick="() => DeactivateAsync(point.Id)">
+                                    Désactiver
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private bool isEditMode = false;
+
+    private string? errorMessage;
+    private string? successMessage;
+
+    private List<PointAccessSummaryDto> pointsAccess = [];
+    private PointAccessFormModel formModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPointsAccessAsync();
+    }
+
+    private async Task LoadPointsAccessAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        var result = await Sender.Send(new GetMyPointAccesses());
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Impossible de charger vos points d'accès.";
+            isLoading = false;
+            return;
+        }
+
+        pointsAccess = result.Value.ToList();
+        isLoading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (isEditMode)
+        {
+            var result = await Sender.Send(new UpdatePointAccess(
+                formModel.Id,
+                formModel.AdresseLine1,
+                formModel.CodePostal,
+                formModel.Fournisseur,
+                formModel.SmartMeter,
+                formModel.EAN,
+                formModel.IsInjectionPoint));
+
+            if (!result.IsSuccess)
+            {
+                errorMessage = "La modification du point d'accès a échoué.";
+                return;
+            }
+
+            successMessage = "Point d'accès modifié avec succès.";
+        }
+        else
+        {
+            var result = await Sender.Send(new CreatePointAccess(
+                formModel.AdresseLine1,
+                formModel.CodePostal,
+                formModel.Fournisseur,
+                formModel.SmartMeter,
+                formModel.EAN,
+                formModel.IsInjectionPoint));
+
+            if (!result.IsSuccess)
+            {
+                errorMessage = "La création du point d'accès a échoué.";
+                return;
+            }
+
+            successMessage = "Point d'accès ajouté avec succès.";
+        }
+
+        ResetForm();
+        await LoadPointsAccessAsync();
+    }
+
+    private async Task EditAsync(Guid id)
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        var result = await Sender.Send(new GetPointAccessById(id));
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Impossible de charger le point d'accès.";
+            return;
+        }
+
+        var dto = result.Value;
+
+        formModel = new PointAccessFormModel
+        {
+            Id = dto.Id,
+            AdresseLine1 = dto.AdresseLine1 ?? string.Empty,
+            CodePostal = dto.CodePostal ?? string.Empty,
+            Fournisseur = dto.Fournisseur,
+            SmartMeter = dto.SmartMeter,
+            EAN = dto.EAN,
+            IsInjectionPoint = dto.IsInjectionPoint
+        };
+
+        isEditMode = true;
+    }
+
+    private async Task DeactivateAsync(Guid id)
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        var result = await Sender.Send(new DeactivatePointAccess(id));
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "La désactivation du point d'accès a échoué.";
+            return;
+        }
+
+        successMessage = "Point d'accès désactivé.";
+        await LoadPointsAccessAsync();
+    }
+
+    private void ResetForm()
+    {
+        formModel = new PointAccessFormModel();
+        isEditMode = false;
+    }
+}

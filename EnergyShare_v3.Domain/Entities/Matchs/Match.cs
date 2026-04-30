@@ -1,5 +1,6 @@
 ﻿using Ardalis.Result;
 using EnergyShare_v3.Bricks.Model;
+using EnergyShare_v3.Domain.Entities.PointsAccesses;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
