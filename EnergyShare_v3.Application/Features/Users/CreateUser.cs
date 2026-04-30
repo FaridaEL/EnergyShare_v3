@@ -6,7 +6,10 @@
 //namespace EnergyShare_v3.Application.Features.Users
 //{       /*Service applicatif pour la gestion des utilisateurs.
 //         Inscruption via Identiy et UseManager
-//        Cette création de user est donc utile pour l'admin s'il doit créer des profils spécifiques*/
+//        Cette création de user est donc utile pour l'admin s'il doit créer des profils spécifiques
+//
+//        Toutefois pour un MVP, l'user crée son compte via l'endpoint et l'admin lui attribe un role admin ou org.public directement en base de données
+//        */
 //    public record CreateUser(string Email):ICommand<Result<Guid>> ;
 //    // public record CreateUserCommand(string Email,string PasswordHash,UserRole Role, UserType UserType);
 

@@ -20,5 +20,25 @@
         
     );
 
+    public record CurrentUserProfileDto(
+       Guid Id,
+       string Email,
+       string? FirstName,
+       string? LastName,
+       string? PhoneNumber,
+       string? SocieteName,
+       string? NumeroEntreprise,
+       string Status,
+       string Role
+   );
+
+    public record UpdateCurrentUserProfileRequest(
+        string? FirstName,
+        string? LastName,
+        string? PhoneNumber,
+        string? SocieteName,
+        string? NumeroEntreprise
+    );
+
 
 }

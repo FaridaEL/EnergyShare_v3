@@ -1,9 +1,11 @@
 ﻿@page "/users"
 @using EnergyShare_v3.Application.Features.Users
 @using Microsoft.AspNetCore.Authorization
+@using Mediator
 @attribute [Authorize(Roles = "Administrateur")]
 
 @inject GetUsersHandler UsersHandler
+@inject ISender Sender
 
 <PageTitle>EnergyShare - Utilisateurs</PageTitle>
 
@@ -28,6 +30,15 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _users = await UsersHandler.HandleAsync();
+        var result = await Sender.Send(new GetUsersQuery());
+
+        if (result.IsSuccess)
+        {
+            _users = result.Value;
+        }
+        else
+        {
+            _users = [];
+        }
     }
 }

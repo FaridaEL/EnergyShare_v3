@@ -1,37 +1,35 @@
-﻿using EnergyShare_v3.Application.Interfaces;
+﻿using Ardalis.Result;
+using EnergyShare_v3.Application.Interfaces;
 using EnergyShare_v3.Domain.Entities.Users;
+using Mediator;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnergyShare_v3.Application.Features.Users
 {       /*Service applicatif pour la gestion des utilisateurs.
 / Requete pour obtenir la liste de toutes les familles..*/
-    public record GetUsersQuery;
-    public class GetUsersHandler
+    public record GetUsersQuery()
+       : IQuery<Result<IReadOnlyList<UserSummaryDto>>>;
+    public class GetUsersHandler (
+        IApplicationDbContext context,
+        UserManager<User> userManager) // on récupère le role depuis IDentityUserManager 
+        : IQueryHandler<GetUsersQuery, Result<IReadOnlyList<UserSummaryDto>>>
     {
-        private readonly IApplicationDbContext _context;
-        private readonly UserManager<User> _userManager;// on récupère le role depuis IDentityUserManager 
-
-        public GetUsersHandler(IApplicationDbContext context, UserManager<User> userManager)
+        public async ValueTask<Result<IReadOnlyList<UserSummaryDto>>> Handle(
+            GetUsersQuery query,
+            CancellationToken cancellationToken)
         {
-            _context = context;  
-            _userManager = userManager;
-        }
-
-       public async Task<IReadOnlyList<UserSummaryDto>> HandleAsync(
-       CancellationToken cancellationToken = default) 
-        {
-            var users = await _context.Users
-               .AsNoTracking()
-               .OrderBy(u => u.FirstName)
-               .ThenBy(u => u.LastName)
-               .ToListAsync(cancellationToken);
+            var users = await context.Users
+                .AsNoTracking()
+                .OrderBy(u => u.FirstName)
+                .ThenBy(u => u.LastName)
+                .ToListAsync(cancellationToken);
 
             var result = new List<UserSummaryDto>();
 
             foreach (var user in users)
             {
-                var roles = await _userManager.GetRolesAsync(user);
+                var roles = await userManager.GetRolesAsync(user);
                 var role = roles.FirstOrDefault() ?? "Utilisateur";
 
                 result.Add(new UserSummaryDto(
@@ -44,34 +42,9 @@ namespace EnergyShare_v3.Application.Features.Users
                 ));
             }
 
-            return result;
-
-            // Important : on récupère d'abord les entités en base (ToListAsync)
-            // puis on fait la projection en mémoire (.Select)
-            // Pourquoi ?
-            // EF Core ne sait pas toujours traduire certaines expressions complexes en SQL comme l'accès à des Value Objects (ex: u.Email.Value).
-            // Cela provoque une erreur à l'exécution (LINQ non traduisible).
-            // Solution :
-            // - on exécute la requête SQL simple (OrderBy + ToListAsync)
-            // - puis on transforme en DTO côté C#
-            // => plus robuste pour un MVP et évite les erreurs EF Core.
-
-
-            /* Ancienne version avec erreur d'exécution : LINQ non traduisible à cause de l'accès à un Value Object (u.Email.Value) dans la projection.
-             * return await _context.Users
-                .AsNoTracking()
-                .OrderBy(u => u.FirstName)
-                .ThenBy(u => u.LastName)
-                .Select(u => new UserSummaryDto(
-                    u.Id,
-                    u.FirstName,
-                    u.LastName,
-                    u.Email.Value,//Email est un value Object, on accède donc + facilement à sa valeur avec .Value
-                    u.Role,
-                    u.Audit.CreatedAt
-                ))
-                .ToListAsync(cancellationToken);    */
-        }
+            return Result.Success<IReadOnlyList<UserSummaryDto>>(result);
+        }        
+    }
 
     }
-}
+

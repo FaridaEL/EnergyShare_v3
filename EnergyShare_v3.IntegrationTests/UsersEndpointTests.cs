@@ -1,9 +1,7 @@
 ﻿using FluentAssertions;
-using System;
-using System.Collections.Generic;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
 
 namespace EnergyShare_v3.IntegrationTests
 {
@@ -16,42 +14,75 @@ namespace EnergyShare_v3.IntegrationTests
             _client = factory.CreateClient();
         }
 
-        [Fact]//(Skip = "À reprendre après stabilisation complète de l'authentification API et du WebApplicationFactory.")]
-        /*public async Task GetUsers_ShouldReturnOk_AndAListOfUsers()  //un user anonyme peut voir tout les users
+        [Fact]
+        public async Task GetUsers_WithoutAuthentication_ShouldReturnUnauthorized()
         {
-            // Act
-            var response = await _client.GetAsync("/api/users");
-
-            // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-            var users = await response.Content.ReadFromJsonAsync<List<UserResponse>>();
-
-            users.Should().NotBeNull();
-            users.Should().NotBeEmpty();
-            users!.Count.Should().BeGreaterThan(0);
-        } */
-        public async Task GetUsers_WithoutAuthentication_ShouldReturnUnauthorized()  //Seuls les admins peuvent voir la liste des users, un user anonyme ne peut pas y accéder
-        {
+            // /api/users est réservé aux admins : un visiteur anonyme doit être refusé.
             var response = await _client.GetAsync("/api/users");
 
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
 
-        [Fact]//(Skip = "À reprendre après stabilisation complète de l'authentification API et du WebApplicationFactory.")]  //mini test de diagnostic : vérifier que l'endpoint existe et ne retourne pas 404.
-        public async Task DebugMe_ShouldExist()
+        [Fact]
+        public async Task GetMyProfile_WithoutAuthentication_ShouldReturnUnauthorized()
         {
-            var response = await _client.GetAsync("/api/debug/me");
+            // /api/users/me nécessite un JWT valide.
+            var response = await _client.GetAsync("/api/users/me");
 
-            response.StatusCode.Should().NotBe(HttpStatusCode.NotFound);
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
 
         [Fact]
-        public async Task Home_ShouldReturnSuccess()
+        public async Task GetMyProfile_WithUserToken_ShouldReturnCurrentUser()
         {
-            var response = await _client.GetAsync("/");
+            var token = await LoginAndGetAccessTokenAsync(
+                "sarah.dupont@example.com",
+                "Test1234");
+
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _client.GetAsync("/api/users/me");
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var profile = await response.Content.ReadFromJsonAsync<CurrentUserProfileResponse>();
+
+            profile.Should().NotBeNull();
+            profile!.Email.Should().Be("sarah.dupont@example.com");
+            profile.FirstName.Should().Be("Sarah");
+            profile.LastName.Should().Be("Dupont");
+            profile.Role.Should().Be("Utilisateur");
+        }
+
+        [Fact]
+        public async Task UpdateMyProfile_WithUserToken_ShouldUpdatePhoneNumber()
+        {
+            var token = await LoginAndGetAccessTokenAsync(
+                "sarah.dupont@example.com",
+                "Test1234");
+
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var updateResponse = await _client.PutAsJsonAsync("/api/users/me", new
+            {
+                firstName = "Sarah",
+                lastName = "Dupont",
+                phoneNumber = "0470000099",
+                societeName = (string?)null,
+                numeroEntreprise = (string?)null
+            });
+
+            updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var getResponse = await _client.GetAsync("/api/users/me");
+            getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var profile = await getResponse.Content.ReadFromJsonAsync<CurrentUserProfileResponse>();
+
+            profile.Should().NotBeNull();
+            profile!.PhoneNumber.Should().Be("0470000099");
         }
 
         [Fact]
@@ -66,15 +97,51 @@ namespace EnergyShare_v3.IntegrationTests
             response.StatusCode.Should().NotBe(HttpStatusCode.NotFound);
         }
 
+        [Fact]
+        public async Task Home_ShouldReturnSuccess()
+        {
+            var response = await _client.GetAsync("/");
 
-        private sealed class UserResponse
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        private async Task<string> LoginAndGetAccessTokenAsync(string email, string password)
+        {
+            // Les tests utilisent le seed de test : Sarah existe avec le rôle Utilisateur.
+            var response = await _client.PostAsJsonAsync("/api/auth/login", new
+            {
+                email,
+                password
+            });
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var auth = await response.Content.ReadFromJsonAsync<AuthTestResponse>();
+
+            auth.Should().NotBeNull();
+            auth!.AccessToken.Should().NotBeNullOrWhiteSpace();
+
+            return auth.AccessToken;
+        }
+
+        private sealed class AuthTestResponse
+        {
+            public string AccessToken { get; set; } = string.Empty;
+            public string RefreshToken { get; set; } = string.Empty;
+            public DateTime AccessTokenExpiresAt { get; set; }
+        }
+
+        private sealed class CurrentUserProfileResponse
         {
             public Guid Id { get; set; }
+            public string Email { get; set; } = string.Empty;
             public string? FirstName { get; set; }
             public string? LastName { get; set; }
-            public string Email { get; set; } = string.Empty;
+            public string? PhoneNumber { get; set; }
+            public string? SocieteName { get; set; }
+            public string? NumeroEntreprise { get; set; }
+            public string Status { get; set; } = string.Empty;
             public string Role { get; set; } = string.Empty;
-            public DateTime CreatedAt { get; set; }
         }
     }
 }
