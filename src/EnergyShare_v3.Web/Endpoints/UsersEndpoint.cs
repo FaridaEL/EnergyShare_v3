@@ -1,6 +1,4 @@
-﻿using Ardalis.Result.AspNetCore;
-using EnergyShare_v3.Application.Features.Users;
-using Mediator;
+﻿using EnergyShare_v3.Application.Features.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,13 +29,13 @@ namespace EnergyShare_v3.Web.Endpoints
             return Results.Ok(users);
         }
 
-        internal static async Task<IResult> CreateUser(
-            [FromServices]ISender sender,
-            [FromBody] CreateUser command)
-        {
-            var response = await sender.Send(command);
-            return response.ToMinimalApiResult();
-        }
+        //internal static async Task<IResult> CreateUser(
+        //    [FromServices]ISender sender,
+        //    [FromBody] CreateUser command)
+        //{
+        //    var response = await sender.Send(command);
+        //    return response.ToMinimalApiResult();
+        //}
 
         //Idem ici un internal static par endpoint
     }

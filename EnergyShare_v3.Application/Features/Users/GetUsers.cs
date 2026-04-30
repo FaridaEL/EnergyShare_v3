@@ -1,7 +1,6 @@
 ﻿using EnergyShare_v3.Application.Interfaces;
-using EnergyShare_v3.Domain.Entities;
 using EnergyShare_v3.Domain.Entities.Users;
-using EnergyShare_v3.Domain.Enums;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnergyShare_v3.Application.Features.Users
@@ -11,10 +10,12 @@ namespace EnergyShare_v3.Application.Features.Users
     public class GetUsersHandler
     {
         private readonly IApplicationDbContext _context;
+        private readonly UserManager<User> _userManager;// on récupère le role depuis IDentityUserManager 
 
-        public GetUsersHandler(IApplicationDbContext context)
+        public GetUsersHandler(IApplicationDbContext context, UserManager<User> userManager)
         {
-            _context = context;
+            _context = context;  
+            _userManager = userManager;
         }
 
        public async Task<IReadOnlyList<UserSummaryDto>> HandleAsync(
@@ -26,16 +27,24 @@ namespace EnergyShare_v3.Application.Features.Users
                .ThenBy(u => u.LastName)
                .ToListAsync(cancellationToken);
 
-            return users
-                .Select(u => new UserSummaryDto(
-                    u.Id,
-                    u.FirstName,
-                    u.LastName,
-                    u.Email ?? string.Empty,
-                    u.Role,
-                    u.Audit.CreatedAt
-                ))
-                .ToList();
+            var result = new List<UserSummaryDto>();
+
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                var role = roles.FirstOrDefault() ?? "Utilisateur";
+
+                result.Add(new UserSummaryDto(
+                    user.Id,
+                    user.FirstName,
+                    user.LastName,
+                    user.Email ?? string.Empty,
+                    role,
+                    user.Audit.CreatedAt
+                ));
+            }
+
+            return result;
 
             // Important : on récupère d'abord les entités en base (ToListAsync)
             // puis on fait la projection en mémoire (.Select)

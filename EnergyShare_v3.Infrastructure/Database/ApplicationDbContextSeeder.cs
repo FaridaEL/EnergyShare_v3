@@ -2,7 +2,6 @@
 using EnergyShare_v3.Domain.Entities.PointsAccesses;
 using EnergyShare_v3.Domain.Entities.ProfilsEnergie;
 using EnergyShare_v3.Domain.Entities.Users;
-using EnergyShare_v3.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -38,8 +37,7 @@ namespace EnergyShare_v3.Infrastructure.Database
             var vendeur1 = await CreateUserIfNotExistsAsync(
                 userManager,
                 "sarah.dupont@example.com",
-                "Test1234",
-                UserRole.Utilisateur,
+                "Test1234", 
                 "Sarah",
                 "Dupont",
                 "0470000001",
@@ -49,7 +47,6 @@ namespace EnergyShare_v3.Infrastructure.Database
                 userManager,
                 "julien.martin@example.com",
                 "Test1234",
-                UserRole.Utilisateur,
                 "Julien",
                 "Martin",
                 "0470000002",
@@ -59,7 +56,6 @@ namespace EnergyShare_v3.Infrastructure.Database
                 userManager,
                 "lea.bernard@example.com",
                 "Test1234",
-                UserRole.Utilisateur,
                 "Léa",
                 "Bernard",
                 "0470000003",
@@ -69,7 +65,6 @@ namespace EnergyShare_v3.Infrastructure.Database
                 userManager,
                 "hugo.lambert@example.com",
                 "Test1234",
-                UserRole.Utilisateur,
                 "Hugo",
                 "Lambert",
                 "0470000004",
@@ -79,7 +74,6 @@ namespace EnergyShare_v3.Infrastructure.Database
                 userManager,
                 "contact@boulangerie-dupain.be",
                 "Test1234",
-                UserRole.Utilisateur,
                 null,
                 null,
                 "0220000010",
@@ -92,7 +86,6 @@ namespace EnergyShare_v3.Infrastructure.Database
                 userManager,
                 "agent.sibelga@example.com",
                 "Test1234",
-                UserRole.OrganismePublic,
                 "Nadia",
                 "Vermeulen",
                 "0220000099",
@@ -208,7 +201,6 @@ namespace EnergyShare_v3.Infrastructure.Database
             UserManager<User> userManager,
             string email,
             string password,
-            UserRole businessRole,
             string? firstName,
             string? lastName,
             string? phoneNumber,
@@ -218,7 +210,7 @@ namespace EnergyShare_v3.Infrastructure.Database
             if (existingUser is not null)
                 return existingUser;
 
-            var result = User.Create(email, businessRole);
+            var result = User.Create(email);
             if (!result.IsSuccess)
                 throw new InvalidOperationException($"Impossible de créer l'utilisateur {email}");
 

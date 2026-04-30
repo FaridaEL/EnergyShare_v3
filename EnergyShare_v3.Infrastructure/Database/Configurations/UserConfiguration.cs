@@ -35,10 +35,10 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
                 .HasConversion<string>()
                 .HasMaxLength(30);
 
-            builder.Property(u => u.Role)
-                .IsRequired()
-                .HasConversion<string>()  // Stocke l'enum en tant que texte
-                .HasMaxLength(50);
+            //builder.Property(u => u.Role)
+            //    .IsRequired()
+            //    .HasConversion<string>()  // Stocke l'enum en tant que texte
+            //    .HasMaxLength(50);
 
             // builder.HasIndex(u => u.Email)      //email unique au sein de l'application
             //    .IsUnique();       //Doit se faire sur un index , pas sur une propriété simple, d'où l'utilisation d'une propriété de valeur (Owned Entity) pour l'email dans la v2 ci-dessous
