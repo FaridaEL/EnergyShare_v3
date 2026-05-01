@@ -41,14 +41,21 @@ namespace EnergyShare_v3.Application.Features.Users
 
     public class UpdateMyUserProfileHandler(
         IApplicationDbContext context,
-        IUserContext userContext,
-        UserManager<User> userManager)
+        IUserContext userContext)
+        //UserManager<User> userManager)
         : ICommandHandler<UpdateMyUserProfile, Result>
     {
         public async ValueTask<Result> Handle(
             UpdateMyUserProfile command,
             CancellationToken cancellationToken)
         {
+            //debug
+            Console.WriteLine($"DEBUG HANDLER - FirstName = {command.FirstName}");
+            Console.WriteLine($"DEBUG HANDLER - LastName = {command.LastName}");
+            Console.WriteLine($"DEBUG HANDLER - PhoneNumber = {command.PhoneNumber}");
+            Console.WriteLine($"DEBUG HANDLER - SocieteName = {command.SocieteName}");
+            Console.WriteLine($"DEBUG HANDLER - NumeroEntreprise = {command.NumeroEntreprise}");
+
             var userId = userContext.UserId;
 
             if (userId == Guid.Empty)
@@ -69,6 +76,10 @@ namespace EnergyShare_v3.Application.Features.Users
                 command.SocieteName,
                 command.NumeroEntreprise);
 
+            //DEbug
+            Console.WriteLine($"DEBUG USER BEFORE SAVE - SocieteName = {user.SocieteName}");
+            Console.WriteLine($"DEBUG USER BEFORE SAVE - NumeroEntreprise = {user.NumeroEntreprise}");
+
             if (!legalResult.IsSuccess)
                 return legalResult;
 
@@ -87,17 +98,23 @@ namespace EnergyShare_v3.Application.Features.Users
             // → Pour les entités métier : context + UnitOfWork
             // → Pour les utilisateurs : UserManager (ne pas doubler avec context.SaveChanges)
 
-            var identityResult = await userManager.UpdateAsync(user);
+            //Finalement :
+            // Ici, on ne fait pas userManager.UpdateAsync(user).
+            // Le user a été chargé via IApplicationDbContext, donc EF Core le suit déjà.
+            // La sauvegarde sera effectuée par le UnitOfWorkBehavior en fin de pipeline.
+            // Cela évite de mélanger deux mécanismes de persistance pour une simple mise à jour de profil.
 
-            if (!identityResult.Succeeded)
-            {
-                return Result.Invalid(
-                    identityResult.Errors.Select(e => new ValidationError
-                    {
-                        Identifier = e.Code,
-                        ErrorMessage = e.Description
-                    }));
-            }
+            //var identityResult = await userManager.UpdateAsync(user);
+
+            //if (!identityResult.Succeeded)
+            //{
+            //    return Result.Invalid(
+            //        identityResult.Errors.Select(e => new ValidationError
+            //        {
+            //            Identifier = e.Code,
+            //            ErrorMessage = e.Description
+            //        }));
+            //}
 
             return Result.Success();
         }

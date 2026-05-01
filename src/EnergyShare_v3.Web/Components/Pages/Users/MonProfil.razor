@@ -1,0 +1,152 @@
+﻿@page "/mon-profil"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using EnergyShare_v3.Application.Features.Users
+@using EnergyShare_v3.Web.Models.User
+@using Mediator
+
+@inject ISender Sender
+
+<PageTitle>Mon profil utilisateur </PageTitle>
+
+<h3>Mon profil</h3>
+
+@if (isLoading)
+{
+    <p>Chargement...</p>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-warning">@errorMessage</div>
+}
+else if (model is not null)
+{
+    <EditForm Model="model" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <h5>Informations personnelles</h5>
+
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input class="form-control" value="@model.Email" disabled />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Prénom</label>
+            <InputText class="form-control" @bind-Value="model.FirstName" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Nom</label>
+            <InputText class="form-control" @bind-Value="model.LastName" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Téléphone</label>
+            <InputText class="form-control" @bind-Value="model.PhoneNumber" />
+        </div>
+
+        <h5>Informations professionnelles</h5>
+
+        <div class="mb-3">
+            <label class="form-label">Société</label>
+            <InputText class="form-control" @bind-Value="model.SocieteName" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Numéro entreprise</label>
+            <InputText class="form-control" @bind-Value="model.NumeroEntreprise" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Rôle</label>
+            <input class="form-control" value="@model.Role" disabled />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Statut</label>
+            <input class="form-control" value="@model.Status" disabled />
+        </div>
+
+        <button class="btn btn-primary" type="submit">Enregistrer</button>
+    </EditForm>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success mt-3">@successMessage</div>
+}
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? successMessage;
+    private UserProfileFormModel? model;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfileAsync();
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        //successMessage = null;
+
+        var result = await Sender.Send(new GetMyUserProfile());
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Impossible de charger le profil.";
+            isLoading = false;
+            return;
+        }
+
+        var dto = result.Value;
+
+        model = new UserProfileFormModel
+        {
+            Email = dto.Email,
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            PhoneNumber = dto.PhoneNumber,
+            SocieteName = dto.SocieteName,
+            NumeroEntreprise = dto.NumeroEntreprise,
+            Role = dto.Role,
+            Status = dto.Status
+        };
+
+        isLoading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (model is null)
+            return;
+
+        errorMessage = null;
+        successMessage = null;
+
+        var result = await Sender.Send(new UpdateMyUserProfile(
+            model.FirstName,
+            model.LastName,
+            model.PhoneNumber,
+            model.SocieteName,
+            model.NumeroEntreprise
+        ));
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "La mise à jour du profil a échoué.";
+            return;
+        }
+
+        
+        await LoadProfileAsync();
+        successMessage = "Profil mis à jour avec succès.";
+    }
+}
