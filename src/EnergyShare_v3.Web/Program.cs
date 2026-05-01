@@ -349,6 +349,7 @@ app.MapRazorComponents<App>()
 app.MapUsers();
 app.MapProfilEnergie();
 app.MapPointAccess();
+app.MapMatching();
 app.MapAuth();
 app.MapDebug();
 

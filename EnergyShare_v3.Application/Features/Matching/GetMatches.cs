@@ -1,22 +1,51 @@
-﻿using EnergyShare_v3.Application.Interfaces;
+﻿using Ardalis.Result;
+using EnergyShare_v3.Application.Interfaces;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace EnergyShare_v3.Application.Features.Matching
 {
-    public record GetMatchesQuery;
-    public class GetMatchesHandler
-    {
-        private readonly IApplicationDbContext _context;
-        public GetMatchesHandler(IApplicationDbContext context) { _context = context; }
+    // Query de lecture : retourne les matchs du user connecté uniquement.
+    public record GetMatchesQuery()
+        : IQuery<Result<IReadOnlyList<SavedMatchSummaryDto>>>;
 
-        public async Task<IReadOnlyList<SavedMatchSummaryDto>> HandleAsync(
-            CancellationToken cancellationToken = default)
+    public class GetMatchesHandler(
+        IApplicationDbContext context,
+        IUserContext currentUserContext)
+        : IQueryHandler<GetMatchesQuery, Result<IReadOnlyList<SavedMatchSummaryDto>>>
+    {
+        public async ValueTask<Result<IReadOnlyList<SavedMatchSummaryDto>>> Handle(
+            GetMatchesQuery query,
+            CancellationToken cancellationToken)
         {
-            return await _context.Matches
+            var currentUserId = currentUserContext.UserId;
+
+            if (currentUserId is null)
+                return Result.Unauthorized();
+
+
+            // Points d'accès appartenant au user connecté.
+            var userPointAccessIds = await context.PointAccesses
                 .AsNoTracking()
+                .Where(pa => pa.UserId == currentUserId)
+                .Select(pa => pa.Id)
+                .ToListAsync(cancellationToken);
+
+            if (!userPointAccessIds.Any())
+                return Result.Success<IReadOnlyList<SavedMatchSummaryDto>>(
+                    new List<SavedMatchSummaryDto>());
+
+
+            // Sécurité : un utilisateur ne voit que les matchs liés à ses points d’accès.
+            var matches = await context.Matches
+                .AsNoTracking()
+                .Where(m =>
+                    userPointAccessIds.Contains(m.PointAccessVendeurId)
+                    || userPointAccessIds.Contains(m.PointAccessAcheteurId))
+
+                // On trie sur l'entité EF avant la projection DTO.
+                .OrderByDescending(m => m.Audit.CreatedAt)
+
                 .Select(m => new SavedMatchSummaryDto(
                     m.Id,
                     m.PointAccessVendeurId,
@@ -24,10 +53,9 @@ namespace EnergyShare_v3.Application.Features.Matching
                     m.DistanceCalculee,
                     m.Audit.CreatedAt
                 ))
-                .OrderByDescending(m => m.CreatedAt)
                 .ToListAsync(cancellationToken);
 
+            return Result.Success<IReadOnlyList<SavedMatchSummaryDto>>(matches);
         }
-
     }
 }

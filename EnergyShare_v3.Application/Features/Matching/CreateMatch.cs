@@ -33,14 +33,45 @@ namespace EnergyShare_v3.Application.Features.Matching
         }
     }
 
-    public class CreateMatchHandler(IApplicationDbContext context)
+    public class CreateMatchHandler(
+        IApplicationDbContext context,
+        IUserContext userContext)
         : ICommandHandler<CreateMatch, Result<Guid>>
     {
         public async ValueTask<Result<Guid>> Handle(
             CreateMatch command,
             CancellationToken cancellationToken)
         {
+            var currentUserId = userContext.UserId;
+
+            if (currentUserId is null)
+                return Result.Unauthorized();
+
+            // Sécurité : l'utilisateur connecté doit être l'un des deux points du match.
+            var userOwnsOnePoint = await context.PointAccesses
+                .AsNoTracking()
+                .AnyAsync(pa =>
+                    (pa.Id == command.PointAccessVendeurId ||
+                     pa.Id == command.PointAccessAcheteurId)
+                    && pa.UserId == currentUserId,
+                    cancellationToken);
+
+            if (!userOwnsOnePoint)
+                return Result.Forbidden();
+
+            // Cohérence : les deux points d'accès doivent exister.
+            var pointsCount = await context.PointAccesses
+                .AsNoTracking()
+                .CountAsync(pa =>
+                    pa.Id == command.PointAccessVendeurId ||
+                    pa.Id == command.PointAccessAcheteurId,
+                    cancellationToken);
+
+            if (pointsCount != 2)
+                return Result.NotFound("Un des points d'accès est introuvable.");
+
             var existingMatch = await context.Matches
+                .AsNoTracking()
                 .FirstOrDefaultAsync(
                     m => m.PointAccessVendeurId == command.PointAccessVendeurId
                       && m.PointAccessAcheteurId == command.PointAccessAcheteurId,
@@ -61,6 +92,9 @@ namespace EnergyShare_v3.Application.Features.Matching
             var match = result.Value;
 
             await context.Matches.AddAsync(match, cancellationToken);
+
+            // Persistance réelle en base.
+            await context.SaveChangesAsync(cancellationToken);
 
             return Result.Success(match.Id);
         }

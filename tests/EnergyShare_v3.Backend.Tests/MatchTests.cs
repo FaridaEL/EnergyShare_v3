@@ -50,6 +50,24 @@ namespace EnergyShare_v3.Backend.Tests
             result.Value.PointAccessAcheteurId.Should().Be(buyerId);
             result.Value.DistanceCalculee.Should().Be(2.3m);
         }
+
+        [Fact]
+        public void Create_ShouldFail_WhenSellerIdIsEmpty()
+        {
+            var result = Match.Create(Guid.Empty, Guid.NewGuid(), 1.5m);
+
+            result.IsSuccess.Should().BeFalse();
+        }
+
+        [Fact]
+        public void Create_ShouldFail_WhenBuyerIdIsEmpty()
+        {
+            var result = Match.Create(Guid.NewGuid(), Guid.Empty, 1.5m);
+
+            result.IsSuccess.Should().BeFalse();
+        }
+
+
     }
 
 }
