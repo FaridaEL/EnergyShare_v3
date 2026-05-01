@@ -53,42 +53,80 @@ else
                 </h5>
 
                 <p class="text-muted">
-                    Indiquez si vous souhaitez acheter de l’énergie, vendre votre surplus, ou les deux.
+                   @*  Indiquez si vous souhaitez acheter de l’énergie, vendre votre surplus, ou les deux. *@
                 </p>
 
                 <EditForm Model="model" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
-                    <div class="alert alert-light border">
-                        <strong>Je cherche de l’énergie</strong>
+                    <div class="energy-profile-grid">
+
+                        <!-- Vendeur -->
+                        <section class="energy-profile-card seller-card">
+                            <div class="energy-card-header">
+                                <div class="energy-icon seller-icon">⚡</div>
+                                <div>
+                                    <h5>Je vends mon surplus</h5>
+                                    @* <p>Indiquez l’énergie que vous souhaitez proposer.</p> *@
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Offre énergie annuelle estimée (kWh)</label>
+                                <InputNumber class="form-control" @bind-Value="model.OffreEnergie_kWh" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Prix vente cible (€ / kWh)</label>
+                                <InputNumber class="form-control" @bind-Value="model.PrixVenteCible_Eur" />
+                            </div>
+
+                            <div class="energy-help-box seller-help">
+                                <span class="help-icon">💡</span>
+                                <span>
+                                    Indiquez la quantité d’énergie que vous souhaitez vendre
+                                    et le prix minimum que vous souhaitez obtenir.
+                                </span>
+                            </div>
+                        </section>
+
+                      
+
+                        <!-- Acheteur -->
+                        <section class="energy-profile-card buyer-card">
+                            <div class="energy-card-header">
+                                <div class="energy-icon buyer-icon">🛒</div>
+                                <div>
+                                    <h5>Je cherche de l’énergie</h5>
+                                    @* <p>Indiquez votre besoin et le prix souhaité.</p>  *@
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Demande énergie annuelle estimée (kWh)</label>
+                                <InputNumber class="form-control" @bind-Value="model.DemandeEnergie_kWh" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Prix achat cible (€ / kWh)</label>
+                                <InputNumber class="form-control" @bind-Value="model.PrixAchatCible_Eur" />
+                            </div>
+
+                            <div class="energy-help-box buyer-help">
+                                <span class="help-icon">💡</span>
+                                <span>
+                                    Indiquez la quantité d’énergie que vous souhaitez acheter
+                                    et le prix maximum que vous êtes prêt à payer.
+                                </span>
+                            </div>
+
+
+                        </section>
+
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Demande énergie annuelle estimée (kWh)</label>
-                        <InputNumber class="form-control" @bind-Value="model.DemandeEnergie_kWh" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Prix achat cible (€ / kWh)</label>
-                        <InputNumber class="form-control" @bind-Value="model.PrixAchatCible_Eur" />
-                    </div>
-
-                    <div class="alert alert-light border mt-4">
-                        <strong>Je vends mon surplus d’énergie</strong>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Offre énergie annuelle estimée (kWh)</label>
-                        <InputNumber class="form-control" @bind-Value="model.OffreEnergie_kWh" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Prix vente cible (€ / kWh)</label>
-                        <InputNumber class="form-control" @bind-Value="model.PrixVenteCible_Eur" />
-                    </div>
-
-                    <button class="btn btn-primary" type="submit">
+                    <button class="btn btn-primary mt-4" type="submit">
                         @(isEditMode ? "Enregistrer les modifications" : "Créer mon profil énergie")
                     </button>
                 </EditForm>
