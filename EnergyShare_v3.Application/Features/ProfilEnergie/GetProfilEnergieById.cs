@@ -8,7 +8,9 @@ namespace EnergyShare_v3.Application.Features.ProfilEnergie
      //de matching et de simulation d'économie d'énergie réalisées grâce au partage,
      //en comparant le prix d'achat cible de l'acheteur avec le prix de vente cible du vendeur et en comparant le prix de vente cible du vendeur avec le prix d'achat auprès de son fournisseur d'énergie actuel
     public record GetProfilEnergieById(Guid Id) : IQuery<Result<ProfilEnergieDetailDto>>;
-    public class GetProfilEnergieByIdHandler(IApplicationDbContext context)
+    public class GetProfilEnergieByIdHandler(
+        IApplicationDbContext context,
+        IUserContext userContext) // on s'assure que l'utilisateur connecté est bien le propriétaire du profil énergie demandé pour des raisons de sécurité et de confidentialité des données, 
         : IQueryHandler<GetProfilEnergieById, Result<ProfilEnergieDetailDto>>
     {
         //private readonly IApplicationDbContext _context;
@@ -44,6 +46,17 @@ namespace EnergyShare_v3.Application.Features.ProfilEnergie
 
             if (profil is null)
                 return Result<ProfilEnergieDetailDto>.NotFound("Profil énergie introuvable.");
+            
+            var currentUserId = userContext.UserId;
+
+            // Sécurité : l'utilisateur doit être authentifié.
+            if (currentUserId is null || currentUserId == Guid.Empty)
+                return Result<ProfilEnergieDetailDto>.Unauthorized();
+
+            // Sécurité : seul le propriétaire ou un administrateur peut consulter le détail complet.
+            // Les autres utilisateurs passent par SearchPotentialMatches, qui expose un DTO limité.
+            if (profil.UserId != currentUserId && !userContext.IsInRole("Administrateur"))
+                return Result<ProfilEnergieDetailDto>.Forbidden();
 
             return Result.Success(profil);
 
