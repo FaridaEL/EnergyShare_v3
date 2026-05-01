@@ -1,59 +1,56 @@
-﻿using Ardalis.Result;
-using EnergyShare_v3.Application.Interfaces;
-using EnergyShare_v3.Domain.Enums;
-using FluentValidation;
-using Mediator;
+﻿//using EnergyShare_v3.Application.Interfaces;
+//using EnergyShare_v3.Domain.Enums;
+//using FluentValidation;
+//using Mediator;
 
-namespace EnergyShare_v3.Application.Features.Users
-{       /*Service applicatif pour la gestion des utilisateurs.*/
-    public record CreateUser(string Email,string PasswordHash,UserRole Role):ICommand<Result<Guid>> ;
-    // public record CreateUserCommand(string Email,string PasswordHash,UserRole Role, UserType UserType);
+//namespace EnergyShare_v3.Application.Features.Users
+//{       /*Service applicatif pour la gestion des utilisateurs.
+//         Inscruption via Identiy et UseManager
+//        Cette création de user est donc utile pour l'admin s'il doit créer des profils spécifiques
+//
+//        Toutefois pour un MVP, l'user crée son compte via l'endpoint et l'admin lui attribe un role admin ou org.public directement en base de données
+//        */
+//    public record CreateUser(string Email):ICommand<Result<Guid>> ;
+//    // public record CreateUserCommand(string Email,string PasswordHash,UserRole Role, UserType UserType);
 
-    public class CreateUserValidator : AbstractValidator<CreateUser>
-    {
-        public CreateUserValidator()
-        {
-            RuleFor(x => x.Email)
-            .NotEmpty()
-            .WithMessage("L'email est requis");
-
-            RuleFor(x => x.PasswordHash)
-                .NotEmpty()
-                .WithMessage("Le mot de passe hashé est requis");
-
-            RuleFor(x => x.Role)
-                .IsInEnum();
-
-
-        }
-    }
+//    public class CreateUserValidator : AbstractValidator<CreateUser>
+//    {
+//        public CreateUserValidator()
+//        {
+//            RuleFor(x => x.Email)
+//                .NotEmpty()
+//                .WithMessage("L'email est requis")
+//                .EmailAddress()
+//                .WithMessage("L'email n'est pas valide");
+//        }
+//    }
 
 
-    public class CreateUserHandler (IApplicationDbContext context) : ICommandHandler<CreateUser, Result<Guid>>
-    {
-        public async ValueTask<Result<Guid>> Handle(
-            CreateUser command,
-            CancellationToken cancellationToken )
-        {    var result = Domain.Entities.Users.User.Create(
-                command.Email,
-                command.Role );
+//    public class CreateUserHandler (IApplicationDbContext context) 
+//        : ICommandHandler<CreateUser, Result<Guid>>
+//    {
+//        public async ValueTask<Result<Guid>> Handle(
+//            CreateUser command,
+//            CancellationToken cancellationToken )
+//        {    var result = Domain.Entities.Users.User.Create( command.Email );
 
-            //Si erreur métier on s'arrête et on retourne l'erreur, sinon on continue
-            if (!result.IsSuccess)
-                return Result<Guid>.Invalid(result.ValidationErrors);
+//            //Si erreur métier on s'arrête et on retourne l'erreur, sinon on continue
+//            if (!result.IsSuccess)
+//                return Result<Guid>.Invalid(result.ValidationErrors);
 
-            var user = result.Value;
+//            var user = result.Value;
 
-            //persistance
-            /*Attention : Remarquez que le handler n'appelle pas SaveChangesAsync(). 
-             * C'est le UnitOfWorkBehavior du pipeline qui s'en charge automatiquement. Cela garantit que le save se fait dans la transaction.*/
-            await context.Users.AddAsync(user, cancellationToken);
-           // await _context.SaveChangesAsync(cancellationToken);
+//            //persistance
+//            /*Attention : Remarquez que le handler n'appelle pas SaveChangesAsync(). 
+//             * C'est le UnitOfWorkBehavior du pipeline qui s'en charge automatiquement. Cela garantit que le save se fait dans la transaction.*/
+//            await context.Users.AddAsync(user, cancellationToken);
+//           // await _context.SaveChangesAsync(cancellationToken);
 
 
-            return Result.Success(user.Id);
+//            return Result.Success(user.Id);
 
-        }
+//        }
 
-    }
-}
+//    }
+//}
+    

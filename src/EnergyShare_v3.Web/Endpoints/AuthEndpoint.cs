@@ -1,6 +1,5 @@
 ﻿using EnergyShare_v3.Application.Interfaces;
 using EnergyShare_v3.Domain.Entities.Users;
-using EnergyShare_v3.Domain.Enums;
 using EnergyShare_v3.Infrastructure.Authentication;
 using EnergyShare_v3.Web.Models.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -41,7 +40,7 @@ namespace EnergyShare_v3.Web.Endpoints
             IApplicationDbContext dbContext,
             IOptions<JwtSettings> jwtOptions)
         {
-            var userResult = User.Create(request.Email, UserRole.Utilisateur);
+            var userResult = User.Create(request.Email);
 
             if (!userResult.IsSuccess)
                 return Results.BadRequest(userResult.Errors);

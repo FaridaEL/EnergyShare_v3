@@ -14,16 +14,40 @@
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
             </NavLink>
+            
         </div>
-
+        <!-- mon profil user -->
         <AuthorizeView>
             <Authorized>
-                <NavLink class="nav-link" href="profil-energie">
-                    Mon profil énergie
-                </NavLink>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="mon-profil">
+                        
+                            Mon profil utilisateur
+                        </NavLink>
+                   
+                </div>
             </Authorized>
         </AuthorizeView>
         
+        <AuthorizeView Roles="Utilisateur">
+            <Authorized>
+                <!-- mes points accès -->
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="mes-points-access">
+                        Mes points d'accès
+                    </NavLink>
+                </div>
+                <!-- mon profil énergie -->
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="profil-energie">
+                        Mon profil énergie
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        
+        
+        <!-- Admin only : liste des users -->
         
         <AuthorizeView Roles="Administrateur">
             <Authorized>

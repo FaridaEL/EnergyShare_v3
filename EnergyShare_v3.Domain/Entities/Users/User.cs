@@ -19,7 +19,7 @@ namespace EnergyShare_v3.Domain.Entities.Users
 
         public UserStatus Status { get; private set; } = UserStatus.Actif; //Statut du membre (Actif, Inactif)  ( ex après un délai d'inactivité passerait automatiquement en inactif..)
                                                                            //Obligatoire à l'inscription : uniquement mail + password pour faciliter l'inscription
-        public UserRole Role { get; private set; }   //Role : User(Acheteur, Vendeur), OrganismePublic, Administrateur.
+        //public UserRole Role { get; private set; }   //Role : User(Acheteur, Vendeur), OrganismePublic, Administrateur.
         //[Required]
         //public Email Email { get; private set; } = null!;  //null indique qu'il ne faut pas envoyer d'avertissement de non-nullabilité 
         //[Required]
@@ -67,13 +67,13 @@ namespace EnergyShare_v3.Domain.Entities.Users
         private User() { } // Constructeur sans parametre requis par Entity Framework Core.EF Core -->private pour empecher la creation d'un membre invalide.
 
         private User(
-            string email,
-            UserRole role
+            string email
+            //UserRole role
             )
                 {
                     UserName = email;
                     Email = email;
-                    Role = role;
+                    //Role = role;
                     Status = UserStatus.Actif;
                     Audit.Touch(null);
         }
@@ -89,12 +89,12 @@ namespace EnergyShare_v3.Domain.Entities.Users
 
 
 
-        public static Result<User> Create(string email, UserRole role)
+        public static Result<User> Create(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
                 return UserErrors.EmailObligatoire().Map<User>();
 
-            var user = new User(email.Trim(), role);
+            var user = new User(email.Trim());
 
             var validation = user.ValidateUser();
             if (!validation.IsSuccess)

@@ -1,6 +1,4 @@
-﻿using EnergyShare_v3.Domain.Enums;
-
-namespace EnergyShare_v3.Application.Features.Users
+﻿namespace EnergyShare_v3.Application.Features.Users
 {       /*DTO pour afficher un user dans une liste.
          * Les DTOs (Data Transfer Objects) sont des record : immutables, avec comparaison par valeur et deconstruction automatique.
          * Ils servent a transporter des donnees entre les couches sans exposer les entites du domaine..*/
@@ -9,7 +7,7 @@ namespace EnergyShare_v3.Application.Features.Users
       string? FirstName,
       string? LastName,
       string Email, // DTO : on utilise string pour simplifier le transport (pas de ValueObject ici)
-      UserRole Role,
+      string Role,
       DateTime CreatedAt
     );
     /// <summary>
@@ -19,7 +17,27 @@ namespace EnergyShare_v3.Application.Features.Users
         Guid Id,
         string? FirstName,
         DateTime CreatedAt
-        //IReadOnlyList<MemberDto> Members
+        
+    );
+
+    public record CurrentUserProfileDto(
+       Guid Id,
+       string Email,
+       string? FirstName,
+       string? LastName,
+       string? PhoneNumber,
+       string? SocieteName,
+       string? NumeroEntreprise,
+       string Status,
+       string Role
+   );
+
+    public record UpdateCurrentUserProfileRequest(
+        string? FirstName,
+        string? LastName,
+        string? PhoneNumber,
+        string? SocieteName,
+        string? NumeroEntreprise
     );
 
 
