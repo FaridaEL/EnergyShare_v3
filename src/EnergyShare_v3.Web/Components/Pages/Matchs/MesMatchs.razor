@@ -1,0 +1,122 @@
+﻿@page "/matching/my"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Mediator
+@using EnergyShare_v3.Application.Features.Matching
+
+@inject ISender Sender
+
+<PageTitle>Mes matchs</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Mes matchs sauvegardés</h2>
+            <p class="text-muted mb-0">Retrouvez les matchs que vous avez enregistrés.</p>
+        </div>
+
+        <a class="btn btn-success rounded-pill" href="/matching/search">
+            Trouver un match
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body">
+            <div class="text-muted small">Matchs sauvegardés</div>
+            <div class="display-6 fw-bold">@SavedMatches.Count</div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <div class="alert alert-danger">@Message</div>
+    }
+
+    @if (IsLoading)
+    {
+        <p>Chargement...</p>
+    }
+    else if (SavedMatches.Count == 0)
+    {
+        <div class="alert alert-info rounded-4">
+            Aucun match sauvegardé pour le moment.
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">Liste de mes matchs</h5>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Vendeur</th>
+                                <th>Acheteur</th>
+                                <th>Distance</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var match in SavedMatches)
+                            {
+                                <tr>
+                                    <td>@match.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                    <td>@ShortId(match.PointAccessVendeurId)</td>
+                                    <td>@ShortId(match.PointAccessAcheteurId)</td>
+                                    <td><strong>@match.DistanceCalculee km</strong></td>
+                                    <td class="text-end">
+                                        <button class="btn btn-outline-primary btn-sm rounded-pill" disabled>
+                                            Contacter
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="text-muted small mt-3 mb-0">
+                    Les informations détaillées seront enrichies avec la messagerie et les données anonymisées.
+                </p>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<SavedMatchSummaryDto> SavedMatches { get; set; } = [];
+    private bool IsLoading { get; set; } = true;
+    private string? Message { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Sender.Send(new GetMatchesQuery());
+
+        if (!result.IsSuccess)
+        {
+            Message = "Impossible de charger vos matchs sauvegardés.";
+            IsLoading = false;
+            return;
+        }
+
+        SavedMatches = result.Value.ToList();
+        IsLoading = false;
+    }
+
+    private static string ShortId(Guid id)
+        => id.ToString()[..8];
+
+    // private record SavedMatchSummaryDto(
+    //     Guid MatchId,
+    //     Guid PointAccessVendeurId,
+    //     Guid PointAccessAcheteurId,
+    //     decimal DistanceCalculee,
+    //     DateTime CreatedAt);
+
+
+}
