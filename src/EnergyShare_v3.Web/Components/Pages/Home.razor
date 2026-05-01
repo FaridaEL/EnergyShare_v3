@@ -2,12 +2,132 @@
 @using Microsoft.AspNetCore.Components.Authorization
 
 <PageTitle>EnergyShare - Accueil</PageTitle>
+<!-- ========================================================= -->
+<!-- section publique                                          -->
+<!-- Objectif : information sur le partage d'énergie et l'app  -->
+<!-- ========================================================= -->
 
-<h1>Bienvenue sur EnergyShare</h1>
+<section class="home-hero p-5 rounded-4 mb-5">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+            <span class="badge rounded-pill bg-warning text-dark mb-3">
+                Partage d’énergie à Bruxelles
+            </span>
 
-<p class="lead">
-    L'application qui vous permet de vendre et d'acheter de l'énergie durable et locale en toute simplicité à Bruxelles.
-</p>
+            <h1 class="display-5 fw-bold">
+                Partagez votre énergie locale en toute confiance
+            </h1>
+
+            <p class="lead mt-3">
+                EnergyShare aide les citoyens bruxellois à vendre leur surplus d’énergie renouvelable
+                ou à acheter une énergie locale, durable et plus transparente.
+            </p>
+
+            <div class="d-flex gap-2 mt-4">
+                <a href="/register" class="btn btn-warning btn-lg">
+                    Créer un compte
+                </a>
+
+                @* <a href="#comment-ca-marche" class="btn btn-outline-primary btn-lg">
+                    Découvrir le concept
+                </a> *@
+
+                <a href="/concept-partage-energie" class="btn btn-outline-primary btn-lg">
+                    Découvrir le concept
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-5 mt-4 mt-lg-0">
+
+            
+
+            <div class="brand-card shadow-sm">
+
+                <div class="brand-title text-end">
+                    <span class="brand-energy">Energy</span><span class="brand-share">Share</span>
+                </div>
+
+                <div class="brand-heading-row">
+                    <h4 class="fw-bold mb-0">Le matching énergétique</h4>
+                    <div class="brand-underline"></div>
+                </div>
+
+                <p class="mb-0 small brand-description">
+                    Trouvez des acheteurs ou vendeurs compatibles selon vos besoins à proximité.
+                </p>
+
+            </div>
+
+
+            @* <div class="brand-card shadow-sm">
+                <div class="brand-title">
+                    <span class="brand-energy">Energy</span><span class="brand-share">Share</span>
+                </div>
+
+                <div class="brand-underline"></div>
+
+                <div class="d-flex align-items-start gap-3 mt-3">
+                    <div class="brand-icon"></div>
+
+                    <div>
+                        <h4 class="fw-bold mb-1">Le matching énergétique</h4>
+                        <p class="mb-0 small">
+                            Trouvez des acheteurs ou vendeurs compatibles selon vos besoins,
+                            votre production et votre proximité.
+                        </p>
+                    </div>
+                </div>
+            </div> *@
+        </div>
+    </div>
+</section>
+<!-- ========================================================= -->
+<!-- section publique                                          -->
+<!-- Objectif : Comment l'app fonctionne  -->
+<!-- ========================================================= -->
+
+<section id="comment-ca-marche" class="mb-5">
+    <h2 class="fw-bold mb-3">Comment ça marche ?</h2>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="step-circle">1</div>
+                    <h5 class="fw-bold">Je complète mon profil</h5>
+                    <p>
+                        J’indique ma consommation, ma production ou mon surplus disponible.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="step-circle">2</div>
+                    <h5 class="fw-bold">Je trouve un match</h5>
+                    <p>
+                        EnergyShare me propose des profils compatibles à Bruxelles.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="step-circle">3</div>
+                    <h5 class="fw-bold">Je lance le partage</h5>
+                    <p>
+                        Je prépare mon partage, mes documents et le suivi du dossier.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
 <!-- ========================================================= -->
 <!-- ACCUEIL ADMINISTRATEUR                                   -->
@@ -110,7 +230,7 @@
             </div>
 
             <!-- Messages -->
-            <div class="col-md-4">
+            <div class="col-mb-5">
                 <div class="card border-secondary">
                     <div class="card-body">
                         <h5 class="card-title">Messages</h5>
@@ -133,26 +253,11 @@
 <!-- ACCUEIL UTILISATEUR STANDARD                             -->
 <!-- Objectif : profil énergie, matching, gestion du partage   -->
 <!-- ========================================================= -->
-<AuthorizeView Roles="Utilisateur">
+@* <AuthorizeView Roles="Utilisateur">
     <Authorized>
-        <h3 class="mt-4">Mon espace énergie</h3>
+        <h3 class="mt-4"> C'est parti ⚡ !</h3>
 
         <div class="row mt-3">
-
-            <!-- Profil énergie -->
-            <div class="col-md-4">
-                <div class="card border-success">
-                    <div class="card-body">
-                        <h5 class="card-title">Profil énergie</h5>
-                        <p class="card-text">
-                            Complétez votre consommation ou production pour préparer le matching énergétique.
-                        </p>
-                        <a href="/profil-energie" class="btn btn-success">
-                            Mon profil énergie
-                        </a>
-                    </div>
-                </div>
-            </div>
 
             <!-- Point accès -->
             <div class="col-md-4">
@@ -160,7 +265,7 @@
                     <div class="card-body">
                         <h5 class="card-title">Points d'accès</h5>
                         <p class="card-text">
-                            Gérez vos compteurs, adresses et points de fourniture.
+                            Compléter les données de vos points de fourniture.
                         </p>
                         <a href="/mes-points-access" class="btn btn-info">
                             Mes points d'accès
@@ -168,29 +273,13 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Partage -->
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Partage</h5>
-                        <p class="card-text">
-                            Gérez vos partages d'énergie et suivez leur évolution.
-                        </p>
-                        <a href="/partages" class="btn btn-primary">
-                            Voir les partages
-                        </a>
-                    </div>
-                </div>
-            </div>
-
             <!-- Matching -->
             <div class="col-md-4">
                 <div class="card border-warning shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Matching énergétique</h5>
                         <p class="card-text">
-                            Trouvez des partenaires proches pour acheter ou vendre votre énergie locale en toute confiance.
+                            Trouvez des partenaires proches pour acheter ou vendre votre énergie.
                         </p>
 
                         <div class="d-flex gap-2">
@@ -201,6 +290,227 @@
                             <a href="/matching/my" class="btn btn-outline-secondary">
                                 Mes matchs
                             </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          
+
+            <!-- Partage -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Partage</h5>
+                        <p class="card-text">
+                            Créer et gérez vos partages d'énergie en toute simplicité.
+                        </p>
+                        <a href="/partages" class="btn btn-primary">
+                            Voir les partages
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profil énergie -->
+            <div class="col-md-4">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <h5 class="card-title">Profil énergie</h5>
+                        <p class="card-text">
+                            Indiquez votre consommation ou production pour préparer le matching énergétique.
+                        </p>
+                        <a href="/profil-energie" class="btn btn-success">
+                            Mon profil énergie
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </Authorized>
+</AuthorizeView> *@
+
+@* <!-- ========================================================= -->
+<!-- ACCUEIL UTILISATEUR STANDARD                             -->
+<!-- Objectif : profil énergie, matching, gestion du partage   -->
+<!-- ========================================================= -->
+<AuthorizeView Roles="Utilisateur">
+    <Authorized>
+        <h3 class="section-title mt-4">
+            C'est parti <span class="energy-exclamation">⚡</span>
+        </h3>
+
+        <div class="row g-3 shortcut-row">
+
+            <!-- Colonne 1 : Point accès + Profil énergie -->
+            <div class="col-md-4">
+                <div class="shortcut-stack">
+
+                    <!-- Point accès -->
+                    <div class="card border-info shortcut-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Points d'accès</h5>
+                            <p class="card-text">
+                                Compléter les données de vos points de fourniture.
+                            </p>
+                            <a href="/mes-points-access" class="btn btn-info">
+                                Mes points d'accès
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Profil énergie -->
+                    <div class="card border-success shortcut-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Profil énergie</h5>
+                            <p class="card-text">
+                                Indiquez votre consommation ou production pour préparer le matching énergétique.
+                            </p>
+                            <a href="/profil-energie" class="btn btn-success">
+                                Mon profil énergie
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Matching -->
+            <div class="col-md-4">
+                <div class="card border-warning shadow-sm shortcut-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Matching énergétique</h5>
+                        <p class="card-text">
+                            Trouvez des partenaires proches pour acheter ou vendre votre énergie.
+                        </p>
+
+                        <div class="d-flex gap-2">
+                            <a href="/matching/search" class="btn btn-warning">
+                                Trouver un match
+                            </a>
+
+                            <a href="/matching/my" class="btn btn-outline-secondary">
+                                Mes matchs
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Messages -->
+            <div class="card border-secondary shortcut-card">
+                <div class="card-body">
+                    <h5 class="card-title">Messages</h5>
+                    <p class="card-text">
+                        Consultez vos échanges avec vos matchs.
+                    </p>
+                    <button class="btn btn-outline-secondary" disabled>
+                        Bientôt disponible
+                    </button>
+                </div>
+            </div>
+
+            <!-- Partage -->
+            <div class="col-md-4">
+                <div class="card shortcut-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Partage</h5>
+                        <p class="card-text">
+                            Créer et gérez vos partages d'énergie en toute simplicité.
+                        </p>
+                        <a href="/partages" class="btn btn-primary">
+                            Voir les partages
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard -->
+            <div class="card border-primary shortcut-card">
+                <div class="card-body">
+                    <h5 class="card-title">Tableau de bord</h5>
+                    <p class="card-text">
+                        Suivez vos volumes, gains et indicateurs.
+                    </p>
+                    <button class="btn btn-outline-primary" disabled>
+                        Bientôt disponible
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </Authorized>
+</AuthorizeView> *@
+
+<AuthorizeView Roles="Utilisateur">
+    <Authorized>
+        <h3 class="section-title mt-4">
+            C'est parti <span class="energy-exclamation">⚡</span>
+        </h3>
+
+        <div class="row g-3 shortcut-row">
+
+            <!-- Colonne 1 : Préparer -->
+            <div class="col-md-4">
+                <div class="shortcut-stack">
+                    <div class="card border-info shortcut-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Points d'accès</h5>
+                            <p class="card-text">Compléter les données de vos points de fourniture.</p>
+                            <a href="/mes-points-access" class="btn btn-info">Mes points d'accès</a>
+                        </div>
+                    </div>
+
+                    <div class="card border-success shortcut-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Profil énergie</h5>
+                            <p class="card-text">Indiquez votre consommation ou production pour préparer le matching énergétique.</p>
+                            <a href="/profil-energie" class="btn btn-success">Mon profil énergie</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonne 2 : Mettre en relation -->
+            <div class="col-md-4">
+                <div class="shortcut-stack">
+                    <div class="card border-warning shadow-sm shortcut-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Matching énergétique</h5>
+                            <p class="card-text">Trouvez des partenaires proches pour acheter ou vendre votre énergie.</p>
+
+                            <div class="d-flex gap-2">
+                                <a href="/matching/search" class="btn btn-warning">Trouver un match</a>
+                                <a href="/matching/my" class="btn btn-outline-secondary">Mes matchs</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-secondary shortcut-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Messages</h5>
+                            <p class="card-text">Consultez vos échanges avec vos matchs.</p>
+                            <button class="btn btn-outline-secondary" disabled>Bientôt disponible</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonne 3 : Suivre -->
+            <div class="col-md-4">
+                <div class="shortcut-stack">
+                    <div class="card shortcut-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Partage</h5>
+                            <p class="card-text">Créer et gérez vos partages d'énergie en toute simplicité.</p>
+                            <a href="/partages" class="btn btn-primary">Voir les partages</a>
+                        </div>
+                    </div>
+
+                    <div class="card border-primary shortcut-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Tableau de bord</h5>
+                            <p class="card-text">Suivez vos volumes, gains et indicateurs.</p>
+                            <button class="btn btn-outline-primary" disabled>Bientôt disponible</button>
                         </div>
                     </div>
                 </div>
