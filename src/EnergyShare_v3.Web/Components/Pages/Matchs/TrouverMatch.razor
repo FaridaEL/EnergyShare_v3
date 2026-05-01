@@ -1,0 +1,250 @@
+﻿@page "/matching/search"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Mediator
+@using EnergyShare_v3.Application.Features.Matching
+@using EnergyShare_v3.Application.Features.PointAccess
+
+@inject ISender Sender
+
+<PageTitle>Trouver un match</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Trouver un match énergétique</h2>
+            <p class="text-muted mb-0">Découvrez les profils compatibles avec votre point d’accès.</p>
+        </div>
+
+        <a class="btn btn-outline-secondary" href="/matching/my">
+            Mes matchs
+        </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body">
+                    <div class="text-muted small">Matchs trouvés</div>
+                    <div class="display-6 fw-bold">@PotentialMatches.Count</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body">
+                    <label class="form-label fw-semibold">Point d’accès</label>
+
+                    <select class="form-select mb-3" @bind="SelectedPointAccessId">
+                        <option value="">Sélectionner un point d’accès</option>
+
+                        @foreach (var point in MyPointAccesses)
+                        {
+                            <option value="@point.Id">
+                                @point.AdresseLine1 - @point.CodePostal
+                            </option>
+                        }
+                    </select>
+
+                    <button class="btn btn-success rounded-pill px-4"
+                            @onclick="SearchMatches"
+                            disabled="@IsSearching">
+                        @(IsSearching ? "Recherche..." : "Rechercher")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <div class="alert @MessageCss">@Message</div>
+    }
+
+    @if (IsLoading)
+    {
+        <p>Chargement...</p>
+    }
+    else if (HasSearched && PotentialMatches.Count == 0)
+    {
+        <div class="alert alert-info rounded-4">
+            Aucun match trouvé pour ce point d’accès.
+        </div>
+    }
+    else if (PotentialMatches.Count > 0)
+    {
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">Suggestions de matchs</h5>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Distance</th>
+                                <th>Offre</th>
+                                <th>Demande</th>
+                                <th>Prix vendeur</th>
+                                <th>Prix acheteur</th>
+                                <th>Disponibilité</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var match in PotentialMatches)
+                            {
+                                <tr>
+                                    <td><strong>@match.DistanceCalculee km</strong></td>
+                                    <td>@FormatKwh(match.OffreEnergie_kWh)</td>
+                                    <td>@FormatKwh(match.DemandeEnergie_kWh)</td>
+                                    <td>@FormatPrice(match.PrixVenteCible_Eur)</td>
+                                    <td>@FormatPrice(match.PrixAchatCible_Eur)</td>
+                                    <td>
+                                        @if (match.EstDisponible)
+                                        {
+                                            <span class="badge bg-success">Libre</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Déjà en partage</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-outline-warning btn-sm rounded-pill me-2"
+                                                title="Sauver ce match"
+                                                @onclick="() => SaveMatch(match)">
+                                            ★ Sauver
+                                        </button>
+
+                                        <button class="btn btn-outline-primary btn-sm rounded-pill" disabled>
+                                            Contacter
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="text-muted small mt-3 mb-0">
+                    Pour des raisons de confidentialité, seules les données utiles au matching sont affichées.
+                </p>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<PointAccessSummaryDto> MyPointAccesses { get; set; } = [];
+    private List<PotentialMatchDto> PotentialMatches { get; set; } = [];
+
+    private Guid? SelectedPointAccessId { get; set; }
+
+    private bool IsLoading { get; set; } = true;
+    private bool IsSearching { get; set; }
+    private bool HasSearched { get; set; }
+
+    private string? Message { get; set; }
+    private string MessageCss { get; set; } = "alert-info";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Sender.Send(new GetMyPointAccesses());
+
+        if (!result.IsSuccess)
+        {
+            Message = "Impossible de charger vos points d’accès.";
+            MessageCss = "alert-danger";
+            IsLoading = false;
+            return;
+        }
+
+        MyPointAccesses = result.Value.ToList();
+        SelectedPointAccessId = MyPointAccesses.FirstOrDefault()?.Id;
+        IsLoading = false;
+    }
+    private async Task SearchMatches()
+    {
+        if (SelectedPointAccessId is null)
+        {
+            Message = "Veuillez sélectionner un point d’accès.";
+            MessageCss = "alert-warning";
+            return;
+        }
+
+        IsSearching = true;
+        HasSearched = true;
+        Message = null;
+
+        var result = await Sender.Send(new SearchPotentialMatchesQuery(SelectedPointAccessId.Value));
+
+        if (!result.IsSuccess)
+        {
+            Message = "La recherche de match a échoué.";
+            MessageCss = "alert-danger";
+            IsSearching = false;
+            return;
+        }
+
+        PotentialMatches = result.Value.ToList();
+        Message = $"{PotentialMatches.Count} match(s) potentiel(s) trouvé(s).";
+        MessageCss = "alert-success";
+        IsSearching = false;
+    }
+
+
+    private async Task SaveMatch(PotentialMatchDto match)
+    {
+        var result = await Sender.Send(new CreateMatch(
+            match.PointAccessVendeurId,
+            match.PointAccessAcheteurId,
+            match.DistanceCalculee));
+
+        if (result.IsSuccess)
+        {
+            Message = "Match sauvegardé dans vos matchs.";
+            MessageCss = "alert-success";
+        }
+        else
+        {
+            Message = "Impossible de sauvegarder ce match.";
+            MessageCss = "alert-danger";
+        }
+    }
+
+    private static string FormatKwh(decimal? value)
+        => value.HasValue ? $"{value.Value:N0} kWh" : "-";
+
+    private static string FormatPrice(decimal? value)
+        => value.HasValue ? $"{value.Value:N2} €/kWh" : "-";
+
+    // private record PointAccessListItemDto(
+    //     Guid Id,
+    //     string? AdresseLine1,
+    //     string? CodePostal,
+    //     bool IsInjectionPoint,
+    //     string? Fournisseur,
+    //     bool EstActif,
+    //     Guid UserId,
+    //     DateTime CreatedAt);
+
+    // private record PotentialMatchDto(
+    //     Guid PointAccessVendeurId,
+    //     Guid PointAccessAcheteurId,
+    //     Guid VendeurUserId,
+    //     Guid AcheteurUserId,
+    //     decimal? OffreEnergie_kWh,
+    //     decimal? DemandeEnergie_kWh,
+    //     decimal? PrixVenteCible_Eur,
+    //     decimal? PrixAchatCible_Eur,
+    //     decimal DistanceCalculee,
+    //     bool EstDisponible);
+
+    // private record CreateMatchRequest(
+    //     Guid PointAccessVendeurId,
+    //     Guid PointAccessAcheteurId,
+    //     decimal DistanceCalculee);
+}
