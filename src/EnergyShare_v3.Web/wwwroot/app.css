@@ -115,15 +115,15 @@ h1:focus {
     align-items: center;
 }
 
-.brand-block {
+/*.brand-block {
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-}
+}*/
 
-.nav-logo {
+/*.nav-logo {
     width: 58px;
     height: 58px;
     object-fit: contain;
@@ -131,7 +131,7 @@ h1:focus {
     border-radius: 12px;
     padding: 4px;
     display: block;
-}
+}*/
 
 .brand-name {
     display: block;
@@ -144,6 +144,14 @@ h1:focus {
 }
 
 /*Mise en forme branding*/
+/*.card {
+    transition: all 0.2s ease;
+}*/
+/*card plys dynamique*/
+ /*.card:hover {
+    
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+}*/
 
 
 .brand-card {
@@ -214,6 +222,12 @@ h1:focus {
 
 .shortcut-card {
     min-height: 120px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.shortcut-card:hover {
+    transform: translateY(-3px);
+     box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+
 }
 
 .shortcut-stack {
@@ -303,4 +317,91 @@ h1:focus {
     padding: 10px;
     background: white;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+
+/*menu gauche*/
+.nav-link {
+    font-size: 0.95rem; /* Taille légèrement augmentée pour lisibilité */
+    font-weight: 500; /* Semi-bold pour meilleure hiérarchie */
+    display: flex; /* Permet alignement icône + texte */
+    align-items: center; /* Alignement vertical */
+    gap: 0.65rem; /* Espacement icône / texte */
+    min-height: 42px; /* Zone cliquable confortable */
+    border-radius: 8px; /* Cohérence avec les cards */
+    transition: background 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/*.nav-section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #9aa3b2;
+    margin: 1rem 1rem 0.5rem;
+}*/
+
+/* Icônes du menu */
+.nav-link span.bi {
+    width: 18px; /* Taille fixe pour alignement propre */
+    min-width: 18px;
+    text-align: center;
+    opacity: 0.9; /* Légèrement atténué pour éviter surcharge visuelle */
+}
+
+
+/* Effet au survol */
+.nav-link:hover {
+    background: rgba(255,255,255,0.10); /* Feedback visuel discret */
+}
+/* Lien actif (page courante) */
+.nav-link.active {
+    background: rgba(255,255,255,0.16); /* Mise en évidence */
+    border-radius: 8px;
+    font-weight: 700; /* Accent visuel */
+}
+/* Titres de section (Mon espace, Matching, Admin) */
+.nav-section-title {
+    font-size: 0.72rem; /* Plus petit pour hiérarchie */
+    text-transform: uppercase; /* Style UI moderne */
+    letter-spacing: 0.06em; /* Espacement des lettres */
+    color: rgba(255,255,255,0.55); /* Contraste léger */
+    margin: 1rem 1.25rem 0.35rem; /* Espacement vertical */
+    font-weight: 700;
+}
+
+
+/* Conteneur du logo + nom */
+.brand-block {
+    display: flex;
+    flex-direction: column; /* Logo au-dessus du texte */
+    align-items: center; /* Centrage horizontal */
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+
+/* Logo */
+.nav-logo {
+    width: 72px; /* Taille maîtrisée */
+    height: 72px;
+    object-fit: contain;
+    background: white;
+    border-radius: 12px;
+    padding: 4px;
+    display: block;
+}
+
+
+/* Nom de l’application */
+/*.brand-name {
+    color: white;
+    font-size: 1.05rem;
+    font-weight: 700;
+}*/
+
+
+/* Zone scrollable du menu */
+.nav-scrollable {
+    padding-top: 0.5rem;
 }

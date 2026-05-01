@@ -5,7 +5,7 @@
         <a class="navbar-brand" href="">EnergyShare_v3.Web</a>
     </div>
 </div> *@
-
+@* 
 <div class="top-row navbar navbar-dark">
     <div class="brand-block">
         <img src="images/logo-energyshare.png"
@@ -84,5 +84,115 @@
         </AuthorizeView>
 
     </nav>
+</div> *@
+
+<!-- ========================= -->
+<!-- LOGO / BRANDING SIDEBAR   -->
+<!-- ========================= -->
+<div class="sidebar-logo">
+    <div class="brand-block">
+        <img src="images/logo-energyshare.png"
+             alt="Logo EnergyShare"
+             class="nav-logo" />
+
+        <span class="brand-name">EnergyShare</span>
+    </div>
 </div>
+
+<!-- ========================= -->
+<!-- MENU DE NAVIGATION        -->
+<!-- ========================= -->
+<nav class="nav flex-column">
+
+    <!-- Accueil -->
+    <div class="nav-item px-3">
+        <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span>
+            <span>Home</span>
+        </NavLink>
+    </div>
+
+    <!-- ========================= -->
+    <!-- SECTION : MON ESPACE USER -->
+    <!-- ========================= -->
+    <AuthorizeView>
+        <Authorized>
+            <div class="nav-section-title">Mon espace</div>
+
+            <!-- Mon profil utilisateur -->
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="mon-profil">
+                    <span class="bi bi-person-fill" aria-hidden="true"></span>
+                    <span>Mon profil</span>
+                </NavLink>
+            </div>
+        </Authorized>
+    </AuthorizeView>
+
+    <!-- ========================= -->
+    <!-- SECTION : UTILISATEUR     -->
+    <!-- ========================= -->
+    <AuthorizeView Roles="Utilisateur">
+        <Authorized>
+
+            <!-- Mes points d'accès -->
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="mes-points-access">
+                    <span class="bi bi-geo-alt-fill" aria-hidden="true"></span>
+                    <span>Mes points d'accès</span>
+                </NavLink>
+            </div>
+
+            <!-- Mon profil énergie -->
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="profil-energie">
+                    <span class="bi bi-lightning-charge-fill" aria-hidden="true"></span>
+                    <span>Mon profil énergie</span>
+                </NavLink>
+            </div>
+
+            <!-- ========================= -->
+            <!-- SOUS-SECTION : MATCHING   -->
+            <!-- ========================= -->
+            <div class="nav-section-title">Matching</div>
+
+            <!-- Trouver un match -->
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="matching/search">
+                    <span class="bi bi-search" aria-hidden="true"></span>
+                    <span>Trouver un match</span>
+                </NavLink>
+            </div>
+
+            <!-- Mes matchs -->
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="matching/my">
+                    <span class="bi bi-list-ul" aria-hidden="true"></span>
+                    <span>Mes matchs</span>
+                </NavLink>
+            </div>
+
+        </Authorized>
+    </AuthorizeView>
+
+    <!-- ========================= -->
+    <!-- SECTION : ADMIN           -->
+    <!-- ========================= -->
+    <AuthorizeView Roles="Administrateur">
+        <Authorized>
+
+            <div class="nav-section-title">Administration</div>
+
+            <!-- Gestion des utilisateurs -->
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="users">
+                    <span class="bi bi-people-fill" aria-hidden="true"></span>
+                    <span>Utilisateurs</span>
+                </NavLink>
+            </div>
+
+        </Authorized>
+    </AuthorizeView>
+
+</nav>
 

@@ -363,7 +363,8 @@ app.MapPost("/logout", async (SignInManager<User> signInManager) =>
     try
     {
         await signInManager.SignOutAsync();
-        return Results.Redirect("/login");
+        return Results.Redirect("/");
+        //return Results.Redirect("/login");
     }
     catch (Exception ex)
     {
