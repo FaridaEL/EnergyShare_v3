@@ -342,16 +342,21 @@ app.UseAntiforgery();
 
 
 app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
 
 //Minimal API
+
+//minimal api d'abord car MapRazorComponents<App>() peut capter des routes qui ne sont pas trouvées comme de la navigation Blazor. 
 app.MapUsers();
 app.MapProfilEnergie();
 app.MapPointAccess();
 app.MapMatching();
 app.MapAuth();
 app.MapDebug();
+
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+
+
 
 app.MapPost("/logout", async (SignInManager<User> signInManager) =>
 {

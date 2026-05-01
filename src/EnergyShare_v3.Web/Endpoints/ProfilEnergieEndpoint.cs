@@ -1,4 +1,5 @@
-﻿using Ardalis.Result.AspNetCore;
+﻿using ArdalisResultStatus = Ardalis.Result.ResultStatus;
+using Ardalis.Result.AspNetCore;
 using EnergyShare_v3.Application.Features.ProfilEnergie;
 using Mediator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -35,10 +36,22 @@ namespace EnergyShare_v3.Web.Endpoints
             return response.ToMinimalApiResult();
         }
 
-        internal static async Task<IResult> GetProfilEnergieById(ISender sender, Guid id)
-        {
-            var response = await sender.Send(new GetProfilEnergieById(id));
-            return response.ToMinimalApiResult();
+        internal static async Task<IResult> GetProfilEnergieById(
+        ISender sender,
+        Guid id)
+            {
+                var response = await sender.Send(new GetProfilEnergieById(id));
+
+                if (response.Status == ArdalisResultStatus.Forbidden)
+                    return Results.StatusCode(403);
+
+                if (response.Status == ArdalisResultStatus.NotFound)
+                    return Results.NotFound();
+
+                if (!response.IsSuccess)
+                    return Results.BadRequest();
+
+                return Results.Ok(response.Value);
         }
 
         internal static async Task<IResult> CreateProfilEnergie(

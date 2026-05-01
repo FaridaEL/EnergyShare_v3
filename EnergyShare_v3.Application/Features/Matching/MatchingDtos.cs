@@ -25,6 +25,8 @@ namespace EnergyShare_v3.Application.Features.Matching
        Guid PointAccessAcheteurId,
        Guid VendeurUserId,
        Guid AcheteurUserId,
+       string PrenomVendeurMatch,
+       string PrenomAcheteurMatch,
        decimal? OffreEnergie_kWh,
        decimal? DemandeEnergie_kWh,
        decimal? PrixVenteCible_Eur,

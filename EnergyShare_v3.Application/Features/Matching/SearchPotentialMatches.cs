@@ -43,6 +43,7 @@ namespace EnergyShare_v3.Application.Features.Matching
             // 1. Point d’accès de départ : c’est lui qui porte l’adresse, le user et le consentement.
             var sourcePointAccess = await context.PointAccesses
                 .AsNoTracking()
+                .Include(pa => pa.User)
                 .Include(pa => pa.Membres)
                 .FirstOrDefaultAsync(pa => pa.Id == query.SourcePointAccessId, cancellationToken);
 
@@ -67,6 +68,7 @@ namespace EnergyShare_v3.Application.Features.Matching
                 .Join(
                     context.PointAccesses
                         .AsNoTracking()
+                        .Include(pa => pa.User)
                         .Include(pa => pa.Membres),
                     profil => profil.PointAccessId,
                     pointAccess => pointAccess.Id,
@@ -110,6 +112,8 @@ namespace EnergyShare_v3.Application.Features.Matching
                         acheteurPoint.Id,
                         vendeurPoint.UserId,
                         acheteurPoint.UserId,
+                        GetDisplayFirstName(vendeurPoint.User.FirstName),
+                        GetDisplayFirstName(acheteurPoint.User.FirstName),
                         vendeurProfil.OffreEnergie_kWh,
                         acheteurProfil.DemandeEnergie_kWh,
                         vendeurProfil.PrixVenteCible_Eur,
@@ -152,6 +156,13 @@ namespace EnergyShare_v3.Application.Features.Matching
             var distance = Math.Sqrt((dLat * dLat) + (dLon * dLon)) * 111; //*111 pour convertir les degrés en kilomètres (approximation) 1 degré = 111km sur Terre
 
             return Math.Round((decimal)distance, 2);
+        }
+
+        private static string GetDisplayFirstName(string? firstName)
+        {
+            return string.IsNullOrWhiteSpace(firstName)
+                ? "Utilisateur"
+                : firstName;
         }
     }
 }

@@ -84,6 +84,7 @@
                     <table class="table align-middle">
                         <thead>
                             <tr>
+                                <th>Match</th>
                                 <th>Distance</th>
                                 <th>Offre</th>
                                 <th>Demande</th>
@@ -97,6 +98,7 @@
                             @foreach (var match in PotentialMatches)
                             {
                                 <tr>
+                                    <td>@GetPrenomMatch(match)</td>
                                     <td><strong>@match.DistanceCalculee km</strong></td>
                                     <td>@FormatKwh(match.OffreEnergie_kWh)</td>
                                     <td>@FormatKwh(match.DemandeEnergie_kWh)</td>
@@ -247,4 +249,18 @@
     //     Guid PointAccessVendeurId,
     //     Guid PointAccessAcheteurId,
     //     decimal DistanceCalculee);
+
+    private Guid? CurrentUserId =>
+    MyPointAccesses.FirstOrDefault(p => p.Id == SelectedPointAccessId)?.UserId;
+
+    private string GetPrenomMatch(PotentialMatchDto match)
+    {
+        if (CurrentUserId == match.VendeurUserId)
+            return match.PrenomAcheteurMatch;
+
+        if (CurrentUserId == match.AcheteurUserId)
+            return match.PrenomVendeurMatch;
+
+        return "Utilisateur";
+    }
 }
