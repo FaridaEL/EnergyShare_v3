@@ -44,9 +44,6 @@ namespace EnergyShare_v3.Application.Features.Partage
 
             var vendeurId = userContext.UserId.Value; // Utilise l'Id de l'utilisateur connecté comme vendeur du partage  via user-context
 
-            // TODO : plus tard, éviter de faire confiance à command.VendeurId
-            // et utiliser userContext.UserId si le vendeur doit être l'utilisateur courant
-
             var result = Domain.Entities.Partages.Partage.Create(
                 command.Nom,
                 command.EnergieType,

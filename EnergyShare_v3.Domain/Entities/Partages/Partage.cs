@@ -100,12 +100,18 @@ namespace EnergyShare_v3.Domain.Entities.Partages
 
             Membres.Add(membre);
 
-            var validation = VerifierNombreMembres();
-            if (!validation.IsSuccess)
-            {
-                Membres.Remove(membre);
-                return validation;
-            }
+            // IMPORTANT :
+            // On ne vérifie pas ici le nombre minimum/maximum de membres, sinon un partage P-to-P
+            // refuserait le premier membre ajouté, car il attend exactement 2 membres.
+            // La validation du nombre de membres se fera donc au moment de la soumission au GRD lorsqu'on considère que la 
+            // composition du partage est complète.
+
+            //var validation = VerifierNombreMembres();
+            //if (!validation.IsSuccess)
+            //{
+            //    Membres.Remove(membre);
+            //    return validation;
+            //}
             Audit.Touch(null);
             return Result.Success();
         }
@@ -165,6 +171,11 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         {
             if (Statut is not PartageEnergieStatutType.Inactif)
                 return PartageErrors.SoumissionGrdImpossible();
+
+
+            var validationNombreMembres = VerifierNombreMembres();
+            if (!validationNombreMembres.IsSuccess)
+                return validationNombreMembres;
 
             Statut = PartageEnergieStatutType.EnAttenteValidation;
             Audit.Touch(null);

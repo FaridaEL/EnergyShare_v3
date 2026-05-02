@@ -347,6 +347,7 @@ app.MapStaticAssets();
 
 //minimal api d'abord car MapRazorComponents<App>() peut capter des routes qui ne sont pas trouvées comme de la navigation Blazor. 
 app.MapUsers();
+app.MapPartages();
 app.MapMessages();
 app.MapProfilEnergie();
 app.MapPointAccess();

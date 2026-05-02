@@ -32,6 +32,30 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         public AuditInfo Audit { get; private set; } = new AuditInfo();
 
 
+        //Todo : éventuellement à relire et modifier
+        public static Result<ParticipationPartage> Create(
+            Guid partageId,
+            Guid pointAccessId,
+            UserRolePartage role)
+                {
+                    if (partageId == Guid.Empty)
+                        return ParticipationPartageErrors.PartageObligatoire().Map();
+
+                    if (pointAccessId == Guid.Empty)
+                        return ParticipationPartageErrors.PointAccessObligatoire().Map();
+
+                    var participation = new ParticipationPartage
+                    {
+                        Id = Guid.NewGuid(),
+                        PartageId = partageId,
+                        PointAccessId = pointAccessId,
+                        UserRolePartage = role,
+                        JoinedAt = DateTime.UtcNow
+                    };
+
+                    return Result.Success(participation);
+        }
+
         //interlocuteur unique : le vendeur-producteur est l'interlocuteur unique du partage, il est le seul à pouvoir créer le partage et à communiquer le préavis de sortie du partage.
 
         public Result DefinirCommeInterlocuteurUnique()
