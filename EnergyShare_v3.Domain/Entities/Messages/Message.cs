@@ -47,17 +47,18 @@ namespace EnergyShare_v3.Domain.Entities.Messages
         //Constructeurs
         //Constructeur
         private Message() { } // Constructeur privé pour EF Core
-        private Message(string objet, string contenu, Guid expediteurId, Guid destinataire)
+        private Message(string objet, string contenu, Guid expediteurId, Guid destinataire, Guid? matchId = null)
         {
             Id = Guid.NewGuid();
             ObjetMessage = objet;
             Contenu = contenu;
             ExpediteurId = expediteurId;
             DestinataireId = destinataire;
+            MatchId = matchId;
 
         }
 
-        public static Result<Message> Create(string objet, string contenu, Guid expediteurId, Guid destinataireId)
+        public static Result<Message> Create(string objet, string contenu, Guid expediteurId, Guid destinataireId, Guid? matchId = null)
         {
             if (expediteurId == Guid.Empty)
                 return MessageErrors.ExpediteurObligatoire().Map();
@@ -74,11 +75,11 @@ namespace EnergyShare_v3.Domain.Entities.Messages
             if (string.IsNullOrWhiteSpace(contenu))
                 return MessageErrors.ContenuObligatoire().Map();
 
-            return Result.Success(new Message(objet, contenu, expediteurId, destinataireId));
+            return Result.Success(new Message(objet, contenu, expediteurId, destinataireId, matchId));
         }
+
+       
 
 
     }
-
-
 }
