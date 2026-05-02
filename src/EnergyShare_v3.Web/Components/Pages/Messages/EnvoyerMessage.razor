@@ -13,17 +13,6 @@
 <PageTitle>Envoyer un message</PageTitle>
 
 <div class="container py-4">
-    @* <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold mb-1">Mes messages</h2>
-            <p class="text-muted mb-0">Consultez vos échanges avec vos matchs.</p>
-        </div>
-    </div>
-
-    @if (!string.IsNullOrWhiteSpace(AlertMessage))
-    {
-        <div class="alert alert-info rounded-4">@AlertMessage</div>
-    } *@
 
     <div class="card shadow-sm border-0 rounded-4 mb-4">
         <div class="card-body">
@@ -31,10 +20,9 @@
 
             <div class="row g-3">
                 <div class="col-md-6">
-                    @* <label class="form-label">DestinataireId</label>
-                    <input class="form-control" @bind="NewMessage.DestinataireIdText" /> *@
+                    @* TODO : adpater avec le nom de l'utilisateur sélectionné *@
                     <label class="form-label">Destinataire</label>
-                    <input class="form-control" value="Utilisateur sélectionné" disabled />
+                    <input class="form-control" value="@DestinataireDisplayName" disabled />
                 </div>
 
                 <div class="col-md-6">
@@ -56,34 +44,7 @@
         </div>
     </div>
 
-    @* <ul class="nav nav-tabs mb-3">
-        <li class="nav-item">
-            <button class="nav-link @(ActiveTab == "inbox" ? "active" : "")"
-                    @onclick='() => ActiveTab = "inbox"'>
-                Reçus (@Inbox.Count)
-            </button>
-        </li>
-
-        <li class="nav-item">
-            <button class="nav-link @(ActiveTab == "outbox" ? "active" : "")"
-                    @onclick='() => ActiveTab = "outbox"'>
-                Envoyés (@Outbox.Count)
-            </button>
-        </li>
-    </ul> *@
-
-    @if (IsLoading)
-    {
-        <p>Chargement...</p>
-    }
-    @* else if (ActiveTab == "inbox")
-    {
-        @RenderMessagesTable(Inbox, true)
-    }
-    else
-    {
-        @RenderMessagesTable(Outbox, false)
-    } *@
+   
 </div>
 
 @code {
@@ -95,13 +56,9 @@
     private string? AlertMessage { get; set; }
 
     private NewMessageForm NewMessage { get; set; } = new();
+    private string DestinataireDisplayName { get; set; } = "Utilisateur sélectionné";
 
-    // protected override async Task OnInitializedAsync()
-    // {
-    //     ReadQueryString();
-    //     // await LoadMessagesAsync();
-        
-    // }
+  
     protected override Task OnInitializedAsync()
     {
         ReadQueryString();
@@ -113,6 +70,11 @@
     {
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
         var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("prenom", out var prenom))
+        {
+            DestinataireDisplayName = prenom!;
+        }
 
         if (query.TryGetValue("to", out var to))
             NewMessage.DestinataireIdText = to!;
@@ -133,18 +95,6 @@
         }
     }
 
-    // private async Task LoadMessagesAsync()
-    // {
-    //     IsLoading = true;
-
-    //     var inboxResult = await Sender.Send(new GetInboxMessages());
-    //     var outboxResult = await Sender.Send(new GetSentMessages());
-
-    //     Inbox = inboxResult.IsSuccess ? inboxResult.Value.ToList() : [];
-    //     Outbox = outboxResult.IsSuccess ? outboxResult.Value.ToList() : [];
-
-    //     IsLoading = false;
-    // }
 
     private async Task SendMessageAsync()
     {
@@ -183,128 +133,6 @@
         ActiveTab = "outbox";
     }
 
-    // private async Task MarkAsReadAsync(Guid messageId)
-    // {
-    //     var result = await Sender.Send(new MarkMessageAsRead(messageId));
-
-    //     if (!result.IsSuccess)
-    //     {
-    //         AlertMessage = "Impossible de marquer ce message comme lu.";
-    //         return;
-    //     }
-
-    //     await LoadMessagesAsync();
-    // }
-
-    // private void ReplyTo(MessageDto message)
-    // {
-    //     NewMessage.DestinataireIdText = message.ExpediteurId.ToString();
-    //     NewMessage.ObjetMessage = $"RE: {message.ObjetMessage}";
-    //     NewMessage.Contenu = "";
-    //     NewMessage.MatchIdText = message.MatchId?.ToString();
-    // }
-
-    // private RenderFragment RenderMessagesTable(List<MessageDto> messages, bool isInbox) => builder =>
-    // {
-    //     if (messages.Count == 0)
-    //     {
-    //         builder.AddMarkupContent(0, """
-    //             <div class="alert alert-info rounded-4">
-    //                 Aucun message à afficher.
-    //             </div>
-    //         """);
-    //         return;
-    //     }
-
-    //     builder.OpenElement(1, "div");
-    //     builder.AddAttribute(2, "class", "card shadow-sm border-0 rounded-4");
-
-    //     builder.OpenElement(3, "div");
-    //     builder.AddAttribute(4, "class", "card-body table-responsive");
-
-    //     builder.OpenElement(5, "table");
-    //     builder.AddAttribute(6, "class", "table align-middle");
-
-    //     builder.AddMarkupContent(7, """
-    //         <thead>
-    //             <tr>
-    //                 <th>Date</th>
-    //                 <th>Type</th>
-    //                 <th>Objet</th>
-    //                 <th>Contenu</th>
-    //                 <th>Contact</th>
-    //                 <th>Statut</th>
-    //                 <th class="text-end">Actions</th>
-    //             </tr>
-    //         </thead>
-    //     """);
-
-    //     builder.OpenElement(8, "tbody");
-
-    //     var sequence = 9;
-
-    //     foreach (var message in messages)
-    //     {
-    //         builder.OpenElement(sequence++, "tr");
-
-    //         builder.OpenElement(sequence++, "td");
-    //         builder.AddContent(sequence++, message.DateEnvoi.ToLocalTime().ToString("dd/MM/yyyy HH:mm"));
-    //         builder.CloseElement();
-
-    //         builder.OpenElement(sequence++, "td");
-    //         builder.AddMarkupContent(sequence++, isInbox
-    //             ? "<span class=\"badge bg-primary\">IN</span>"
-    //             : "<span class=\"badge bg-secondary\">OUT</span>");
-    //         builder.CloseElement();
-
-    //         builder.OpenElement(sequence++, "td");
-    //         builder.AddContent(sequence++, message.ObjetMessage);
-    //         builder.CloseElement();
-
-    //         builder.OpenElement(sequence++, "td");
-    //         builder.AddContent(sequence++, message.Contenu);
-    //         builder.CloseElement();
-
-    //         builder.OpenElement(sequence++, "td");
-    //         builder.AddContent(sequence++, isInbox ? message.NomExpediteur : message.NomDestinataire);
-    //         builder.CloseElement();
-
-    //         builder.OpenElement(sequence++, "td");
-    //         builder.AddMarkupContent(sequence++, message.IsLu
-    //             ? "<span class=\"badge bg-success\">Lu</span>"
-    //             : "<span class=\"badge bg-warning text-dark\">Non lu</span>");
-    //         builder.CloseElement();
-
-    //         builder.OpenElement(sequence++, "td");
-    //         builder.AddAttribute(sequence++, "class", "text-end");
-
-    //         if (isInbox)
-    //         {
-    //             builder.OpenElement(sequence++, "button");
-    //             builder.AddAttribute(sequence++, "class", "btn btn-outline-primary btn-sm rounded-pill me-2");
-    //             builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create(this, () => ReplyTo(message)));
-    //             builder.AddContent(sequence++, "Répondre");
-    //             builder.CloseElement();
-
-    //             if (!message.IsLu)
-    //             {
-    //                 builder.OpenElement(sequence++, "button");
-    //                 builder.AddAttribute(sequence++, "class", "btn btn-outline-success btn-sm rounded-pill");
-    //                 builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create(this, () => MarkAsReadAsync(message.Id)));
-    //                 builder.AddContent(sequence++, "Marquer lu");
-    //                 builder.CloseElement();
-    //             }
-    //         }
-
-    //         builder.CloseElement();
-    //         builder.CloseElement();
-    //     }
-
-    //     builder.CloseElement();
-    //     builder.CloseElement();
-    //     builder.CloseElement();
-    //     builder.CloseElement();
-    // };
 
     private class NewMessageForm
     {

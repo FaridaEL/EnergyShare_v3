@@ -33,9 +33,11 @@ namespace EnergyShare_v3.Application.Features.Messages
                     m.DateEnvoi,
                     m.IsLu,
                     m.ExpediteurId,
-                    m.Expediteur.Email,
+                    //m.Expediteur.Email,  //on n'expose par l'email  --> mais le prénom plutôt afin déviter le contournement de la plateforme
+                    m.Expediteur.FirstName ?? "Utilisateur",
                     m.DestinataireId,
-                    m.Destinataire.Email,
+                    //m.Destinataire.Email,
+                    m.Destinataire.FirstName ?? "Utilisateur",
                     m.MatchId
                 ))
                 .ToListAsync(cancellationToken);

@@ -66,20 +66,17 @@
                             {
                                 <tr>
                                     <td>@match.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
-                                    <td>@ShortId(match.PointAccessVendeurId)</td>
-                                    <td>@ShortId(match.PointAccessAcheteurId)</td>
+                                    <td>@match.PrenomVendeurMatch</td>
+                                    <td>@match.PrenomAcheteurMatch</td>
                                     <td><strong>@match.DistanceCalculee km</strong></td>
                                     <td class="text-end">
-                                        <button class="btn btn-outline-primary btn-sm rounded-pill" disabled>
+                                       @*  <button class="btn btn-outline-primary btn-sm rounded-pill" disabled>
                                             Contacter
-                                        </button>
-                                           @* <-- to do : adapter le dto savedMatch SummaryDto --!> *@
-                                        
-                                       @*  <a class="btn btn-outline-primary btn-sm rounded-pill"
-                                           href="@($"/messages/send?tomatchId={match.MatchId}")"> 
-                                            href="@($"/messages/send?to={match.ContactUserId}&matchId={match.MatchId}")">
+                                        </button> *@
+                                        <a class="btn btn-outline-primary btn-sm rounded-pill"
+                                           href="@($"/messages/send?to={match.ContactUserId}&prenom={Uri.EscapeDataString(match.ContactPrenom)}&matchId={match.MatchId}")">
                                             Contacter
-                                        </a>  *@
+                                        </a>
                                     </td>
                                 </tr>
                             }
@@ -115,8 +112,8 @@
         IsLoading = false;
     }
 
-    private static string ShortId(Guid id)
-        => id.ToString()[..8];
+    // private static string ShortId(Guid id)
+    //     => id.ToString()[..8];
 
     // private record SavedMatchSummaryDto(
     //     Guid MatchId,

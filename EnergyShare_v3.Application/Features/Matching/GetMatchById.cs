@@ -39,6 +39,20 @@ namespace EnergyShare_v3.Application.Features.Matching
                     m.Id,
                     m.PointAccessVendeurId,
                     m.PointAccessAcheteurId,
+
+                     m.PointAccessVendeur.UserId,
+                    m.PointAccessAcheteur.UserId,
+                    m.PointAccessVendeur.User.FirstName ?? "Vendeur",
+                    m.PointAccessAcheteur.User.FirstName ?? "Acheteur",
+
+                    m.PointAccessVendeur.UserId == currentUserId
+                        ? m.PointAccessAcheteur.UserId
+                        : m.PointAccessVendeur.UserId,
+
+                    m.PointAccessVendeur.UserId == currentUserId
+                        ? (m.PointAccessAcheteur.User.FirstName ?? "Acheteur")
+                        : (m.PointAccessVendeur.User.FirstName ?? "Vendeur"),
+
                     m.DistanceCalculee,
                     m.Audit.CreatedAt
                 ))

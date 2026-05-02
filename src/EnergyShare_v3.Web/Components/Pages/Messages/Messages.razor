@@ -3,7 +3,6 @@
 @attribute [Authorize]
 
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.WebUtilities
 @using Mediator
 @using EnergyShare_v3.Application.Features.Messages
 
@@ -13,11 +12,9 @@
 <PageTitle>Mes messages</PageTitle>
 
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold mb-1">Mes messages</h2>
-            <p class="text-muted mb-0">Consultez vos échanges avec vos matchs.</p>
-        </div>
+    <div class="mb-4">
+        <h2 class="fw-bold mb-1">Mes messages</h2>
+        <p class="text-muted mb-0">Consultez vos échanges avec vos matchs.</p>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(AlertMessage))
@@ -25,35 +22,7 @@
         <div class="alert alert-info rounded-4">@AlertMessage</div>
     }
 
-   @*  <div class="card shadow-sm border-0 rounded-4 mb-4">
-        <div class="card-body">
-            <h5 class="fw-bold mb-3">Nouveau message</h5>
-
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">DestinataireId</label>
-                    <input class="form-control" @bind="NewMessage.DestinataireIdText" />
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">Objet</label>
-                    <input class="form-control" @bind="NewMessage.ObjetMessage" />
-                </div>
-
-                <div class="col-12">
-                    <label class="form-label">Message</label>
-                    <textarea class="form-control" rows="3" @bind="NewMessage.Contenu"></textarea>
-                </div>
-
-                <div class="col-12 text-end">
-                    <button class="btn btn-success rounded-pill" @onclick="SendMessageAsync">
-                        Envoyer
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div> *@
-
+    <!-- Onglets Bootstrap : on affiche soit les messages reçus, soit les messages envoyés -->
     <ul class="nav nav-tabs mb-3">
         <li class="nav-item">
             <button class="nav-link @(ActiveTab == "inbox" ? "active" : "")"
@@ -74,13 +43,97 @@
     {
         <p>Chargement...</p>
     }
-    else if (ActiveTab == "inbox")
-    {                                                                                       
-        @RenderMessagesTable(Inbox, true)
-    }
     else
     {
-        @RenderMessagesTable(Outbox, false)
+        var messages = ActiveTab == "inbox" ? Inbox : Outbox;
+        var isInbox = ActiveTab == "inbox";
+
+        @if (messages.Count == 0)
+        {
+            <div class="alert alert-info rounded-4">
+                Aucun message à afficher.
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Objet</th>
+                                <th>Contenu</th>
+                                <th>Contact</th>
+                                <th>Statut</th>
+
+                                @* Les actions n'ont de sens que pour les messages reçus *@
+                                @if (isInbox)
+                                {
+                                    <th class="text-end">Actions</th>
+                                }
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var message in messages)
+                            {
+                                <tr>
+                                    <td>@message.DateEnvoi.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+
+                                    <td>
+                                        @if (isInbox)
+                                        {
+                                            <span class="badge bg-primary">IN</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">OUT</span>
+                                        }
+                                    </td>
+
+                                    <td>@message.ObjetMessage</td>
+                                    <td>@message.Contenu</td>
+
+                                    @* Inbox : contact = expéditeur / Outbox : contact = destinataire *@
+                                    <td>@(isInbox ? message.NomExpediteur : message.NomDestinataire)</td>
+
+                                    <td>
+                                        @if (message.IsLu)
+                                        {
+                                            <span class="badge bg-success">Lu</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Non lu</span>
+                                        }
+                                    </td>
+
+                                    @if (isInbox)
+                                    {
+                                        <td class="text-end">
+                                            <button class="btn btn-outline-primary btn-sm rounded-pill me-2"
+                                                    @onclick="() => ReplyTo(message)">
+                                                Répondre
+                                            </button>
+
+                                            @if (!message.IsLu)
+                                            {
+                                                <button class="btn btn-outline-success btn-sm rounded-pill"
+                                                        @onclick="() => MarkAsReadAsync(message.Id)">
+                                                    Marquer lu
+                                                </button>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
     }
 </div>
 
@@ -92,32 +145,12 @@
     private string ActiveTab { get; set; } = "inbox";
     private string? AlertMessage { get; set; }
 
-    // private NewMessageForm NewMessage { get; set; } = new();
-
     protected override async Task OnInitializedAsync()
     {
-        // ReadQueryString();
         await LoadMessagesAsync();
     }
 
-    // private void ReadQueryString()
-    // {
-    //     var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
-    //     var query = QueryHelpers.ParseQuery(uri.Query);
-
-    //     if (query.TryGetValue("to", out var to))
-    //         NewMessage.DestinataireIdText = to!;
-
-    //     if (query.TryGetValue("matchId", out var matchId))
-    //         NewMessage.MatchIdText = matchId!;
-
-    //     if (!string.IsNullOrWhiteSpace(NewMessage.DestinataireIdText))
-    //     {
-    //         NewMessage.ObjetMessage = "Contact depuis un match EnergyShare";
-    //         NewMessage.Contenu = "Bonjour, je suis intéressé(e) par votre profil énergétique.";
-    //     }
-    // }
-
+    // Charge les messages reçus et envoyés depuis les handlers Application
     private async Task LoadMessagesAsync()
     {
         IsLoading = true;
@@ -131,42 +164,7 @@
         IsLoading = false;
     }
 
-    // private async Task SendMessageAsync()
-    // {
-    //     AlertMessage = null;
-
-    //     if (!Guid.TryParse(NewMessage.DestinataireIdText, out var destinataireId))
-    //     {
-    //         AlertMessage = "Le destinataire est invalide.";
-    //         return;
-    //     }
-
-    //     Guid? matchId = null;
-
-    //     if (!string.IsNullOrWhiteSpace(NewMessage.MatchIdText)
-    //         && Guid.TryParse(NewMessage.MatchIdText, out var parsedMatchId))
-    //     {
-    //         matchId = parsedMatchId;
-    //     }
-
-    //     var result = await Sender.Send(new SendMessage(
-    //         destinataireId,
-    //         NewMessage.ObjetMessage,
-    //         NewMessage.Contenu,
-    //         matchId));
-
-    //     if (!result.IsSuccess)
-    //     {
-    //         AlertMessage = "Impossible d’envoyer le message.";
-    //         return;
-    //     }
-
-    //     AlertMessage = "Message envoyé.";
-    //     NewMessage = new();
-    //     await LoadMessagesAsync();
-    //     ActiveTab = "outbox";
-    // }
-
+    // Marque un message reçu comme lu, puis recharge la liste
     private async Task MarkAsReadAsync(Guid messageId)
     {
         var result = await Sender.Send(new MarkMessageAsRead(messageId));
@@ -180,123 +178,19 @@
         await LoadMessagesAsync();
     }
 
+    // Redirige vers la page d'envoi avec le destinataire et l'objet préremplis
     private void ReplyTo(MessageDto message)
     {
-        // NewMessage.DestinataireIdText = message.ExpediteurId.ToString();
-        // NewMessage.ObjetMessage = $"RE: {message.ObjetMessage}";
-        // NewMessage.Contenu = "";
-        // NewMessage.MatchIdText = message.MatchId?.ToString();
-        Navigation.NavigateTo(
-         $"/messages/send?to={message.ExpediteurId}&matchId={message.MatchId}&subject={Uri.EscapeDataString($"RE: {message.ObjetMessage}")}");
+        var prenom = string.IsNullOrWhiteSpace(message.NomExpediteur)
+            ? "Utilisateur sélectionné"
+            : message.NomExpediteur;
+
+        var url =
+            $"/messages/send?to={message.ExpediteurId}" +
+            $"&prenom={Uri.EscapeDataString(prenom)}" +
+            $"&subject={Uri.EscapeDataString($"RE: {message.ObjetMessage}")}" +
+            (message.MatchId is not null ? $"&matchId={message.MatchId}" : "");
+
+        Navigation.NavigateTo(url);
     }
-
-    private RenderFragment RenderMessagesTable(List<MessageDto> messages, bool isInbox) => builder =>
-    {
-        if (messages.Count == 0)
-        {
-            builder.AddMarkupContent(0, """
-                <div class="alert alert-info rounded-4">
-                    Aucun message à afficher.
-                </div>
-            """);
-            return;
-        }
-
-        builder.OpenElement(1, "div");
-        builder.AddAttribute(2, "class", "card shadow-sm border-0 rounded-4");
-
-        builder.OpenElement(3, "div");
-        builder.AddAttribute(4, "class", "card-body table-responsive");
-
-        builder.OpenElement(5, "table");
-        builder.AddAttribute(6, "class", "table align-middle");
-
-        builder.AddMarkupContent(7, """
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Type</th>
-                    <th>Objet</th>
-                    <th>Contenu</th>
-                    <th>Contact</th>
-                    <th>Statut</th>
-                    <th class="text-end">Actions</th>
-                </tr>
-            </thead>
-        """);
-
-        builder.OpenElement(8, "tbody");
-
-        var sequence = 9;
-
-        foreach (var message in messages)
-        {
-            builder.OpenElement(sequence++, "tr");
-
-            builder.OpenElement(sequence++, "td");
-            builder.AddContent(sequence++, message.DateEnvoi.ToLocalTime().ToString("dd/MM/yyyy HH:mm"));
-            builder.CloseElement();
-
-            builder.OpenElement(sequence++, "td");
-            builder.AddMarkupContent(sequence++, isInbox
-                ? "<span class=\"badge bg-primary\">IN</span>"
-                : "<span class=\"badge bg-secondary\">OUT</span>");
-            builder.CloseElement();
-
-            builder.OpenElement(sequence++, "td");
-            builder.AddContent(sequence++, message.ObjetMessage);
-            builder.CloseElement();
-
-            builder.OpenElement(sequence++, "td");
-            builder.AddContent(sequence++, message.Contenu);
-            builder.CloseElement();
-
-            builder.OpenElement(sequence++, "td");
-            builder.AddContent(sequence++, isInbox ? message.NomExpediteur : message.NomDestinataire);
-            builder.CloseElement();
-
-            builder.OpenElement(sequence++, "td");
-            builder.AddMarkupContent(sequence++, message.IsLu
-                ? "<span class=\"badge bg-success\">Lu</span>"
-                : "<span class=\"badge bg-warning text-dark\">Non lu</span>");
-            builder.CloseElement();
-
-            builder.OpenElement(sequence++, "td");
-            builder.AddAttribute(sequence++, "class", "text-end");
-
-            if (isInbox)
-            {
-                builder.OpenElement(sequence++, "button");
-                builder.AddAttribute(sequence++, "class", "btn btn-outline-primary btn-sm rounded-pill me-2");
-                builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create(this, () => ReplyTo(message)));
-                builder.AddContent(sequence++, "Répondre");
-                builder.CloseElement();
-
-                if (!message.IsLu)
-                {
-                    builder.OpenElement(sequence++, "button");
-                    builder.AddAttribute(sequence++, "class", "btn btn-outline-success btn-sm rounded-pill");
-                    builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create(this, () => MarkAsReadAsync(message.Id)));
-                    builder.AddContent(sequence++, "Marquer lu");
-                    builder.CloseElement();
-                }
-            }
-
-            builder.CloseElement();
-            builder.CloseElement();
-        }
-
-        builder.CloseElement();
-        builder.CloseElement();
-        builder.CloseElement();
-        builder.CloseElement();
-    };
-
-    // private class NewMessageForm
-    // {
-    //     public string DestinataireIdText { get; set; } = "";
-    //     public string ObjetMessage { get; set; } = "";
-    //     public string Contenu { get; set; } = "";
-    //     public string? MatchIdText { get; set; }
-    // }
 }
