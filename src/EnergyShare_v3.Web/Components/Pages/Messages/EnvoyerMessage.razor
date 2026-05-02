@@ -1,0 +1,144 @@
+﻿@page "/messages/send"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.WebUtilities
+@using Mediator
+@using EnergyShare_v3.Application.Features.Messages
+
+@inject ISender Sender
+@inject NavigationManager Navigation
+
+<PageTitle>Envoyer un message</PageTitle>
+
+<div class="container py-4">
+
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">Nouveau message</h5>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    @* TODO : adpater avec le nom de l'utilisateur sélectionné *@
+                    <label class="form-label">Destinataire</label>
+                    <input class="form-control" value="@DestinataireDisplayName" disabled />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Objet</label>
+                    <input class="form-control" @bind="NewMessage.ObjetMessage" />
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Message</label>
+                    <textarea class="form-control" rows="3" @bind="NewMessage.Contenu"></textarea>
+                </div>
+
+                <div class="col-12 text-end">
+                    <button class="btn btn-success rounded-pill" @onclick="SendMessageAsync">
+                        Envoyer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+   
+</div>
+
+@code {
+    private List<MessageDto> Inbox { get; set; } = [];
+    private List<MessageDto> Outbox { get; set; } = [];
+
+    private bool IsLoading { get; set; } = true;
+    private string ActiveTab { get; set; } = "inbox";
+    private string? AlertMessage { get; set; }
+
+    private NewMessageForm NewMessage { get; set; } = new();
+    private string DestinataireDisplayName { get; set; } = "Utilisateur sélectionné";
+
+  
+    protected override Task OnInitializedAsync()
+    {
+        ReadQueryString();
+        IsLoading = false;
+        return Task.CompletedTask;
+    }
+
+    private void ReadQueryString()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("prenom", out var prenom))
+        {
+            DestinataireDisplayName = prenom!;
+        }
+
+        if (query.TryGetValue("to", out var to))
+            NewMessage.DestinataireIdText = to!;
+
+        if (query.TryGetValue("matchId", out var matchId))
+            NewMessage.MatchIdText = matchId!;
+
+        if (query.TryGetValue("subject", out var subject))
+        {
+            NewMessage.ObjetMessage = subject!;
+            NewMessage.Contenu = "";
+            return;
+        }
+        if (!string.IsNullOrWhiteSpace(NewMessage.DestinataireIdText))
+        {
+            NewMessage.ObjetMessage = "Contact depuis un match EnergyShare";
+            NewMessage.Contenu = "Bonjour, je suis intéressé(e) par votre profil énergétique.";
+        }
+    }
+
+
+    private async Task SendMessageAsync()
+    {
+        AlertMessage = null;
+
+        if (!Guid.TryParse(NewMessage.DestinataireIdText, out var destinataireId))
+        {
+            AlertMessage = "Le destinataire est invalide.";
+            return;
+        }
+
+        Guid? matchId = null;
+
+        if (!string.IsNullOrWhiteSpace(NewMessage.MatchIdText)
+            && Guid.TryParse(NewMessage.MatchIdText, out var parsedMatchId))
+        {
+            matchId = parsedMatchId;
+        }
+
+        var result = await Sender.Send(new SendMessage(
+            destinataireId,
+            NewMessage.ObjetMessage,
+            NewMessage.Contenu,
+            matchId));
+
+        if (!result.IsSuccess)
+        {
+            AlertMessage = "Impossible d’envoyer le message.";
+            return;
+        }
+
+        AlertMessage = "Message envoyé.";
+        Navigation.NavigateTo("/messages");
+        NewMessage = new();
+        // await LoadMessagesAsync();
+        ActiveTab = "outbox";
+    }
+
+
+    private class NewMessageForm
+    {
+        public string DestinataireIdText { get; set; } = "";
+        public string ObjetMessage { get; set; } = "";
+        public string Contenu { get; set; } = "";
+        public string? MatchIdText { get; set; }
+    }
+}

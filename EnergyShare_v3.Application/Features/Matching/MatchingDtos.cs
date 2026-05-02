@@ -12,6 +12,15 @@ namespace EnergyShare_v3.Application.Features.Matching
         Guid MatchId,
         Guid PointAccessVendeurId,
         Guid PointAccessAcheteurId,
+
+        Guid VendeurUserId,
+        Guid AcheteurUserId,
+        string PrenomVendeurMatch,
+        string PrenomAcheteurMatch,
+
+        Guid ContactUserId,     // pour envoyer le message  : dépend du context qui est connecté c'est soit le vendeur soit l'acheteur
+        string ContactPrenom,    // pour afficher dans l'UI
+        
         decimal DistanceCalculee,
         DateTime CreatedAt
     );

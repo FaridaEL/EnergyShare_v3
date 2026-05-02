@@ -1,0 +1,196 @@
+﻿@page "/messages"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Mediator
+@using EnergyShare_v3.Application.Features.Messages
+
+@inject ISender Sender
+@inject NavigationManager Navigation
+
+<PageTitle>Mes messages</PageTitle>
+
+<div class="container py-4">
+    <div class="mb-4">
+        <h2 class="fw-bold mb-1">Mes messages</h2>
+        <p class="text-muted mb-0">Consultez vos échanges avec vos matchs.</p>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(AlertMessage))
+    {
+        <div class="alert alert-info rounded-4">@AlertMessage</div>
+    }
+
+    <!-- Onglets Bootstrap : on affiche soit les messages reçus, soit les messages envoyés -->
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <button class="nav-link @(ActiveTab == "inbox" ? "active" : "")"
+                    @onclick='() => ActiveTab = "inbox"'>
+                Reçus (@Inbox.Count)
+            </button>
+        </li>
+
+        <li class="nav-item">
+            <button class="nav-link @(ActiveTab == "outbox" ? "active" : "")"
+                    @onclick='() => ActiveTab = "outbox"'>
+                Envoyés (@Outbox.Count)
+            </button>
+        </li>
+    </ul>
+
+    @if (IsLoading)
+    {
+        <p>Chargement...</p>
+    }
+    else
+    {
+        var messages = ActiveTab == "inbox" ? Inbox : Outbox;
+        var isInbox = ActiveTab == "inbox";
+
+        @if (messages.Count == 0)
+        {
+            <div class="alert alert-info rounded-4">
+                Aucun message à afficher.
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Objet</th>
+                                <th>Contenu</th>
+                                <th>Contact</th>
+                                <th>Statut</th>
+
+                                @* Les actions n'ont de sens que pour les messages reçus *@
+                                @if (isInbox)
+                                {
+                                    <th class="text-end">Actions</th>
+                                }
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var message in messages)
+                            {
+                                <tr>
+                                    <td>@message.DateEnvoi.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+
+                                    <td>
+                                        @if (isInbox)
+                                        {
+                                            <span class="badge bg-primary">IN</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">OUT</span>
+                                        }
+                                    </td>
+
+                                    <td>@message.ObjetMessage</td>
+                                    <td>@message.Contenu</td>
+
+                                    @* Inbox : contact = expéditeur / Outbox : contact = destinataire *@
+                                    <td>@(isInbox ? message.NomExpediteur : message.NomDestinataire)</td>
+
+                                    <td>
+                                        @if (message.IsLu)
+                                        {
+                                            <span class="badge bg-success">Lu</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Non lu</span>
+                                        }
+                                    </td>
+
+                                    @if (isInbox)
+                                    {
+                                        <td class="text-end">
+                                            <button class="btn btn-outline-primary btn-sm rounded-pill me-2"
+                                                    @onclick="() => ReplyTo(message)">
+                                                Répondre
+                                            </button>
+
+                                            @if (!message.IsLu)
+                                            {
+                                                <button class="btn btn-outline-success btn-sm rounded-pill"
+                                                        @onclick="() => MarkAsReadAsync(message.Id)">
+                                                    Marquer lu
+                                                </button>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<MessageDto> Inbox { get; set; } = [];
+    private List<MessageDto> Outbox { get; set; } = [];
+
+    private bool IsLoading { get; set; } = true;
+    private string ActiveTab { get; set; } = "inbox";
+    private string? AlertMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMessagesAsync();
+    }
+
+    // Charge les messages reçus et envoyés depuis les handlers Application
+    private async Task LoadMessagesAsync()
+    {
+        IsLoading = true;
+
+        var inboxResult = await Sender.Send(new GetInboxMessages());
+        var outboxResult = await Sender.Send(new GetSentMessages());
+
+        Inbox = inboxResult.IsSuccess ? inboxResult.Value.ToList() : [];
+        Outbox = outboxResult.IsSuccess ? outboxResult.Value.ToList() : [];
+
+        IsLoading = false;
+    }
+
+    // Marque un message reçu comme lu, puis recharge la liste
+    private async Task MarkAsReadAsync(Guid messageId)
+    {
+        var result = await Sender.Send(new MarkMessageAsRead(messageId));
+
+        if (!result.IsSuccess)
+        {
+            AlertMessage = "Impossible de marquer ce message comme lu.";
+            return;
+        }
+
+        await LoadMessagesAsync();
+    }
+
+    // Redirige vers la page d'envoi avec le destinataire et l'objet préremplis
+    private void ReplyTo(MessageDto message)
+    {
+        var prenom = string.IsNullOrWhiteSpace(message.NomExpediteur)
+            ? "Utilisateur sélectionné"
+            : message.NomExpediteur;
+
+        var url =
+            $"/messages/send?to={message.ExpediteurId}" +
+            $"&prenom={Uri.EscapeDataString(prenom)}" +
+            $"&subject={Uri.EscapeDataString($"RE: {message.ObjetMessage}")}" +
+            (message.MatchId is not null ? $"&matchId={message.MatchId}" : "");
+
+        Navigation.NavigateTo(url);
+    }
+}

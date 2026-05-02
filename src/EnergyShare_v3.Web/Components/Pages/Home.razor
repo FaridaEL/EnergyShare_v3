@@ -248,198 +248,10 @@
     </Authorized>
 </AuthorizeView>
 
-
 <!-- ========================================================= -->
 <!-- ACCUEIL UTILISATEUR STANDARD                             -->
-<!-- Objectif : profil énergie, matching, gestion du partage   -->
+<!-- Obj. : profil énergie, matching, message, partage   -->
 <!-- ========================================================= -->
-@* <AuthorizeView Roles="Utilisateur">
-    <Authorized>
-        <h3 class="mt-4"> C'est parti ⚡ !</h3>
-
-        <div class="row mt-3">
-
-            <!-- Point accès -->
-            <div class="col-md-4">
-                <div class="card border-info">
-                    <div class="card-body">
-                        <h5 class="card-title">Points d'accès</h5>
-                        <p class="card-text">
-                            Compléter les données de vos points de fourniture.
-                        </p>
-                        <a href="/mes-points-access" class="btn btn-info">
-                            Mes points d'accès
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <!-- Matching -->
-            <div class="col-md-4">
-                <div class="card border-warning shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Matching énergétique</h5>
-                        <p class="card-text">
-                            Trouvez des partenaires proches pour acheter ou vendre votre énergie.
-                        </p>
-
-                        <div class="d-flex gap-2">
-                            <a href="/matching/search" class="btn btn-warning">
-                                Trouver un match
-                            </a>
-
-                            <a href="/matching/my" class="btn btn-outline-secondary">
-                                Mes matchs
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-          
-
-            <!-- Partage -->
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Partage</h5>
-                        <p class="card-text">
-                            Créer et gérez vos partages d'énergie en toute simplicité.
-                        </p>
-                        <a href="/partages" class="btn btn-primary">
-                            Voir les partages
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Profil énergie -->
-            <div class="col-md-4">
-                <div class="card border-success">
-                    <div class="card-body">
-                        <h5 class="card-title">Profil énergie</h5>
-                        <p class="card-text">
-                            Indiquez votre consommation ou production pour préparer le matching énergétique.
-                        </p>
-                        <a href="/profil-energie" class="btn btn-success">
-                            Mon profil énergie
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </Authorized>
-</AuthorizeView> *@
-
-@* <!-- ========================================================= -->
-<!-- ACCUEIL UTILISATEUR STANDARD                             -->
-<!-- Objectif : profil énergie, matching, gestion du partage   -->
-<!-- ========================================================= -->
-<AuthorizeView Roles="Utilisateur">
-    <Authorized>
-        <h3 class="section-title mt-4">
-            C'est parti <span class="energy-exclamation">⚡</span>
-        </h3>
-
-        <div class="row g-3 shortcut-row">
-
-            <!-- Colonne 1 : Point accès + Profil énergie -->
-            <div class="col-md-4">
-                <div class="shortcut-stack">
-
-                    <!-- Point accès -->
-                    <div class="card border-info shortcut-card">
-                        <div class="card-body">
-                            <h5 class="card-title">Points d'accès</h5>
-                            <p class="card-text">
-                                Compléter les données de vos points de fourniture.
-                            </p>
-                            <a href="/mes-points-access" class="btn btn-info">
-                                Mes points d'accès
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Profil énergie -->
-                    <div class="card border-success shortcut-card">
-                        <div class="card-body">
-                            <h5 class="card-title">Profil énergie</h5>
-                            <p class="card-text">
-                                Indiquez votre consommation ou production pour préparer le matching énergétique.
-                            </p>
-                            <a href="/profil-energie" class="btn btn-success">
-                                Mon profil énergie
-                            </a>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Matching -->
-            <div class="col-md-4">
-                <div class="card border-warning shadow-sm shortcut-card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Matching énergétique</h5>
-                        <p class="card-text">
-                            Trouvez des partenaires proches pour acheter ou vendre votre énergie.
-                        </p>
-
-                        <div class="d-flex gap-2">
-                            <a href="/matching/search" class="btn btn-warning">
-                                Trouver un match
-                            </a>
-
-                            <a href="/matching/my" class="btn btn-outline-secondary">
-                                Mes matchs
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Messages -->
-            <div class="card border-secondary shortcut-card">
-                <div class="card-body">
-                    <h5 class="card-title">Messages</h5>
-                    <p class="card-text">
-                        Consultez vos échanges avec vos matchs.
-                    </p>
-                    <button class="btn btn-outline-secondary" disabled>
-                        Bientôt disponible
-                    </button>
-                </div>
-            </div>
-
-            <!-- Partage -->
-            <div class="col-md-4">
-                <div class="card shortcut-card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Partage</h5>
-                        <p class="card-text">
-                            Créer et gérez vos partages d'énergie en toute simplicité.
-                        </p>
-                        <a href="/partages" class="btn btn-primary">
-                            Voir les partages
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Dashboard -->
-            <div class="card border-primary shortcut-card">
-                <div class="card-body">
-                    <h5 class="card-title">Tableau de bord</h5>
-                    <p class="card-text">
-                        Suivez vos volumes, gains et indicateurs.
-                    </p>
-                    <button class="btn btn-outline-primary" disabled>
-                        Bientôt disponible
-                    </button>
-                </div>
-            </div>
-
-        </div>
-    </Authorized>
-</AuthorizeView> *@
 
 <AuthorizeView Roles="Utilisateur">
     <Authorized>
@@ -452,6 +264,7 @@
             <!-- Colonne 1 : Préparer -->
             <div class="col-md-4">
                 <div class="shortcut-stack">
+                    <!-- Points d'accès -->
                     <div class="card border-info shortcut-card">
                         <div class="card-body">
                             <h5 class="card-title">Points d'accès</h5>
@@ -459,7 +272,7 @@
                             <a href="/mes-points-access" class="btn btn-info">Mes points d'accès</a>
                         </div>
                     </div>
-
+                    <!-- Profil Energie -->
                     <div class="card border-success shortcut-card">
                         <div class="card-body">
                             <h5 class="card-title">Profil énergie</h5>
@@ -473,6 +286,7 @@
             <!-- Colonne 2 : Mettre en relation -->
             <div class="col-md-4">
                 <div class="shortcut-stack">
+                    <!-- Matching -->
                     <div class="card border-warning shadow-sm shortcut-card">
                         <div class="card-body">
                             <h5 class="card-title">Matching énergétique</h5>
@@ -484,12 +298,13 @@
                             </div>
                         </div>
                     </div>
-
+                    <!-- contact -->
                     <div class="card border-secondary shortcut-card">
                         <div class="card-body">
                             <h5 class="card-title">Messages</h5>
                             <p class="card-text">Consultez vos échanges avec vos matchs.</p>
-                            <button class="btn btn-outline-secondary" disabled>Bientôt disponible</button>
+                            @* <button class="btn btn-outline-secondary" disabled>Bientôt disponible</button> *@
+                            <a href="/messages" class="btn btn-outline-secondary"> Mes messages</a>
                         </div>
                     </div>
                 </div>
