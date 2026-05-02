@@ -121,9 +121,13 @@
                                             ★ Sauver
                                         </button>
 
-                                        <button class="btn btn-outline-primary btn-sm rounded-pill" disabled>
+                                        <a class="btn btn-outline-primary btn-sm rounded-pill"
+                                           href="@($"/messages/send?to={GetContactUserId(match)}&prenom={Uri.EscapeDataString(GetContactPrenom(match))}")">
                                             Contacter
-                                        </button>
+                                        </a>
+                                        @* <button class="btn btn-outline-primary btn-sm rounded-pill" disabled>
+                                            Contacter
+                                        </button> *@
                                     </td>
                                 </tr>
                             }
@@ -263,4 +267,19 @@
 
         return "Utilisateur";
     }
+
+    private Guid GetContactUserId(PotentialMatchDto match)
+    {
+        return match.VendeurUserId == CurrentUserId
+            ? match.AcheteurUserId
+            : match.VendeurUserId;
+    }
+
+    private string GetContactPrenom(PotentialMatchDto match)
+    {
+        return match.VendeurUserId == CurrentUserId
+            ? match.PrenomAcheteurMatch
+            : match.PrenomVendeurMatch;
+    }
+
 }

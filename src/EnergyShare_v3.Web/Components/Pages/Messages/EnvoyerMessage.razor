@@ -1,0 +1,316 @@
+﻿@page "/messages/send"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.WebUtilities
+@using Mediator
+@using EnergyShare_v3.Application.Features.Messages
+
+@inject ISender Sender
+@inject NavigationManager Navigation
+
+<PageTitle>Envoyer un message</PageTitle>
+
+<div class="container py-4">
+    @* <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Mes messages</h2>
+            <p class="text-muted mb-0">Consultez vos échanges avec vos matchs.</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(AlertMessage))
+    {
+        <div class="alert alert-info rounded-4">@AlertMessage</div>
+    } *@
+
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">Nouveau message</h5>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    @* <label class="form-label">DestinataireId</label>
+                    <input class="form-control" @bind="NewMessage.DestinataireIdText" /> *@
+                    <label class="form-label">Destinataire</label>
+                    <input class="form-control" value="Utilisateur sélectionné" disabled />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Objet</label>
+                    <input class="form-control" @bind="NewMessage.ObjetMessage" />
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Message</label>
+                    <textarea class="form-control" rows="3" @bind="NewMessage.Contenu"></textarea>
+                </div>
+
+                <div class="col-12 text-end">
+                    <button class="btn btn-success rounded-pill" @onclick="SendMessageAsync">
+                        Envoyer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <button class="nav-link @(ActiveTab == "inbox" ? "active" : "")"
+                    @onclick='() => ActiveTab = "inbox"'>
+                Reçus (@Inbox.Count)
+            </button>
+        </li>
+
+        <li class="nav-item">
+            <button class="nav-link @(ActiveTab == "outbox" ? "active" : "")"
+                    @onclick='() => ActiveTab = "outbox"'>
+                Envoyés (@Outbox.Count)
+            </button>
+        </li>
+    </ul> *@
+
+    @if (IsLoading)
+    {
+        <p>Chargement...</p>
+    }
+    @* else if (ActiveTab == "inbox")
+    {
+        @RenderMessagesTable(Inbox, true)
+    }
+    else
+    {
+        @RenderMessagesTable(Outbox, false)
+    } *@
+</div>
+
+@code {
+    private List<MessageDto> Inbox { get; set; } = [];
+    private List<MessageDto> Outbox { get; set; } = [];
+
+    private bool IsLoading { get; set; } = true;
+    private string ActiveTab { get; set; } = "inbox";
+    private string? AlertMessage { get; set; }
+
+    private NewMessageForm NewMessage { get; set; } = new();
+
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     ReadQueryString();
+    //     // await LoadMessagesAsync();
+        
+    // }
+    protected override Task OnInitializedAsync()
+    {
+        ReadQueryString();
+        IsLoading = false;
+        return Task.CompletedTask;
+    }
+
+    private void ReadQueryString()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("to", out var to))
+            NewMessage.DestinataireIdText = to!;
+
+        if (query.TryGetValue("matchId", out var matchId))
+            NewMessage.MatchIdText = matchId!;
+
+        if (query.TryGetValue("subject", out var subject))
+        {
+            NewMessage.ObjetMessage = subject!;
+            NewMessage.Contenu = "";
+            return;
+        }
+        if (!string.IsNullOrWhiteSpace(NewMessage.DestinataireIdText))
+        {
+            NewMessage.ObjetMessage = "Contact depuis un match EnergyShare";
+            NewMessage.Contenu = "Bonjour, je suis intéressé(e) par votre profil énergétique.";
+        }
+    }
+
+    // private async Task LoadMessagesAsync()
+    // {
+    //     IsLoading = true;
+
+    //     var inboxResult = await Sender.Send(new GetInboxMessages());
+    //     var outboxResult = await Sender.Send(new GetSentMessages());
+
+    //     Inbox = inboxResult.IsSuccess ? inboxResult.Value.ToList() : [];
+    //     Outbox = outboxResult.IsSuccess ? outboxResult.Value.ToList() : [];
+
+    //     IsLoading = false;
+    // }
+
+    private async Task SendMessageAsync()
+    {
+        AlertMessage = null;
+
+        if (!Guid.TryParse(NewMessage.DestinataireIdText, out var destinataireId))
+        {
+            AlertMessage = "Le destinataire est invalide.";
+            return;
+        }
+
+        Guid? matchId = null;
+
+        if (!string.IsNullOrWhiteSpace(NewMessage.MatchIdText)
+            && Guid.TryParse(NewMessage.MatchIdText, out var parsedMatchId))
+        {
+            matchId = parsedMatchId;
+        }
+
+        var result = await Sender.Send(new SendMessage(
+            destinataireId,
+            NewMessage.ObjetMessage,
+            NewMessage.Contenu,
+            matchId));
+
+        if (!result.IsSuccess)
+        {
+            AlertMessage = "Impossible d’envoyer le message.";
+            return;
+        }
+
+        AlertMessage = "Message envoyé.";
+        Navigation.NavigateTo("/messages");
+        NewMessage = new();
+        // await LoadMessagesAsync();
+        ActiveTab = "outbox";
+    }
+
+    // private async Task MarkAsReadAsync(Guid messageId)
+    // {
+    //     var result = await Sender.Send(new MarkMessageAsRead(messageId));
+
+    //     if (!result.IsSuccess)
+    //     {
+    //         AlertMessage = "Impossible de marquer ce message comme lu.";
+    //         return;
+    //     }
+
+    //     await LoadMessagesAsync();
+    // }
+
+    // private void ReplyTo(MessageDto message)
+    // {
+    //     NewMessage.DestinataireIdText = message.ExpediteurId.ToString();
+    //     NewMessage.ObjetMessage = $"RE: {message.ObjetMessage}";
+    //     NewMessage.Contenu = "";
+    //     NewMessage.MatchIdText = message.MatchId?.ToString();
+    // }
+
+    // private RenderFragment RenderMessagesTable(List<MessageDto> messages, bool isInbox) => builder =>
+    // {
+    //     if (messages.Count == 0)
+    //     {
+    //         builder.AddMarkupContent(0, """
+    //             <div class="alert alert-info rounded-4">
+    //                 Aucun message à afficher.
+    //             </div>
+    //         """);
+    //         return;
+    //     }
+
+    //     builder.OpenElement(1, "div");
+    //     builder.AddAttribute(2, "class", "card shadow-sm border-0 rounded-4");
+
+    //     builder.OpenElement(3, "div");
+    //     builder.AddAttribute(4, "class", "card-body table-responsive");
+
+    //     builder.OpenElement(5, "table");
+    //     builder.AddAttribute(6, "class", "table align-middle");
+
+    //     builder.AddMarkupContent(7, """
+    //         <thead>
+    //             <tr>
+    //                 <th>Date</th>
+    //                 <th>Type</th>
+    //                 <th>Objet</th>
+    //                 <th>Contenu</th>
+    //                 <th>Contact</th>
+    //                 <th>Statut</th>
+    //                 <th class="text-end">Actions</th>
+    //             </tr>
+    //         </thead>
+    //     """);
+
+    //     builder.OpenElement(8, "tbody");
+
+    //     var sequence = 9;
+
+    //     foreach (var message in messages)
+    //     {
+    //         builder.OpenElement(sequence++, "tr");
+
+    //         builder.OpenElement(sequence++, "td");
+    //         builder.AddContent(sequence++, message.DateEnvoi.ToLocalTime().ToString("dd/MM/yyyy HH:mm"));
+    //         builder.CloseElement();
+
+    //         builder.OpenElement(sequence++, "td");
+    //         builder.AddMarkupContent(sequence++, isInbox
+    //             ? "<span class=\"badge bg-primary\">IN</span>"
+    //             : "<span class=\"badge bg-secondary\">OUT</span>");
+    //         builder.CloseElement();
+
+    //         builder.OpenElement(sequence++, "td");
+    //         builder.AddContent(sequence++, message.ObjetMessage);
+    //         builder.CloseElement();
+
+    //         builder.OpenElement(sequence++, "td");
+    //         builder.AddContent(sequence++, message.Contenu);
+    //         builder.CloseElement();
+
+    //         builder.OpenElement(sequence++, "td");
+    //         builder.AddContent(sequence++, isInbox ? message.NomExpediteur : message.NomDestinataire);
+    //         builder.CloseElement();
+
+    //         builder.OpenElement(sequence++, "td");
+    //         builder.AddMarkupContent(sequence++, message.IsLu
+    //             ? "<span class=\"badge bg-success\">Lu</span>"
+    //             : "<span class=\"badge bg-warning text-dark\">Non lu</span>");
+    //         builder.CloseElement();
+
+    //         builder.OpenElement(sequence++, "td");
+    //         builder.AddAttribute(sequence++, "class", "text-end");
+
+    //         if (isInbox)
+    //         {
+    //             builder.OpenElement(sequence++, "button");
+    //             builder.AddAttribute(sequence++, "class", "btn btn-outline-primary btn-sm rounded-pill me-2");
+    //             builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create(this, () => ReplyTo(message)));
+    //             builder.AddContent(sequence++, "Répondre");
+    //             builder.CloseElement();
+
+    //             if (!message.IsLu)
+    //             {
+    //                 builder.OpenElement(sequence++, "button");
+    //                 builder.AddAttribute(sequence++, "class", "btn btn-outline-success btn-sm rounded-pill");
+    //                 builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create(this, () => MarkAsReadAsync(message.Id)));
+    //                 builder.AddContent(sequence++, "Marquer lu");
+    //                 builder.CloseElement();
+    //             }
+    //         }
+
+    //         builder.CloseElement();
+    //         builder.CloseElement();
+    //     }
+
+    //     builder.CloseElement();
+    //     builder.CloseElement();
+    //     builder.CloseElement();
+    //     builder.CloseElement();
+    // };
+
+    private class NewMessageForm
+    {
+        public string DestinataireIdText { get; set; } = "";
+        public string ObjetMessage { get; set; } = "";
+        public string Contenu { get; set; } = "";
+        public string? MatchIdText { get; set; }
+    }
+}

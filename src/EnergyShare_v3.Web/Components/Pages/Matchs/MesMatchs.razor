@@ -73,6 +73,13 @@
                                         <button class="btn btn-outline-primary btn-sm rounded-pill" disabled>
                                             Contacter
                                         </button>
+                                           @* <-- to do : adapter le dto savedMatch SummaryDto --!> *@
+                                        
+                                       @*  <a class="btn btn-outline-primary btn-sm rounded-pill"
+                                           href="@($"/messages/send?tomatchId={match.MatchId}")"> 
+                                            href="@($"/messages/send?to={match.ContactUserId}&matchId={match.MatchId}")">
+                                            Contacter
+                                        </a>  *@
                                     </td>
                                 </tr>
                             }
