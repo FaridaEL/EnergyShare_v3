@@ -11,3 +11,20 @@
         margin-top: 1rem;
     }
 }
+
+  /*mise en forme des données non éditables : crée le, updaté le,nombre de participants*/ 
+.metadata-box {
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    background: #f8f9fa;
+    color: #6c757d;
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.95rem;
+}
+
+.metadata-label {
+    font-weight: 700;
+    color: #495057;
+    margin-right: 0.35rem;
+}

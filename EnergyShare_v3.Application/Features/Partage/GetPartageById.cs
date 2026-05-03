@@ -57,6 +57,7 @@ namespace EnergyShare_v3.Application.Features.Partage
                 p.DateDebut,
                 p.DateFin,
                 p.Audit.CreatedAt,
+                p.Audit.UpdatedAt,
 
                 // CanEdit :  Pour le MVP, l'admin ou le vendeur/interlocuteur peut modifier.Plus tard, on pourra ajouter le gestionnaire de partage.
                 isAdmin || p.VendeurId == currentUserId,
