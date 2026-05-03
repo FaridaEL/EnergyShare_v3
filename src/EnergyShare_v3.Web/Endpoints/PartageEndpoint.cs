@@ -5,6 +5,8 @@ using Mediator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using EnergyShare_v3.Domain.Enums;
+using EnergyShare_v3.Web.Models.Partage;
 
 namespace EnergyShare_v3.Web.Endpoints
 {
@@ -34,7 +36,12 @@ namespace EnergyShare_v3.Web.Endpoints
             group.MapGet("", GetPartages)
                 .RequireAuthorization(adminOnlyPolicy);
 
-            
+
+            // GET /api/partages/my
+            // Retourne les partages liés à l'utilisateur connecté.
+            group.MapGet("/my", GetMyPartages)
+                .RequireAuthorization(authenticatedUserPolicy);
+
             // Consulter le détail d’un partage --> handler vérifie si le user connecté a le droit d’y accéder.
             group.MapGet("/{id:guid}", GetPartageById)
                 .RequireAuthorization(authenticatedUserPolicy);
@@ -42,6 +49,9 @@ namespace EnergyShare_v3.Web.Endpoints
             // POST /api/partages
             // Création d’un partage par l’utilisateur connecté : VendeurId ne vient PAS du front : il est récupéré via IUserContext dans le handler.
             group.MapPost("", CreatePartage)
+                .RequireAuthorization(authenticatedUserPolicy);
+
+            group.MapPut("/{id:guid}", UpdatePartage)
                 .RequireAuthorization(authenticatedUserPolicy);
 
             return app;
@@ -96,5 +106,36 @@ namespace EnergyShare_v3.Web.Endpoints
             // On retourne 201 Created avec l’id du partage créé.
             return Results.Created($"/api/partages/{response.Value}", response.Value);
         }
+
+        internal static async Task<IResult> GetMyPartages(ISender sender)
+        {
+            var response = await sender.Send(new GetMyPartages());
+
+            return response.ToMinimalApiResult();
+        }
+
+        internal static async Task<IResult> UpdatePartage(
+            ISender sender,
+            Guid id,
+            [FromBody] UpdatePartageRequest request)
+         {
+            var response = await sender.Send(new UpdatePartage(
+                id,
+                request.Nom,
+                request.Description,
+                request.EnergieType,
+                request.DateDebut,
+                request.DateFin));
+
+            return response.ToMinimalApiResult();
+        }
+
+        //public record UpdatePartageRequest(
+        //    string Nom,
+        //    string? Description,
+        //    PartageEnergieType EnergieType,
+        //    DateTime? DateDebut,
+        //    DateTime? DateFin
+        //    );
     }
 }

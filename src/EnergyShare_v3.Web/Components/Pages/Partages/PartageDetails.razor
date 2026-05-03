@@ -6,6 +6,7 @@
 @using Mediator
 @using EnergyShare_v3.Application.Features.Partage
 @using EnergyShare_v3.Domain.Enums
+@using EnergyShare_v3.Web.Models.Partage
 
 @inject ISender Sender
 
@@ -71,7 +72,7 @@ else if (partage is not null)
         </div>
 
         <div class="card-body">
-            <div class="row g-3 mb-3">
+            @* <div class="row g-3 mb-3">
                
                 <div class="col-md-4">
                     <strong>Créé le :</strong> @partage.CreatedAt.ToShortDateString()
@@ -80,49 +81,89 @@ else if (partage is not null)
                 <div class="col-md-4">
                     <strong>Participants :</strong> @partage.NombreParticipants
                 </div>
+ 
 
-                
-
-               @*  <div class="col-md-4">
+               <div class="col-md-4">
                     <strong>Statut :</strong>
                     <span class="text-danger fw-bold">@GetStatutLabel(partage.Statut)</span>
-                </div> *@
+                </div> 
+            </div> *@
+
+            <div class="metadata-box mb-3">
+                <div>
+                    <span class="metadata-label">Créé le :</span>
+                    <span>@partage.CreatedAt.ToShortDateString()</span>
+                </div>
+
+                <div>
+                    <span class="metadata-label">Dernière modification le :</span>
+                    <span>@FormatDate(partage.UpdatedAt)</span>
+                </div>
+
+                <div>
+                    <span class="metadata-label">Participants :</span>
+                    <span>@partage.NombreParticipants</span>
+                </div>
             </div>
 
             <p class="text-muted mb-3">
-                Cette zone servira à compléter les informations administratives nécessaires avant la demande de validation.
+                Cette zone vous permet de compléter les informations de votre partage avant de demander une validation au GRD (Sibelga).
             </p>
 
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Nom du partage</label>
-                    <input class="form-control" value="@partage.Nom" disabled="@(!partage.CanEdit)" />
+                    @* <input class="form-control" value="@partage.Nom" disabled="@(!partage.CanEdit)" /> *@
+                    <InputText class="form-control"
+                               @bind-Value="formModel.Nom"
+                               disabled="@(!partage.CanEdit)" />
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label">Type de partage</label>
-                    <input class="form-control" value="@partage.EnergieType" disabled />
+                    @* <input class="form-control" value="@partage.EnergieType" disabled="@(!partage.CanEdit)" /> *@
+                    <InputSelect class="form-select"
+                                 @bind-Value="formModel.EnergieType"
+                                 disabled="@(!partage.CanEdit)">
+                        <option value="@PartageEnergieType.PairToPair">Pair à pair</option>
+                        <option value="@PartageEnergieType.MemeBatiment">Même bâtiment</option>
+                    </InputSelect>
+
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label">Date de début</label>
-                    <input class="form-control" value="@FormatDate(partage.DateDebut)" disabled="@(!partage.CanEdit)" />
+                    @* <input class="form-control" value="@FormatDate(partage.DateDebut)" disabled="@(!partage.CanEdit)" /> *@
+                    <InputDate class="form-control"
+                               @bind-Value="formModel.DateDebut"
+                               disabled="@(!partage.CanEdit)" />
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label">Date de fin</label>
-                    <input class="form-control" value="@FormatDate(partage.DateFin)" disabled="@(!partage.CanEdit)" />
+                    @* <input class="form-control" value="@FormatDate(partage.DateFin)" disabled="@(!partage.CanEdit)" /> *@
+                    <InputDate class="form-control"
+                               @bind-Value="formModel.DateFin"
+                               disabled="@(!partage.CanEdit)" />
                 </div>
 
                 <div class="col-12">
                     <label class="form-label">Description</label>
-                    <textarea class="form-control" rows="3" disabled="@(!partage.CanEdit)">@partage.Description</textarea>
+                    @* <textarea class="form-control" rows="3" disabled="@(!partage.CanEdit)">@partage.Description</textarea> *@
+                    <InputTextArea class="form-control"
+                                   @bind-Value="formModel.Description"
+                                   rows="3"
+                                   disabled="@(!partage.CanEdit)" />
                 </div>
             </div>
         </div>
     </div>
 
     <div class="d-flex gap-2 mt-3 flex-wrap">
+        <button class="btn btn-primary" @onclick="HandleUpdate" disabled="@(!partage.CanEdit)">
+            Enregistrer les modifications
+        </button>
+        
         <button class="btn btn-outline-primary" disabled="@(!partage.CanEdit)">
             Ajouter un participant
         </button>
@@ -145,6 +186,10 @@ else if (partage is not null)
     private string? errorMessage;
     private PartageDetailsDto? partage;
 
+    // Modèle UI éditable utilisé par les champs du formulaire.
+    // On ne modifie pas directement PartageDetailsDto car c'est un record immutable.
+    private PartageDetailsFormModel formModel = new();
+
     protected override async Task OnInitializedAsync()
     {
         var result = await Sender.Send(new GetPartageById(Id));
@@ -157,6 +202,15 @@ else if (partage is not null)
         }
 
         partage = result.Value;
+        // Copie du DTO vers le modèle éditable du formulaire.
+        formModel = new PartageDetailsFormModel
+        {
+            Nom = partage.Nom,
+            Description = partage.Description,
+            EnergieType = partage.EnergieType,
+            DateDebut = partage.DateDebut,
+            DateFin = partage.DateFin
+        };
         isLoading = false;
     }
 
@@ -191,5 +245,46 @@ else if (partage is not null)
             PartageEnergieStatutType.Cloture => "Clôturé",
             _ => statut.ToString()
         };
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (partage is null)
+            return;
+
+        var command = new UpdatePartage(
+            partage.Id,
+            formModel.Nom,
+            formModel.Description,
+            formModel.EnergieType,
+            formModel.DateDebut,
+            formModel.DateFin
+            
+        );
+
+        var result = await Sender.Send(command);
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Erreur lors de la mise à jour.";
+            return;
+        }
+
+        // Recharge les données après update (bonne pratique)
+        var refresh = await Sender.Send(new GetPartageById(Id));
+        if (refresh.IsSuccess)
+        {
+            partage = refresh.Value;
+
+            // Re-synchroniser le formModel
+            formModel = new PartageDetailsFormModel
+            {
+                Nom = partage.Nom,
+                Description = partage.Description,
+                EnergieType = partage.EnergieType,
+                DateDebut = partage.DateDebut,
+                DateFin = partage.DateFin
+            };
+        }
     }
 }

@@ -90,7 +90,12 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 "Partage.VendeurObligatoire",
                 ValidationSeverity.Error));
 
-
+        public static Result DateFinAvantDateDebut() =>
+            Result.Invalid(new ValidationError(
+                nameof(Partage.DateFin),
+                "La date de fin ne peut pas être antérieure à la date de début.",
+                "Partage.DateFinAvantDateDebut",
+                ValidationSeverity.Error));
 
 
     }

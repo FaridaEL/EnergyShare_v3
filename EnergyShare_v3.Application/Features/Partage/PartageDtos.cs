@@ -25,11 +25,11 @@ namespace EnergyShare_v3.Application.Features.Partage
 
         // Participants
         int NombreParticipants,
-
         // Dates
         DateTime? DateDebut,
         DateTime? DateFin,
         DateTime CreatedAt,
+        DateTime UpdatedAt,
 
         // Permissions UI
         bool CanEdit,        // permet de gérer l'accès à ce niveau et pas dans l'UI

@@ -120,6 +120,84 @@ namespace EnergyShare_v3.Backend.Tests
             partage.Statut.Should().Be(PartageEnergieStatutType.Inactif);
         }
 
+        [Fact]
+        public void Update_ShouldSucceed_WhenPartageIsInactif()
+        {
+            // Arrange
+            var vendeurId = Guid.NewGuid();
+
+            var partage = Partage.Create(
+                "Partage initial",
+                PartageEnergieType.PairToPair,
+                vendeurId).Value;
+
+            var dateDebut = new DateTime(2026, 6, 1);
+            var dateFin = new DateTime(2026, 12, 31);
+
+            // Act
+            var result = partage.Update(
+                "Partage modifié",
+                "Description modifiée",
+                PartageEnergieType.MemeBatiment,
+                dateDebut,
+                dateFin);
+
+            // Assert
+            result.IsSuccess.Should().BeTrue();
+            partage.Nom.Should().Be("Partage modifié");
+            partage.Description.Should().Be("Description modifiée");
+            partage.EnergieType.Should().Be(PartageEnergieType.MemeBatiment);
+            partage.DateDebut.Should().Be(dateDebut);
+            partage.DateFin.Should().Be(dateFin);
+        }
+
+        [Fact]
+        public void Update_ShouldFail_WhenNameIsEmpty()
+        {
+            // Arrange
+            var vendeurId = Guid.NewGuid();
+
+            var partage = Partage.Create(
+                "Partage initial",
+                PartageEnergieType.PairToPair,
+                vendeurId).Value;
+
+            // Act
+            var result = partage.Update(
+                "",
+                "Description",
+                PartageEnergieType.PairToPair,
+                null,
+                null);
+
+            // Assert
+            result.IsSuccess.Should().BeFalse();
+        }
+
+        [Fact]
+        public void Update_ShouldFail_WhenDateFinIsBeforeDateDebut()
+        {
+            // Arrange
+            var vendeurId = Guid.NewGuid();
+
+            var partage = Partage.Create(
+                "Partage initial",
+                PartageEnergieType.PairToPair,
+                vendeurId).Value;
+
+            // Act
+            var result = partage.Update(
+                "Partage test",
+                "Description",
+                PartageEnergieType.PairToPair,
+                new DateTime(2026, 12, 31),
+                new DateTime(2026, 6, 1));
+
+            // Assert
+            result.IsSuccess.Should().BeFalse();
+        }
+
+
 
     }
 }

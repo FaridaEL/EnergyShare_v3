@@ -261,5 +261,29 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         }
 
 
+        //Mettre à jour les données du partage : nom, description, dates de début et de fin (tant que le partage n'est pas soumis au GRD), ajouter des membres ou des documents (tant que le partage n'est pas en cours de clôture ou clôturé).
+        public Result Update(
+            string nom,
+            string? description,
+            PartageEnergieType energieType,
+            DateTime? dateDebut,
+            DateTime? dateFin)
+            {
+                if (string.IsNullOrWhiteSpace(nom))
+                    return PartageErrors.NomObligatoire();
+
+                if (dateDebut.HasValue && dateFin.HasValue && dateFin.Value < dateDebut.Value)
+                    return PartageErrors.DateFinAvantDateDebut();
+
+                Nom = nom.Trim();
+                Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+                EnergieType = energieType;
+                DateDebut = dateDebut;
+                DateFin = dateFin;
+
+                Audit.Touch(null);
+
+                return Result.Success();
+        }
     }
 }
