@@ -1,0 +1,77 @@
+﻿@page "/partages/rejoindre"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Mediator
+@using EnergyShare_v3.Application.Features.Partage
+
+@inject ISender Sender
+@inject NavigationManager Navigation
+
+<PageTitle>Rejoindre un partage</PageTitle>
+
+<h3>Rejoindre un partage</h3>
+
+<p class="text-muted">
+    Saisissez le code d’invitation reçu pour rejoindre un partage d’énergie.
+</p>
+
+<div class="card">
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label">Code d’invitation</label>
+            <input class="form-control"
+                   @bind="invitationCode"
+                   placeholder="Exemple : ABC123456789" />
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-warning">
+                @errorMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(successMessage))
+        {
+            <div class="alert alert-success">
+                @successMessage
+            </div>
+        }
+
+        <button class="btn btn-primary"
+                @onclick="HandleJoin"
+                disabled="@isLoading">
+            @(isLoading ? "Traitement..." : "Rejoindre le partage")
+        </button>
+    </div>
+</div>
+
+@code {
+    private string invitationCode = string.Empty;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isLoading;
+
+    private async Task HandleJoin()
+    {
+        errorMessage = null;
+        successMessage = null;
+        isLoading = true;
+        //TOdo éventuellement renommer le handler en RejoindrePartageHandler pour plus de clarté
+        var result = await Sender.Send(new EnergyShare_v3.Application.Features.Partage.RejoindrePartage(invitationCode));
+
+        isLoading = false;
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Code invalide, expiré ou partage impossible à rejoindre.";
+            return;
+        }
+
+        successMessage = "Vous avez rejoint le partage avec succès.";
+
+        Navigation.NavigateTo($"/partages/{result.Value}");
+    }
+}

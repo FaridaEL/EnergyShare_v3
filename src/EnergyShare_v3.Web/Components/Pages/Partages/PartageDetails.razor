@@ -1,12 +1,14 @@
 ﻿@page "/partages/{Id:guid}"
 @rendermode InteractiveServer
 @attribute [Authorize]
+@inject IJSRuntime JS //nécessaire pour copier le code d'invitation dans le presse-papier
 
 @using Microsoft.AspNetCore.Authorization
 @using Mediator
 @using EnergyShare_v3.Application.Features.Partage
 @using EnergyShare_v3.Domain.Enums
 @using EnergyShare_v3.Web.Models.Partage
+@using Microsoft.JSInterop  
 
 @inject ISender Sender
 
@@ -72,23 +74,6 @@ else if (partage is not null)
         </div>
 
         <div class="card-body">
-            @* <div class="row g-3 mb-3">
-               
-                <div class="col-md-4">
-                    <strong>Créé le :</strong> @partage.CreatedAt.ToShortDateString()
-                    
-                </div>
-                <div class="col-md-4">
-                    <strong>Participants :</strong> @partage.NombreParticipants
-                </div>
- 
-
-               <div class="col-md-4">
-                    <strong>Statut :</strong>
-                    <span class="text-danger fw-bold">@GetStatutLabel(partage.Statut)</span>
-                </div> 
-            </div> *@
-
             <div class="metadata-box mb-3">
                 <div>
                     <span class="metadata-label">Créé le :</span>
@@ -113,7 +98,6 @@ else if (partage is not null)
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Nom du partage</label>
-                    @* <input class="form-control" value="@partage.Nom" disabled="@(!partage.CanEdit)" /> *@
                     <InputText class="form-control"
                                @bind-Value="formModel.Nom"
                                disabled="@(!partage.CanEdit)" />
@@ -121,19 +105,16 @@ else if (partage is not null)
 
                 <div class="col-md-6">
                     <label class="form-label">Type de partage</label>
-                    @* <input class="form-control" value="@partage.EnergieType" disabled="@(!partage.CanEdit)" /> *@
                     <InputSelect class="form-select"
                                  @bind-Value="formModel.EnergieType"
                                  disabled="@(!partage.CanEdit)">
                         <option value="@PartageEnergieType.PairToPair">Pair à pair</option>
                         <option value="@PartageEnergieType.MemeBatiment">Même bâtiment</option>
                     </InputSelect>
-
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label">Date de début</label>
-                    @* <input class="form-control" value="@FormatDate(partage.DateDebut)" disabled="@(!partage.CanEdit)" /> *@
                     <InputDate class="form-control"
                                @bind-Value="formModel.DateDebut"
                                disabled="@(!partage.CanEdit)" />
@@ -141,7 +122,6 @@ else if (partage is not null)
 
                 <div class="col-md-6">
                     <label class="form-label">Date de fin</label>
-                    @* <input class="form-control" value="@FormatDate(partage.DateFin)" disabled="@(!partage.CanEdit)" /> *@
                     <InputDate class="form-control"
                                @bind-Value="formModel.DateFin"
                                disabled="@(!partage.CanEdit)" />
@@ -149,7 +129,6 @@ else if (partage is not null)
 
                 <div class="col-12">
                     <label class="form-label">Description</label>
-                    @* <textarea class="form-control" rows="3" disabled="@(!partage.CanEdit)">@partage.Description</textarea> *@
                     <InputTextArea class="form-control"
                                    @bind-Value="formModel.Description"
                                    rows="3"
@@ -163,9 +142,11 @@ else if (partage is not null)
         <button class="btn btn-primary" @onclick="HandleUpdate" disabled="@(!partage.CanEdit)">
             Enregistrer les modifications
         </button>
-        
-        <button class="btn btn-outline-primary" disabled="@(!partage.CanEdit)">
-            Ajouter un participant
+
+        <button class="btn btn-outline-primary"
+                @onclick="HandleInvitation"
+                disabled="@(!partage.CanEdit || isInvitationLoading)">
+            @(isInvitationLoading ? "Préparation..." : "Inviter un participant")
         </button>
 
         <button class="btn btn-outline-secondary" disabled="@(!partage.CanEdit || partage.NombreParticipants < 2)">
@@ -176,6 +157,53 @@ else if (partage is not null)
             Demander validation GRD
         </button>
     </div>
+
+    @* Bloc affiché après clic sur "Inviter un participant".
+       Le code est généré côté domaine s'il n'existe pas ou s'il est expiré. *@
+    @if (invitation is not null)
+    {
+        <div class="card mt-3 mb-3 border-primary">
+            <div class="card-body">
+                <h5 class="card-title">Code d’invitation</h5>
+
+                <p class="text-muted">
+                    Transmettez ce code à la personne que vous souhaitez inviter.
+                    Elle devra se connecter à EnergyShare, puis cliquer sur
+                    <strong>Rejoindre un partage</strong>.
+                    Ce code expire dans 24 heures.
+                </p>
+
+                <div class="input-group mb-2">
+                    <input class="form-control fw-bold"
+                           value="@invitation.InvitationCode"
+                           readonly />
+
+                    <button class="btn btn-outline-secondary"
+                            @onclick="CopyInvitationCode">
+                        Copier
+                    </button>
+                </div>
+
+                <div class="small text-muted">
+                    Expire le : @invitation.InvitationCodeExpiresAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(invitationMessage))
+                {
+                    <div class="alert alert-success mt-3 mb-0">
+                        @invitationMessage
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(invitationError))
+    {
+        <div class="alert alert-warning mt-3">
+            @invitationError
+        </div>
+    }
 }
 
 @code {
@@ -185,6 +213,13 @@ else if (partage is not null)
     private bool isLoading = true;
     private string? errorMessage;
     private PartageDetailsDto? partage;
+    
+    //var pour inviter et rejoindre un partage
+    private InvitationCodeDto? invitation;
+    private string? invitationMessage;
+    private string? invitationError;
+    private bool isInvitationLoading;
+
 
     // Modèle UI éditable utilisé par les champs du formulaire.
     // On ne modifie pas directement PartageDetailsDto car c'est un record immutable.
@@ -287,4 +322,38 @@ else if (partage is not null)
             };
         }
     }
+
+    private async Task HandleInvitation()
+    {
+        if (partage is null)
+            return;
+
+        invitationError = null;
+        invitationMessage = null;
+        isInvitationLoading = true;
+
+        var result = await Sender.Send(new GetInvitationCodePartage(partage.Id));
+
+        isInvitationLoading = false;
+
+        if (!result.IsSuccess)
+        {
+            invitationError = "Impossible de générer le code d’invitation.";
+            return;
+        }
+
+        invitation = result.Value;
+    }
+
+    private async Task CopyInvitationCode()
+    {
+        if (invitation is null)
+            return;
+
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", invitation.InvitationCode);
+
+        invitationMessage = "Code copié dans le presse-papiers.";
+    }
+
+
 }
