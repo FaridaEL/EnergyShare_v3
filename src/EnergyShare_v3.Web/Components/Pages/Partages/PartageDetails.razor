@@ -1,0 +1,195 @@
+﻿@page "/partages/{Id:guid}"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Mediator
+@using EnergyShare_v3.Application.Features.Partage
+@using EnergyShare_v3.Domain.Enums
+
+@inject ISender Sender
+
+<PageTitle>Dossier de partage</PageTitle>
+
+<h3>Dossier de partage</h3>
+
+@if (isLoading)
+{
+    <p>Chargement...</p>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-warning">@errorMessage</div>
+}
+else if (partage is not null)
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                <div class="flex-grow-1">
+                    <h5 class="mb-2">Progression du dossier</h5>
+
+                    <div class="progress mb-2">
+                        <div class="progress-bar" style="width:@($"{partage.Progression}%")">
+                            @partage.Progression%
+                        </div>
+                    </div>
+
+                    <ul class="mb-0">
+                        <li class="text-success">✔ Création du partage</li>
+                        <li class="@(partage.NombreParticipants >= 2 ? "text-success" : "text-muted")">
+                            @(partage.NombreParticipants >= 2 ? "✔" : "○") Participants
+                        </li>
+                        <li class="text-muted">○ Périmètre électrique</li>
+                        <li class="text-muted">○ Transmission des données</li>
+                        <li class="@(partage.Statut == PartageEnergieStatutType.EnAttenteValidation || partage.Statut == PartageEnergieStatutType.Actif ? "text-success" : "text-muted")">
+                            @(partage.Statut == PartageEnergieStatutType.EnAttenteValidation || partage.Statut == PartageEnergieStatutType.Actif ? "✔" : "○") Validation GRD
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="status-box text-center">
+                    <div class="text-muted small">Statut du partage</div>
+                    <div class="fw-bold text-danger fs-5">
+                        @GetStatutLabel(partage.Statut)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!partage.CanEdit)
+    {
+        <div class="alert alert-info">
+            Vous consultez ce dossier en lecture seule.
+        </div>
+    }
+
+    <div class="card mb-3">
+        <div class="card-header fw-bold">
+            Données du partage
+        </div>
+
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+               
+                <div class="col-md-4">
+                    <strong>Créé le :</strong> @partage.CreatedAt.ToShortDateString()
+                    
+                </div>
+                <div class="col-md-4">
+                    <strong>Participants :</strong> @partage.NombreParticipants
+                </div>
+
+                
+
+               @*  <div class="col-md-4">
+                    <strong>Statut :</strong>
+                    <span class="text-danger fw-bold">@GetStatutLabel(partage.Statut)</span>
+                </div> *@
+            </div>
+
+            <p class="text-muted mb-3">
+                Cette zone servira à compléter les informations administratives nécessaires avant la demande de validation.
+            </p>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nom du partage</label>
+                    <input class="form-control" value="@partage.Nom" disabled="@(!partage.CanEdit)" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Type de partage</label>
+                    <input class="form-control" value="@partage.EnergieType" disabled />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Date de début</label>
+                    <input class="form-control" value="@FormatDate(partage.DateDebut)" disabled="@(!partage.CanEdit)" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Date de fin</label>
+                    <input class="form-control" value="@FormatDate(partage.DateFin)" disabled="@(!partage.CanEdit)" />
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" rows="3" disabled="@(!partage.CanEdit)">@partage.Description</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3 flex-wrap">
+        <button class="btn btn-outline-primary" disabled="@(!partage.CanEdit)">
+            Ajouter un participant
+        </button>
+
+        <button class="btn btn-outline-secondary" disabled="@(!partage.CanEdit || partage.NombreParticipants < 2)">
+            Demander info périmètre
+        </button>
+
+        <button class="btn btn-success" disabled="@(!partage.CanEdit || partage.NombreParticipants < 2)">
+            Demander validation GRD
+        </button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private bool isLoading = true;
+    private string? errorMessage;
+    private PartageDetailsDto? partage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Sender.Send(new GetPartageById(Id));
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Impossible de charger le partage.";
+            isLoading = false;
+            return;
+        }
+
+        partage = result.Value;
+        isLoading = false;
+    }
+
+    private static string FormatDate(DateTime? date)
+        => date?.ToShortDateString() ?? "Non définie";
+
+    private static string GetBadgeClass(PartageEnergieStatutType statut)
+    {
+        return statut switch
+        {
+            PartageEnergieStatutType.Inactif => "bg-secondary",
+            PartageEnergieStatutType.EnAttenteValidation => "bg-warning text-dark",
+            PartageEnergieStatutType.Actif => "bg-success",
+            PartageEnergieStatutType.EnAttenteModification => "bg-warning text-dark",
+            PartageEnergieStatutType.Suspendu => "bg-danger",
+            PartageEnergieStatutType.EnCoursCloture => "bg-warning text-dark",
+            PartageEnergieStatutType.Cloture => "bg-dark",
+            _ => "bg-light text-dark"
+        };
+    }
+
+    private static string GetStatutLabel(PartageEnergieStatutType statut)
+    {
+        return statut switch
+        {
+            PartageEnergieStatutType.Inactif => "Brouillon / Inactif",
+            PartageEnergieStatutType.EnAttenteValidation => "En attente GRD",
+            PartageEnergieStatutType.Actif => "Actif",
+            PartageEnergieStatutType.EnAttenteModification => "Modification en attente",
+            PartageEnergieStatutType.Suspendu => "Suspendu",
+            PartageEnergieStatutType.EnCoursCloture => "Clôture en cours",
+            PartageEnergieStatutType.Cloture => "Clôturé",
+            _ => statut.ToString()
+        };
+    }
+}
