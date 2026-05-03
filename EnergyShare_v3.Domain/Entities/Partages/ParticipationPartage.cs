@@ -63,10 +63,13 @@ namespace EnergyShare_v3.Domain.Entities.Partages
             if (UserRolePartage != UserRolePartage.Vendeur)
                return ParticipationPartageErrors.InterlocuteurUniqueDoitEtreVendeur(PointAccessId);
 
-           if (!PointAccess.IsInjectionPoint)
-                return ParticipationPartageErrors.PointInjectionRequis(PointAccessId);
-           
+            // cette vérification est faite au niveau de l'application dans le handler
+            //if (!PointAccess.IsInjectionPoint)
+            //     return ParticipationPartageErrors.PointInjectionRequis(PointAccessId);
+
             IsInterlocuteurUnique = true;
+
+            Audit ??= new AuditInfo();
             Audit.Touch(null);
             //UpdatedAt = DateTime.UtcNow;
             return Result.Success();
