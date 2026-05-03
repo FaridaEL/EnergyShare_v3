@@ -36,6 +36,16 @@ namespace EnergyShare_v3.Infrastructure.Database.Configurations
                 .HasConversion<string>()
                 .HasMaxLength(40);
 
+            builder.Property(p => p.InvitationCodeExpiresAt);
+
+            builder.HasIndex(p => p.InvitationCode)
+                .IsUnique()
+                // L’index UNIQUE s’applique uniquement sur les lignes  où InvitationCode n’est PAS null
+                // ça permet d’avoir plusieurs partages sans code, tout en garantissant
+                // l’unicité des codes d’invitation lorsqu’ils existent.
+                .HasFilter("[InvitationCode] IS NOT NULL");
+
+
             builder.HasOne(p => p.Vendeur)
                 .WithMany(u => u.PartagesCrees)
                 .HasForeignKey(p => p.VendeurId)

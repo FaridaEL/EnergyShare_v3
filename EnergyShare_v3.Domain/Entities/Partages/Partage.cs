@@ -2,8 +2,10 @@
 using EnergyShare_v3.Bricks.Model;
 using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Domain.Enums;
+using System.Collections;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text;
 
 namespace EnergyShare_v3.Domain.Entities.Partages
 {
@@ -12,6 +14,11 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         //Seul l'interlocuteur unique, càd le vendeur, peut créer un partage.
         [Key]
         public Guid Id { get; set; }
+
+        
+
+        
+        
 
         [Required, MaxLength(100)]
         public string Nom { get; private set; } = null!;
@@ -27,7 +34,21 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         public PartageEnergieType EnergieType { get; private set; }
 
         public PerimetreType? Perimetre { get; set; } //A pour même batiment, sinon connu après dde info aurpès de Sibelga
-                                                                      //Lien tables et clés étrangères
+                                                      //Lien tables et clés étrangères
+
+
+        /*le code doit être :
+
+            - créé lorsque le créateur clique sur "Inviter membres" ;
+            - unique ;
+            - non devinable;
+            - stocké dans Partage ;
+            - utilisé ensuite pour créer une ParticipationPartage 
+            - expiré au bout de 24 heures */
+
+        [MaxLength(32)]
+        public string? InvitationCode { get; private set; }
+        public DateTime? InvitationCodeExpiresAt { get; private set; }
 
         public Guid VendeurId { get; set; } // L'ID du créateur
         [ForeignKey("VendeurId")]
@@ -66,6 +87,8 @@ namespace EnergyShare_v3.Domain.Entities.Partages
             EnergieType = energieType;
             VendeurId = vendeurId;
             Statut = PartageEnergieStatutType.Inactif; // Un nouveau partage commence toujours en statut Inactif
+            
+
         }
         public static Result<Partage> Create(
             string nom,
@@ -284,6 +307,38 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 Audit.Touch(null);
 
                 return Result.Success();
+        }
+
+        private static string GenerateInvitationCode()
+        {    //Guid : génere un identifiant unique
+            //Replace : nettoyer les caractères spéciaux pour obtenir une chaîne alphanumérique
+            // .ToUpperInvariant() : uniformise le code en majuscules
+            
+            return Guid.NewGuid()
+                .ToString()
+                .Replace("-", "")
+                .ToUpperInvariant()[..12];
+
+        }
+
+        public  Result EnsureValidInvitationCode()
+        {
+            if (Statut == PartageEnergieStatutType.EnCoursCloture)
+                return PartageErrors.PartageEnCoursDeCloture();
+
+            if (Statut == PartageEnergieStatutType.Cloture)
+                return PartageErrors.PartageCloture();
+
+            if (string.IsNullOrWhiteSpace(InvitationCode) ||
+                InvitationCodeExpiresAt is null ||
+                InvitationCodeExpiresAt <= DateTime.UtcNow)
+            {
+                InvitationCode = GenerateInvitationCode();
+                InvitationCodeExpiresAt = DateTime.UtcNow.AddHours(24);
+                Audit.Touch(null);
+            }
+
+            return Result.Success();
         }
     }
 }
