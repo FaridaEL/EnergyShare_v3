@@ -1,0 +1,140 @@
+﻿@page "/partages/my"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Mediator
+@using EnergyShare_v3.Application.Features.PointAccess
+@using EnergyShare_v3.Application.Features.Partage
+
+@inject ISender Sender
+
+<PageTitle>Mon partage</PageTitle>
+
+<h3>Mon partage</h3>
+
+<p class="text-muted">
+    Suivez votre partage d’énergie et les prochaines étapes.
+</p>
+
+@if (isLoading)
+{
+    <p>Chargement...</p>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-warning">@errorMessage</div>
+    }
+
+    @if (partages.Any())
+    {
+        <div class="row g-3">
+            @foreach (var partage in partages)
+            {
+                <div class="col-md-6">
+                    <div class="card border-primary mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">@partage.Nom</h5>
+
+                            <p class="card-text mb-1">
+                                <strong>Type :</strong> @partage.EnergieType
+                            </p>
+
+                            <p class="card-text mb-1">
+                                <strong>Statut :</strong> @partage.Statut
+                            </p>
+
+                            <p class="card-text mb-3">
+                                <strong>Participants :</strong> @partage.NombreParticipants
+                            </p>
+
+                            <a href="@($"/partages/{partage.Id}")" class="btn btn-primary">
+                                Voir le détail
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            Aucun partage trouvé.
+        </div>
+
+        @if (hasInjectionPoint)
+        {
+            <div class="card border-primary mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">💡 Vous pouvez créer un partage</h5>
+                    <p class="card-text">
+                        Vous possédez un point d’injection. Vous pouvez créer un partage
+                        et devenir l’interlocuteur unique vis-à-vis du GRD.
+                    </p>
+
+                    <a href="/partages/create" class="btn btn-primary">
+                        Créer un partage
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card border-warning mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Point d’injection requis</h5>
+                    <p class="card-text">
+                        Pour créer un partage, vous devez d’abord déclarer un point d’accès
+                        qui injecte de l’énergie sur le réseau.
+                    </p>
+
+                    <a href="/mes-points-access" class="btn btn-primary">
+                        Mes points d’accès
+                    </a>
+                </div>
+            </div>
+        }
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private bool hasInjectionPoint = false;
+
+    private string? errorMessage;
+
+    private IReadOnlyList<PartageSummaryDto> partages = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        var pointAccessResult = await Sender.Send(new GetMyPointAccesses());
+
+        if (!pointAccessResult.IsSuccess)
+        {
+            errorMessage = "Impossible de charger vos points d’accès.";
+            isLoading = false;
+            return;
+        }
+
+        hasInjectionPoint = pointAccessResult.Value.Any(p => p.EstActif && p.IsInjectionPoint);
+
+        var partageResult = await Sender.Send(new GetMyPartages());
+
+        if (!partageResult.IsSuccess)
+        {
+            errorMessage = "Impossible de charger vos partages.";
+            isLoading = false;
+            return;
+        }
+
+        partages = partageResult.Value;
+
+        isLoading = false;
+    }
+}

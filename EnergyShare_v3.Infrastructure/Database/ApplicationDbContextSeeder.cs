@@ -16,6 +16,20 @@ namespace EnergyShare_v3.Infrastructure.Database
         {
             await SeedRolesAsync(roleManager);
 
+
+            // ADMIN DE TEST
+            // À créer AVANT le return sur PointAccesses.
+            // Sinon, si la base contient déjà des points d'accès,
+            // le seed s'arrête ici et l'admin n'est jamais créé.
+            await CreateUserIfNotExistsAsync(
+                userManager,
+                "admin.test@example.com",
+                "Test1234",
+                "Admin",
+                "Test",
+                "0470000099",
+                "Administrateur");
+
             if (await context.PointAccesses.AnyAsync())
                 return;
 
@@ -129,13 +143,13 @@ namespace EnergyShare_v3.Infrastructure.Database
 
 
             var paAcheteur1 = PointAccess.Create(
-    acheteur1.Id,
-    "Chaussée de Wavre 88",
-    "1040",
-    "TotalEnergies",
-    "1SJ-ACHETEUR-0001",
-    "541448900000000003",
-    false).Value;
+                acheteur1.Id,
+                "Chaussée de Wavre 88",
+                "1040",
+                "TotalEnergies",
+                "1SJ-ACHETEUR-0001",
+                "541448900000000003",
+                false).Value;
             paAcheteur1.SetCoordinates(50.8360, 4.3833);
 
             var paAcheteur2 = PointAccess.Create(

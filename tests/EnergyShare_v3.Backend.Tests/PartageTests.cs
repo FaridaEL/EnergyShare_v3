@@ -61,5 +61,65 @@ namespace EnergyShare_v3.Backend.Tests
             result.Value.EnergieType.Should().Be(PartageEnergieType.PairToPair);
             result.Value.Statut.Should().Be(PartageEnergieStatutType.Inactif);
         }
+
+        [Fact]
+        public void AjouterMembre_ShouldSucceed_EvenIfPairToPairHasOnlyOneMember()
+        {
+            // Arrange
+            var vendeurId = Guid.NewGuid();
+
+            var partage = Partage.Create(
+                "Partage Test",
+                PartageEnergieType.PairToPair,
+                vendeurId).Value;
+
+            var membre = new ParticipationPartage
+            {
+                Id = Guid.NewGuid(),
+                PartageId = partage.Id,
+                PointAccessId = Guid.NewGuid(),
+                UserRolePartage = UserRolePartage.Acheteur,
+                JoinedAt = DateTime.UtcNow
+            };
+
+            // Act
+            var result = partage.AjouterMembre(membre);
+
+            // Assert
+            result.IsSuccess.Should().BeTrue();
+            partage.Membres.Should().HaveCount(1);
+        }
+
+        [Fact]
+        public void SoumettreNouveauPartageAuGrd_ShouldFail_WhenPairToPairHasOnlyOneMember()
+        {
+            // Arrange
+            var vendeurId = Guid.NewGuid();
+
+            var partage = Partage.Create(
+                "Partage Test",
+                PartageEnergieType.PairToPair,
+                vendeurId).Value;
+
+            var membre = new ParticipationPartage
+            {
+                Id = Guid.NewGuid(),
+                PartageId = partage.Id,
+                PointAccessId = Guid.NewGuid(),
+                UserRolePartage = UserRolePartage.Acheteur,
+                JoinedAt = DateTime.UtcNow
+            };
+
+            partage.AjouterMembre(membre);
+
+            // Act
+            var result = partage.SoumettreNouveauPartageAuGrd();
+
+            // Assert
+            result.IsSuccess.Should().BeFalse();
+            partage.Statut.Should().Be(PartageEnergieStatutType.Inactif);
+        }
+
+
     }
 }

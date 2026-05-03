@@ -62,7 +62,19 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                "ParticipationPartage.PointAccessDejaDansUnPartageActif",
                ValidationSeverity.Error));
 
+        public static Result PartageObligatoire() =>
+            Result.Invalid(new ValidationError(
+                nameof(ParticipationPartage.PartageId),
+                "Le partage est obligatoire.",
+                "ParticipationPartage.PartageObligatoire",
+                ValidationSeverity.Error));
 
+        public static Result PointAccessObligatoire() =>
+            Result.Invalid(new ValidationError(
+                nameof(ParticipationPartage.PointAccessId),
+                "Le point d'accès est obligatoire.",
+                "ParticipationPartage.PointAccessObligatoire",
+                ValidationSeverity.Error));
 
     }
 }

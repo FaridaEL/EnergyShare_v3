@@ -1,0 +1,141 @@
+﻿@page "/partages/create"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Mediator
+@using EnergyShare_v3.Application.Features.Partage
+@using EnergyShare_v3.Application.Features.PointAccess
+@using EnergyShare_v3.Domain.Enums
+@using EnergyShare_v3.Web.Models.Partage
+
+@inject ISender Sender
+@inject NavigationManager Navigation
+
+<PageTitle>Créer un partage</PageTitle>
+
+<h3>Créer un partage</h3>
+
+<p class="text-muted">
+    Créez un partage d’énergie. Vous serez considéré comme l’interlocuteur unique.
+</p>
+
+@if (isLoading)
+{
+    <p>Chargement...</p>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-warning">@errorMessage</div>
+    }
+
+    @if (!hasInjectionPoint)
+    {
+        <div class="alert alert-info">
+            Vous devez d’abord posséder un point d’accès d’injection pour créer un partage.
+        </div>
+
+        <a href="/mes-points-access" class="btn btn-primary">
+            Créer mon point d’accès
+        </a>
+    }
+    else
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Nouveau partage</h5>
+
+                <EditForm Model="model" OnValidSubmit="CreateAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label class="form-label">Nom du partage</label>
+                        <InputText class="form-control" @bind-Value="model.Nom" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Type de partage</label>
+                        <InputSelect class="form-select" @bind-Value="model.EnergieType">
+                            <option value="@PartageEnergieType.PairToPair">Pair à pair</option>
+                            <option value="@PartageEnergieType.MemeBatiment">Même bâtiment</option>
+                        </InputSelect>
+                        <small class="text-muted">
+                            La communauté d’énergie est prévue plus tard, hors MVP.
+                        </small>
+                    </div>
+
+                    <div class="alert alert-info">
+                        💡 Après la création, vous pourrez ajouter les membres du partage.
+                    </div>
+
+                    <button class="btn btn-primary" type="submit" disabled="@isSaving">
+                        @(isSaving ? "Création..." : "Créer le partage")
+                    </button>
+
+                    <a href="/partages/my" class="btn btn-outline-secondary ms-2">
+                        Annuler
+                    </a>
+                </EditForm>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool hasInjectionPoint = false;
+
+    private string? errorMessage;
+
+    private PartageFormModel model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        var pointsResult = await Sender.Send(new GetMyPointAccesses());
+
+        if (!pointsResult.IsSuccess)
+        {
+            errorMessage = "Impossible de vérifier vos points d’accès.";
+            isLoading = false;
+            return;
+        }
+
+        hasInjectionPoint = pointsResult.Value.Any(p => p.EstActif && p.IsInjectionPoint);
+
+        isLoading = false;
+    }
+
+    private async Task CreateAsync()
+    {
+        isSaving = true;
+        errorMessage = null;
+
+        var result = await Sender.Send(new CreatePartage(
+            model.Nom,
+            model.EnergieType));
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Impossible de créer le partage. Vérifiez les informations saisies.";
+            isSaving = false;
+            return;
+        }
+
+        // Navigation.NavigateTo($"/partages/my");
+        Navigation.NavigateTo($"/partages/{result.Value}");
+    }
+
+    
+}

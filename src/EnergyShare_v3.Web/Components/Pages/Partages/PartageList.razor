@@ -1,5 +1,5 @@
 ﻿
-@page "/partages"
+@* @page "/partages"
 @inject GetPartagesHandler PartagesHandler
 @rendermode InteractiveServer
 
@@ -53,6 +53,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _partages = await PartagesHandler.HandleAsync();
+        _partages = await PartagesHandler.Handle();
     }
-}
+} *@
