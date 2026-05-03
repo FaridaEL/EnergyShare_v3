@@ -38,4 +38,15 @@ namespace EnergyShare_v3.Application.Features.Partage
         // Progression (UI)
         int Progression
     );
+
+    // Partage add member
+    public record InvitationCodeDto(
+        Guid PartageId,
+        string InvitationCode,
+        DateTime InvitationCodeExpiresAt
+      );
+
+
+
+
 }

@@ -97,6 +97,19 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 "Partage.DateFinAvantDateDebut",
                 ValidationSeverity.Error));
 
+        public static Result InvitationCodeIntrouvable() =>
+            Result.Invalid(new ValidationError(
+                nameof(Partage.InvitationCode),
+                "Aucun partage ne correspond à ce code d’invitation.",
+                "Partage.InvitationCodeIntrouvable",
+                ValidationSeverity.Error));
+        public static Result InvitationCodeExpire() =>
+           Result.Invalid(new ValidationError(
+               nameof(Partage.InvitationCode),
+               "Ce code d’invitation a expiré. Demandez un nouveau code au créateur du partage.",
+               "Partage.InvitationCodeExpire",
+               ValidationSeverity.Error));
+
 
     }
 }

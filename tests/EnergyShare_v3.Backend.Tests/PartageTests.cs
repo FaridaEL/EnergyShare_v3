@@ -197,6 +197,68 @@ namespace EnergyShare_v3.Backend.Tests
             result.IsSuccess.Should().BeFalse();
         }
 
+        //Test sur l'ajout d'utilisateur via invitation par code
+        [Fact]
+        public void Create_ShouldNotGenerateInvitationCode()
+        {
+            // Arrange
+            var vendeurId = Guid.NewGuid();
+
+            // Act
+            var result = Partage.Create(
+                nom: "Partage Test",
+                energieType: PartageEnergieType.PairToPair,
+                vendeurId: vendeurId);
+
+            // Assert
+            result.IsSuccess.Should().BeTrue();
+            result.Value.InvitationCode.Should().BeNull();
+            result.Value.InvitationCodeExpiresAt.Should().BeNull();
+        }
+
+        [Fact]
+        public void EnsureValidInvitationCode_ShouldGenerateCode_WhenNoCodeExists()
+        {
+            // Arrange
+            var partage = Partage.Create(
+                "Partage Test",
+                PartageEnergieType.PairToPair,
+                Guid.NewGuid()).Value;
+
+            // Act
+            var result = partage.EnsureValidInvitationCode();
+
+            // Assert
+            result.IsSuccess.Should().BeTrue();
+            partage.InvitationCode.Should().NotBeNullOrWhiteSpace();
+            partage.InvitationCode.Should().HaveLength(12);
+            partage.InvitationCodeExpiresAt.Should().NotBeNull();
+            partage.InvitationCodeExpiresAt!.Value.Should().BeAfter(DateTime.UtcNow);
+        }
+
+        [Fact]
+        public void EnsureValidInvitationCode_ShouldKeepSameCode_WhenCodeIsStillValid()
+        {
+            // Arrange
+            var partage = Partage.Create(
+                "Partage Test",
+                PartageEnergieType.PairToPair,
+                Guid.NewGuid()).Value;
+
+            partage.EnsureValidInvitationCode();
+
+            var firstCode = partage.InvitationCode;
+            var firstExpiration = partage.InvitationCodeExpiresAt;
+
+            // Act
+            var result = partage.EnsureValidInvitationCode();
+
+            // Assert
+            result.IsSuccess.Should().BeTrue();
+            partage.InvitationCode.Should().Be(firstCode);
+            partage.InvitationCodeExpiresAt.Should().Be(firstExpiration);
+        }
+
 
 
     }

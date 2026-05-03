@@ -4,6 +4,7 @@ using EnergyShare_v3.Domain.Entities.Partages;
 using EnergyShare_v3.Domain.Enums;
 using FluentValidation;
 using Mediator;
+using Microsoft.EntityFrameworkCore;
 
 namespace EnergyShare_v3.Application.Features.Partage
 {
@@ -44,6 +45,27 @@ namespace EnergyShare_v3.Application.Features.Partage
 
             var vendeurId = userContext.UserId.Value; // Utilise l'Id de l'utilisateur connecté comme vendeur du partage  via user-context
 
+            // fix : ajouter le vendeur dans participation partage
+            // condition prélable : Un vendeur doit avoir un point d’accès actif qui injecte de l’énergie.
+            // C’est ce point d’accès qui sera ajouté comme première participation du partage.
+            var pointInjectionVendeur = await context.PointAccesses
+                .FirstOrDefaultAsync(p =>
+                    p.UserId == vendeurId &&
+                    p.EstActif &&
+                    p.IsInjectionPoint,
+                    cancellationToken);
+
+            if (pointInjectionVendeur is null)
+            {
+                return Result<Guid>.Invalid(new ValidationError(
+                    "PointAccess",
+                    "Vous devez d’abord déclarer un point d’accès d’injection actif pour créer un partage.",
+                    "CreatePartage.PointInjectionObligatoire",
+                    ValidationSeverity.Error));
+            }
+
+
+
             var result = Domain.Entities.Partages.Partage.Create(
                 command.Nom,
                 command.EnergieType,
@@ -54,7 +76,38 @@ namespace EnergyShare_v3.Application.Features.Partage
 
             var partage = result.Value;
 
+            // fix : ajouter le vendeur dans participation partage + interlocuteur unique
+            // Ainsi, NombreParticipants inclut bien le créateur du partage.
+            var participationVendeurResult = ParticipationPartage.Create(
+                partage.Id,
+                pointInjectionVendeur.Id,
+                UserRolePartage.Vendeur);
+
+            if (!participationVendeurResult.IsSuccess)
+                return Result<Guid>.Invalid(participationVendeurResult.ValidationErrors);
+
+            var participationVendeur = participationVendeurResult.Value;
+
+            // Le vendeur est l’interlocuteur unique vis-à-vis du GRD.
+            //participationVendeur.DefinirCommeInterlocuteurUnique();
+
+            var interlocuteurResult = participationVendeur.DefinirCommeInterlocuteurUnique();
+
+            if (!interlocuteurResult.IsSuccess)
+                return Result<Guid>.Invalid(interlocuteurResult.ValidationErrors);
+
+            var ajoutResult = partage.AjouterMembre(participationVendeur);
+
+            if (!ajoutResult.IsSuccess)
+                return Result<Guid>.Invalid(ajoutResult.ValidationErrors);
+
+
+
             await context.Partages.AddAsync(partage, cancellationToken);
+
+            // Important : on indique explicitement à EF que la participation est nouvelle.
+            // Le SaveChanges est géré par le UnitOfWorkBehavior.
+            await context.MembresPartage.AddAsync(participationVendeur, cancellationToken);
 
             return Result.Success(partage.Id);
         }

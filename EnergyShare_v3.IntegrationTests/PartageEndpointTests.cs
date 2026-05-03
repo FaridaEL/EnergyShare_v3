@@ -15,6 +15,7 @@ namespace EnergyShare_v3.IntegrationTests
         private static string? _sarahToken;
         private static string? _julienToken;
         private static string? _adminToken;
+        private static string? _leaToken;
 
         public PartageEndpointTests(CustomWebApplicationFactory factory)
         {
@@ -237,7 +238,142 @@ namespace EnergyShare_v3.IntegrationTests
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         }
+        //Test sur l'ajout d'utilisateur via invitation par code
+       
+        //test pour le créateur :
 
+        [Fact]
+        public async Task GetInvitationCodePartage_WhenUserIsSeller_ShouldReturnOk()
+        {
+            // Arrange
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var createCommand = new CreatePartage(
+                Nom: "Partage invitation code",
+                EnergieType: PartageEnergieType.PairToPair);
+
+            var createResponse = await _client.PostAsJsonAsync("/api/partages", createCommand);
+            createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+            var partageId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+            // Act
+            var response = await _client.PostAsync(
+                $"/api/partages/{partageId}/invitation-code",
+                content: null);
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var dto = await response.Content.ReadFromJsonAsync<InvitationCodeDto>();
+
+            dto.Should().NotBeNull();
+            dto!.PartageId.Should().Be(partageId);
+            dto.InvitationCode.Should().NotBeNullOrWhiteSpace();
+            dto.InvitationCode.Should().HaveLength(12);
+            dto.InvitationCodeExpiresAt.Should().BeAfter(DateTime.UtcNow);
+        }
+
+        //test pour l’accès interdit :
+
+        [Fact]
+        public async Task GetInvitationCodePartage_WhenUserIsNotSeller_ShouldReturnForbidden()
+        {
+            // Arrange : Sarah crée un partage.
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var createCommand = new CreatePartage(
+                Nom: "Partage invitation interdit",
+                EnergieType: PartageEnergieType.PairToPair);
+
+            var createResponse = await _client.PostAsJsonAsync("/api/partages", createCommand);
+            createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+            var partageId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+            // Act : Julien tente de récupérer le code.
+            await AuthenticateAsync("julien.martin@example.com");
+
+            var response = await _client.PostAsync(
+                $"/api/partages/{partageId}/invitation-code",
+                content: null);
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        //test pour rejoindre :
+        [Fact]
+        public async Task RejoindrePartage_WithValidInvitationCode_ShouldReturnOk()
+        {
+            // Arrange : Sarah crée un partage
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var createCommand = new CreatePartage(
+                Nom: "Partage à rejoindre",
+                EnergieType: PartageEnergieType.PairToPair);
+
+            var createResponse = await _client.PostAsJsonAsync("/api/partages", createCommand);
+            createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+            var partageId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+            // Génération du code d’invitation
+            var invitationResponse = await _client.PostAsync(
+                $"/api/partages/{partageId}/invitation-code",
+                content: null);
+
+            invitationResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var invitationDto = await invitationResponse.Content.ReadFromJsonAsync<InvitationCodeDto>();
+            invitationDto.Should().NotBeNull();
+
+            // Act : Léa rejoint le partage
+            await AuthenticateAsync("lea.bernard@example.com");
+
+            var response = await _client.PostAsJsonAsync(
+                "/api/partages/rejoindre",
+                new RejoindrePartageRequest(invitationDto!.InvitationCode));
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var joinedPartageId = await response.Content.ReadFromJsonAsync<Guid>();
+            joinedPartageId.Should().Be(partageId);
+        }
+        //N'est pas déjà dans un partage actif 
+        //[Fact]
+        //public async Task RejoindrePartage_WhenAlreadyInActivePartage_ShouldReturnBadRequest()
+
+        //code invalide
+        [Fact]
+        public async Task RejoindrePartage_WithInvalidCode_ShouldReturnBadRequest()
+        {
+            await AuthenticateAsync("lea.bernard@example.com");
+
+            var response = await _client.PostAsJsonAsync(
+                "/api/partages/rejoindre",
+                new RejoindrePartageRequest("CODEINCONNU"));
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        }
+
+        //Sans authentification
+        [Fact]
+        public async Task RejoindrePartage_WithoutAuthentication_ShouldReturnUnauthorized()
+        {
+            _client.DefaultRequestHeaders.Authorization = null;
+
+            var response = await _client.PostAsJsonAsync(
+                "/api/partages/rejoindre",
+                new RejoindrePartageRequest("ABC123456789"));
+
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+
+
+
+        //authentification
 
         private async Task AuthenticateAsync(string email, string password = "Test1234")
         {   
@@ -252,6 +388,9 @@ namespace EnergyShare_v3.IntegrationTests
 
                 "admin.test@example.com" =>
                     _adminToken ??= await GetTokenAsync(email, password),
+
+                "lea.bernard@example.com" =>
+                    _leaToken ??= await GetTokenAsync(email, password),
 
                 _ => await GetTokenAsync(email, password)
             };
@@ -302,6 +441,25 @@ namespace EnergyShare_v3.IntegrationTests
             public string AccessToken { get; set; } = string.Empty;
             public string RefreshToken { get; set; } = string.Empty;
             public DateTime AccessTokenExpiresAt { get; set; }
+        }
+
+
+
+        private async Task<string> CreateInvitationCodeAsync()
+        {
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var createResponse = await _client.PostAsJsonAsync("/api/partages",
+                new CreatePartage("Test", PartageEnergieType.PairToPair));
+
+            var partageId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+            var invitationResponse = await _client.PostAsync(
+                $"/api/partages/{partageId}/invitation-code", null);
+
+            var dto = await invitationResponse.Content.ReadFromJsonAsync<InvitationCodeDto>();
+
+            return dto!.InvitationCode;
         }
     }
 }

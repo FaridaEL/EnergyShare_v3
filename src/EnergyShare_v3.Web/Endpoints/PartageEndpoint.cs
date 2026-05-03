@@ -54,6 +54,21 @@ namespace EnergyShare_v3.Web.Endpoints
             group.MapPut("/{id:guid}", UpdatePartage)
                 .RequireAuthorization(authenticatedUserPolicy);
 
+
+            // POST /api/partages/{id}/invitation-code
+            // Retourne un code d’invitation valide pour le partage.
+            // Le handler vérifie que l'utilisateur connecté est bien le créateur du partage.
+            group.MapPost("/{id:guid}/invitation-code", GetInvitationCodePartage)
+                .RequireAuthorization(authenticatedUserPolicy);
+
+            // POST /api/partages/rejoindre
+            // Permet à un utilisateur connecté de rejoindre un partage via un code d’invitation.
+            group.MapPost("/rejoindre", RejoindrePartage)
+                .RequireAuthorization(authenticatedUserPolicy);
+
+
+
+
             return app;
         }
 
@@ -129,13 +144,40 @@ namespace EnergyShare_v3.Web.Endpoints
 
             return response.ToMinimalApiResult();
         }
+        internal static async Task<IResult> GetInvitationCodePartage(
+           ISender sender,
+           Guid id)
+        {
+            var response = await sender.Send(new GetInvitationCodePartage(id));
 
-        //public record UpdatePartageRequest(
-        //    string Nom,
-        //    string? Description,
-        //    PartageEnergieType EnergieType,
-        //    DateTime? DateDebut,
-        //    DateTime? DateFin
-        //    );
+            //return response.ToMinimalApiResult();
+            if (response.Status == ArdalisResultStatus.Unauthorized)
+                return Results.Unauthorized();
+
+            if (response.Status == ArdalisResultStatus.Forbidden)
+                return Results.StatusCode(403);
+
+            if (response.Status == ArdalisResultStatus.NotFound)
+                return Results.NotFound();
+
+            if (response.Status == ArdalisResultStatus.Invalid)
+                return Results.BadRequest(response.ValidationErrors);
+
+            if (!response.IsSuccess)
+                return Results.BadRequest(response.Errors);
+
+            return Results.Ok(response.Value);
+
+        }
+
+        internal static async Task<IResult> RejoindrePartage(
+            ISender sender,
+            [FromBody] RejoindrePartageRequest request)
+        {
+            var response = await sender.Send(new RejoindrePartage(request.InvitationCode));
+
+            return response.ToMinimalApiResult();
+        }
+
     }
 }
