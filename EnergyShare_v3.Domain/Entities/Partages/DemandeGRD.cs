@@ -1,10 +1,10 @@
-﻿using EnergyShare_v3.Domain.Entities.Partages;
+﻿using Ardalis.Result;
 using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EnergyShare_v3.Domain.Entities
+namespace EnergyShare_v3.Domain.Entities.Partages
 {
     public class DemandeGRD
     {
@@ -45,6 +45,32 @@ namespace EnergyShare_v3.Domain.Entities
         [ForeignKey("AgentTraitantId")]
         public User? AgentTraitant { get; set; }
 
-    
+        //Faire une demande d'infor périmetre
+        public static Result<DemandeGRD> CreateDemandeInfoPerimetre(
+            Guid partageId,
+            Guid demandeurId,
+            string? detailsDemande = null)
+            {
+                if (partageId == Guid.Empty)
+                return DemandeGRDErrors.PartageObligatoire().Map();
+
+                 if (demandeurId == Guid.Empty)
+                return DemandeGRDErrors.DemandeurObligatoire().Map();
+
+                var demande = new DemandeGRD
+                    {
+                        Id = Guid.NewGuid(),
+                        DateDemande = DateTime.UtcNow,
+                        ResponseStatus = DdeGRDResponseStatus.EnAttente,
+                        DemandeType = DemandeGRDType.DdeInfoPerimetre,
+                        DemandeurId = demandeurId,
+                        PartageId = partageId,
+                        DetailsDemande = string.IsNullOrWhiteSpace(detailsDemande)
+                            ? "Demande d'information de périmètre pour le partage."
+                            : detailsDemande.Trim()
+                    };
+
+                    return Result.Success(demande);
+            }
     }
 }

@@ -2,10 +2,8 @@
 using EnergyShare_v3.Bricks.Model;
 using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Domain.Enums;
-using System.Collections;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace EnergyShare_v3.Domain.Entities.Partages
 {
@@ -340,5 +338,24 @@ namespace EnergyShare_v3.Domain.Entities.Partages
 
             return Result.Success();
         }
+        //FAire une dde info périmetre  
+        public Result AjouterDemandeGrd(DemandeGRD demande)
+        {
+            if (demande == null)
+                throw new ArgumentNullException(nameof(demande));
+
+            if (Statut == PartageEnergieStatutType.EnCoursCloture ||
+                Statut == PartageEnergieStatutType.Cloture)
+            {
+                return PartageErrors.DemandePerimetreImpossible();
+            }
+
+            DemandesGrd.Add(demande);
+            Audit.Touch(null);
+
+            return Result.Success();
+        }
+
+
     }
 }

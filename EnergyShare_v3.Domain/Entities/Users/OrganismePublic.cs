@@ -1,9 +1,9 @@
 ﻿using EnergyShare_v3.Bricks.Model;
-using EnergyShare_v3.Domain.Entities.Users;
+using EnergyShare_v3.Domain.Entities.Partages;
 using EnergyShare_v3.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 
-namespace EnergyShare_v3.Domain.Entities
+namespace EnergyShare_v3.Domain.Entities.Users
 {
     public class OrganismePublic   :IAuditable
     {
