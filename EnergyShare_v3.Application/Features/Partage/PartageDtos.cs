@@ -46,6 +46,14 @@ namespace EnergyShare_v3.Application.Features.Partage
         DateTime InvitationCodeExpiresAt
       );
 
+    //Dde info périmetre GRD 
+    public record DemandePerimetreDto(
+        Guid DemandeId,
+        Guid PartageId,
+        DateTime DateDemande,
+        string ResponseStatus,
+        string DetailsDemande
+    );
 
 
 

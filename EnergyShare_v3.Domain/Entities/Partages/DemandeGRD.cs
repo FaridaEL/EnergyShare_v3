@@ -46,6 +46,10 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         public User? AgentTraitant { get; set; }
 
         //Faire une demande d'infor périmetre
+        //--> Factory (= méthode de création) à utiliser si  :
+        //- nécessite des règles métiers lors de la création
+        //- on veut éviter d'avoir des objets dans un état invalide (ex. une demande d'infos périmètre sans partageId ou demandeurId)
+
         public static Result<DemandeGRD> CreateDemandeInfoPerimetre(
             Guid partageId,
             Guid demandeurId,

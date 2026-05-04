@@ -66,7 +66,10 @@ namespace EnergyShare_v3.Web.Endpoints
             group.MapPost("/rejoindre", RejoindrePartage)
                 .RequireAuthorization(authenticatedUserPolicy);
 
-
+            // POST /api/partages/{id}/demande-info-perimetre
+            // Permet au vendeur/interlocuteur unique de demander les informations de périmètre au GRD.
+            group.MapPost("/{id:guid}/demande-info-perimetre", DemandeInfoPerimetrePartage)
+                .RequireAuthorization(authenticatedUserPolicy);
 
 
             return app;
@@ -148,25 +151,25 @@ namespace EnergyShare_v3.Web.Endpoints
            ISender sender,
            Guid id)
         {
-            var response = await sender.Send(new GetInvitationCodePartage(id));
+                var response = await sender.Send(new GetInvitationCodePartage(id));
 
-            //return response.ToMinimalApiResult();
-            if (response.Status == ArdalisResultStatus.Unauthorized)
-                return Results.Unauthorized();
+                //return response.ToMinimalApiResult();
+                if (response.Status == ArdalisResultStatus.Unauthorized)
+                    return Results.Unauthorized();
 
-            if (response.Status == ArdalisResultStatus.Forbidden)
-                return Results.StatusCode(403);
+                if (response.Status == ArdalisResultStatus.Forbidden)
+                    return Results.StatusCode(403);
 
-            if (response.Status == ArdalisResultStatus.NotFound)
-                return Results.NotFound();
+                if (response.Status == ArdalisResultStatus.NotFound)
+                    return Results.NotFound();
 
-            if (response.Status == ArdalisResultStatus.Invalid)
-                return Results.BadRequest(response.ValidationErrors);
+                if (response.Status == ArdalisResultStatus.Invalid)
+                    return Results.BadRequest(response.ValidationErrors);
 
-            if (!response.IsSuccess)
-                return Results.BadRequest(response.Errors);
+                if (!response.IsSuccess)
+                    return Results.BadRequest(response.Errors);
 
-            return Results.Ok(response.Value);
+                return Results.Ok(response.Value);
 
         }
 
@@ -174,9 +177,33 @@ namespace EnergyShare_v3.Web.Endpoints
             ISender sender,
             [FromBody] RejoindrePartageRequest request)
         {
-            var response = await sender.Send(new RejoindrePartage(request.InvitationCode));
+                var response = await sender.Send(new RejoindrePartage(request.InvitationCode));
 
-            return response.ToMinimalApiResult();
+                return response.ToMinimalApiResult();
+        }
+
+        internal static async Task<IResult> DemandeInfoPerimetrePartage(
+            ISender sender,
+            Guid id)
+        {
+                var response = await sender.Send(new DemandeInfoPerimetrePartage(id));
+
+                if (response.Status == ArdalisResultStatus.Unauthorized)
+                    return Results.Unauthorized();
+
+                if (response.Status == ArdalisResultStatus.Forbidden)
+                    return Results.StatusCode(403);
+
+                if (response.Status == ArdalisResultStatus.NotFound)
+                    return Results.NotFound();
+
+                if (response.Status == ArdalisResultStatus.Invalid)
+                    return Results.BadRequest(response.ValidationErrors);
+
+                if (!response.IsSuccess)
+                    return Results.BadRequest(response.Errors);
+
+                return Results.Ok(response.Value);
         }
 
     }

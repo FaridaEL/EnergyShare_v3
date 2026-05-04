@@ -260,6 +260,30 @@ namespace EnergyShare_v3.Backend.Tests
         }
 
 
+        //test sur la factory ddeGRD
+        [Fact]
+        public void CreateDemandeInfoPerimetre_ShouldSucceed_WhenDataIsValid()
+        {
+            // Arrange
+            var partageId = Guid.NewGuid();
+            var demandeurId = Guid.NewGuid();
+
+            // Act
+            var result = DemandeGRD.CreateDemandeInfoPerimetre(
+                partageId,
+                demandeurId,
+                "Adresse 1\nAdresse 2");
+
+            // Assert
+            result.IsSuccess.Should().BeTrue();
+
+            result.Value.PartageId.Should().Be(partageId);
+            result.Value.DemandeurId.Should().Be(demandeurId);
+            result.Value.DemandeType.Should().Be(DemandeGRDType.DdeInfoPerimetre);
+            result.Value.ResponseStatus.Should().Be(DdeGRDResponseStatus.EnAttente);
+            result.Value.DetailsDemande.Should().Contain("Adresse 1");
+        }
+
 
     }
 }
