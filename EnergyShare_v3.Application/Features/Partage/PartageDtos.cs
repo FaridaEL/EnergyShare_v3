@@ -36,7 +36,10 @@ namespace EnergyShare_v3.Application.Features.Partage
         bool IsInterlocuteurUnique,
 
         // Progression (UI)
-        int Progression
+        int Progression ,
+
+        //Demandes info périmetre 
+        DemandePerimetreDto? DerniereDemandePerimetre
     );
 
     // Partage add member

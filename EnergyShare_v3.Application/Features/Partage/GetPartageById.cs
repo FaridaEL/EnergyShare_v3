@@ -69,7 +69,20 @@ namespace EnergyShare_v3.Application.Features.Partage
                 p.Statut == PartageEnergieStatutType.Inactif ? 20 :
                 p.Statut == PartageEnergieStatutType.EnAttenteValidation ? 60 :
                 p.Statut == PartageEnergieStatutType.Actif ? 100 :
-                40
+                40,
+                // On récupère la dernière dde d'info de périmètre liée au partage.
+                p.DemandesGrd
+                    .Where(d => d.DemandeType == DemandeGRDType.DdeInfoPerimetre)
+                    .OrderByDescending(d => d.DateDemande)
+                    .Select(d => new DemandePerimetreDto(
+                        d.Id,
+                        p.Id,
+                        d.DateDemande,
+                        d.ResponseStatus.ToString(),
+                        d.DetailsDemande ?? string.Empty
+                    ))
+                    .FirstOrDefault()
+
             ))
             .FirstOrDefaultAsync(cancellationToken);
 

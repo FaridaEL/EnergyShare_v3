@@ -149,9 +149,19 @@ else if (partage is not null)
             @(isInvitationLoading ? "Préparation..." : "Inviter un participant")
         </button>
 
-        <button class="btn btn-outline-secondary" disabled="@(!partage.CanEdit || partage.NombreParticipants < 2)">
+        @* <button class="btn btn-outline-secondary" disabled="@(!partage.CanEdit || partage.NombreParticipants < 2)">
             Demander info périmètre
+        </button> *@
+
+        <button class="btn btn-outline-secondary"
+                @onclick="HandleDemandePerimetre"
+                disabled="@(!partage.CanEdit 
+                            || partage.NombreParticipants < 2 
+                            || isPerimetreLoading
+                            || HasDemandePerimetreEnAttente )">
+            @(isPerimetreLoading ? "Envoi..." : "Demander info périmètre")
         </button>
+
 
         <button class="btn btn-success" disabled="@(!partage.CanEdit || partage.NombreParticipants < 2)">
             Demander validation GRD
@@ -204,6 +214,47 @@ else if (partage is not null)
             @invitationError
         </div>
     }
+
+    @* Bloc affiché après clic sur "Demander info périmètre".
+   La demande est envoyée au GRD avec les adresses des participants récupérées automatiquement. *@
+    @if (demandePerimetre is not null)
+    {
+        <div class="card mt-3 mb-3 border-secondary">
+            <div class="card-body">
+                <h5 class="card-title">Demande d’information de périmètre</h5>
+
+                <p class="text-muted">
+                    Votre demande a été préparée et envoyée au GRD.
+                    Les adresses des participants actifs ont été ajoutées automatiquement à la demande.
+                </p>
+
+                <div class="metadata-box mb-3">
+                    <div>
+                        <span class="metadata-label">Statut :</span>
+                        <span>@demandePerimetre.ResponseStatus</span>
+                    </div>
+
+                    <div>
+                        <span class="metadata-label">Date de demande :</span>
+                        <span>@FormatDateTime(demandePerimetre.DateDemande)</span>
+                    </div>
+                </div>
+
+                <label class="form-label">Détails transmis au GRD</label>
+                <textarea class="form-control"
+                          rows="5"
+                          readonly>@demandePerimetre.DetailsDemande</textarea>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(perimetreError))
+    {
+        <div class="alert alert-warning mt-3">
+            @perimetreError
+        </div>
+    }
+
 }
 
 @code {
@@ -220,6 +271,13 @@ else if (partage is not null)
     private string? invitationError;
     private bool isInvitationLoading;
 
+    //var pour demande périmètre
+    private DemandePerimetreDto? demandePerimetre;
+    private string? perimetreError;
+    private bool isPerimetreLoading;
+    private bool HasDemandePerimetreEnAttente =>
+    demandePerimetre?.ResponseStatus == "EnAttente"; //permet de désativer le bouton si une dde est en attente 
+
 
     // Modèle UI éditable utilisé par les champs du formulaire.
     // On ne modifie pas directement PartageDetailsDto car c'est un record immutable.
@@ -227,7 +285,7 @@ else if (partage is not null)
 
     protected override async Task OnInitializedAsync()
     {
-        var result = await Sender.Send(new GetPartageById(Id));
+        var result = await Sender.Send(new GetPartageById(Id)); //appel backend CQRS/mediator
 
         if (!result.IsSuccess)
         {
@@ -237,6 +295,7 @@ else if (partage is not null)
         }
 
         partage = result.Value;
+        demandePerimetre = partage.DerniereDemandePerimetre;
         // Copie du DTO vers le modèle éditable du formulaire.
         formModel = new PartageDetailsFormModel
         {
@@ -249,8 +308,16 @@ else if (partage is not null)
         isLoading = false;
     }
 
+    // private static string FormatDate(DateTime? date)
+    //     => date?.ToShortDateString() ?? "Non définie";
+
+    //on corrigel'affichage de la date doit être au format de Bxl heure locale
+
     private static string FormatDate(DateTime? date)
-        => date?.ToShortDateString() ?? "Non définie";
+    => date?.ToLocalTime().ToString("dd/MM/yyyy") ?? "Non définie";
+
+    private static string FormatDateTime(DateTime? date)
+        => date?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Non définie";
 
     private static string GetBadgeClass(PartageEnergieStatutType statut)
     {
@@ -355,5 +422,27 @@ else if (partage is not null)
         invitationMessage = "Code copié dans le presse-papiers.";
     }
 
+    //gestion des demandes de périmètre
+    private async Task HandleDemandePerimetre()
+    {
+        if (partage is null)
+            return;
+
+        perimetreError = null;
+        isPerimetreLoading = true;
+
+        var result = await Sender.Send(new DemandeInfoPerimetrePartage(partage.Id));
+
+        isPerimetreLoading = false;
+
+        if (!result.IsSuccess)
+        {
+            perimetreError = "Impossible d’envoyer la demande d’information de périmètre.";
+            return;
+        }
+
+        // On conserve le DTO retourné pour afficher la box de confirmation.
+        demandePerimetre = result.Value;
+    }
 
 }

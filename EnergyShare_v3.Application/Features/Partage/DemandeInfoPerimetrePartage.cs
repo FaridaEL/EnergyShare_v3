@@ -1,6 +1,7 @@
 ﻿using Ardalis.Result;
 using EnergyShare_v3.Application.Interfaces;
 using EnergyShare_v3.Domain.Entities.Partages;
+using EnergyShare_v3.Domain.Enums;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
@@ -64,6 +65,25 @@ namespace EnergyShare_v3.Application.Features.Partage
                 "Demande d'information de périmètre pour le partage.\n\n" +
                 "Adresses des points d’accès concernés :\n" +
                 string.Join("\n", adressesMembres);
+
+            //Validation supplémentaire : s'il existe déjà une dde en attente, on refuse d'en créer une nouvelle
+            //en effet : griser le bouton dans l'UI n'est pas suffisant car on pourrait appeler directement l'uri
+            var demandeEnAttenteExiste = partage.DemandesGrd.Any(d =>
+                d.DemandeType == DemandeGRDType.DdeInfoPerimetre &&
+                d.ResponseStatus == DdeGRDResponseStatus.EnAttente);
+
+                        if (demandeEnAttenteExiste)
+                        {
+                            return Result<DemandePerimetreDto>.Invalid(
+                                new[]
+                                {
+                        new ValidationError(
+                            "DemandePerimetre",
+                            "Une demande d'information de périmètre est déjà en attente.",
+                            "DemandeGRD.DejaEnAttente",
+                            ValidationSeverity.Error)
+                                });
+                        }
 
             // Création de la demande via la factory de DemandeGRD qu garantit que la dde est créée dans
             // un état cohérent : --> statut EnAttente, type DdeInfoPerimetre, date de demande, demandeur, partage.
