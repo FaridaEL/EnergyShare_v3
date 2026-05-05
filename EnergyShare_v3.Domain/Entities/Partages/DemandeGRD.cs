@@ -76,5 +76,35 @@ namespace EnergyShare_v3.Domain.Entities.Partages
 
                     return Result.Success(demande);
             }
+
+        // Réponse du GRD 
+        public Result RepondreDemandePerimetre(
+            PerimetreType perimetreConfirme,
+            string? commentaireReponseGrd,
+            Guid agentTraitantId,
+            Guid? organismePublicId)
+                    {
+                        if (DemandeType != DemandeGRDType.DdeInfoPerimetre)
+                            return DemandeGRDErrors.TypeDemandeInvalide();
+
+                        if (ResponseStatus != DdeGRDResponseStatus.EnAttente)
+                            return DemandeGRDErrors.DemandeDejaTraitee();
+
+                        if (agentTraitantId == Guid.Empty)
+                            return DemandeGRDErrors.AgentTraitantObligatoire();
+
+                        PerimetreConfirme = perimetreConfirme;
+                            if (string.IsNullOrWhiteSpace(commentaireReponseGrd))
+                            { CommentaireReponseGRD = null;  }
+                            else
+                            { CommentaireReponseGRD = commentaireReponseGrd.Trim(); } //permet de ne pas garder des chaines vides ou composées uniquement d'espaces
+
+            AgentTraitantId = agentTraitantId;
+                        OrganismePublicId = organismePublicId;
+                        DateReponse = DateTime.UtcNow;
+                        ResponseStatus = DdeGRDResponseStatus.Valide;
+
+                        return Result.Success();
+        }
     }
 }
