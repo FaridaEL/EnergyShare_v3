@@ -110,6 +110,13 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                "Partage.InvitationCodeExpire",
                ValidationSeverity.Error));
 
+        //pas sur pour cette erreur  : Il n'y pas de règles spéciques pour les demandes de périmètre....
+        public static Result DemandePerimetreImpossible() =>
+            Result.Invalid(new ValidationError(
+                nameof(Partage.Statut),
+                "Impossible de demander une information de périmètre pour un partage clôturé ou en cours de clôture.",
+                "Partage.DemandePerimetreImpossible",
+                ValidationSeverity.Error));
 
     }
 }

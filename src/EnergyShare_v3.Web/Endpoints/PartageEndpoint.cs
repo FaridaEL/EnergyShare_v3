@@ -28,6 +28,12 @@ namespace EnergyShare_v3.Web.Endpoints
                 //Roles = "Administrateur,OrganismePublic"   //a implémenter plus tard
                 AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme
             };
+            //nécessaire pour afficher les ddes de périmètre en attente.
+            var adminOrOrganismePublicPolicy = new AuthorizeAttribute
+            {
+                Roles = "Administrateur,OrganismePublic",
+                AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme
+            };
 
 
             // Accès réservé pour le moment à l'administrateur,
@@ -66,7 +72,23 @@ namespace EnergyShare_v3.Web.Endpoints
             group.MapPost("/rejoindre", RejoindrePartage)
                 .RequireAuthorization(authenticatedUserPolicy);
 
+            // POST /api/partages/{id}/demande-info-perimetre
+            // Permet au vendeur/interlocuteur unique de demander les informations de périmètre au GRD.
+            group.MapPost("/{id:guid}/demande-info-perimetre", DemandeInfoPerimetrePartage)
+                .RequireAuthorization(authenticatedUserPolicy);
 
+            //Gestion des ddes par le GRD 
+            // GET /api/partages/demandes-grd/en-attente
+            // Retourne les demandes GRD de périmètre en attente.
+            // Accès réservé à l'administrateur ou à l'organisme public.
+            group.MapGet("/demandes-grd/en-attente", GetDemandesGrdEnAttente)
+                .RequireAuthorization(adminOrOrganismePublicPolicy);
+            
+            //Gestion des réponses Dde info périmetre par le GRD
+            // POST /api/partages/demandes-grd/{id}/repondre
+            // Permet à l'organisme public / GRD de répondre à une demande d'information de périmètre.
+            group.MapPost("/demandes-grd/{id:guid}/repondre", RepondreDemandePerimetre)
+                .RequireAuthorization(adminOrOrganismePublicPolicy);
 
 
             return app;
@@ -148,25 +170,25 @@ namespace EnergyShare_v3.Web.Endpoints
            ISender sender,
            Guid id)
         {
-            var response = await sender.Send(new GetInvitationCodePartage(id));
+                var response = await sender.Send(new GetInvitationCodePartage(id));
 
-            //return response.ToMinimalApiResult();
-            if (response.Status == ArdalisResultStatus.Unauthorized)
-                return Results.Unauthorized();
+                //return response.ToMinimalApiResult();
+                if (response.Status == ArdalisResultStatus.Unauthorized)
+                    return Results.Unauthorized();
 
-            if (response.Status == ArdalisResultStatus.Forbidden)
-                return Results.StatusCode(403);
+                if (response.Status == ArdalisResultStatus.Forbidden)
+                    return Results.StatusCode(403);
 
-            if (response.Status == ArdalisResultStatus.NotFound)
-                return Results.NotFound();
+                if (response.Status == ArdalisResultStatus.NotFound)
+                    return Results.NotFound();
 
-            if (response.Status == ArdalisResultStatus.Invalid)
-                return Results.BadRequest(response.ValidationErrors);
+                if (response.Status == ArdalisResultStatus.Invalid)
+                    return Results.BadRequest(response.ValidationErrors);
 
-            if (!response.IsSuccess)
-                return Results.BadRequest(response.Errors);
+                if (!response.IsSuccess)
+                    return Results.BadRequest(response.Errors);
 
-            return Results.Ok(response.Value);
+                return Results.Ok(response.Value);
 
         }
 
@@ -174,10 +196,80 @@ namespace EnergyShare_v3.Web.Endpoints
             ISender sender,
             [FromBody] RejoindrePartageRequest request)
         {
-            var response = await sender.Send(new RejoindrePartage(request.InvitationCode));
+                var response = await sender.Send(new RejoindrePartage(request.InvitationCode));
 
-            return response.ToMinimalApiResult();
+                return response.ToMinimalApiResult();
         }
+
+        internal static async Task<IResult> DemandeInfoPerimetrePartage(
+            ISender sender,
+            Guid id)
+        {
+                var response = await sender.Send(new DemandeInfoPerimetrePartage(id));
+
+                if (response.Status == ArdalisResultStatus.Unauthorized)
+                    return Results.Unauthorized();
+
+                if (response.Status == ArdalisResultStatus.Forbidden)
+                    return Results.StatusCode(403);
+
+                if (response.Status == ArdalisResultStatus.NotFound)
+                    return Results.NotFound();
+
+                if (response.Status == ArdalisResultStatus.Invalid)
+                    return Results.BadRequest(response.ValidationErrors);
+
+                if (!response.IsSuccess)
+                    return Results.BadRequest(response.Errors);
+
+                return Results.Ok(response.Value);
+        }
+
+        internal static async Task<IResult> GetDemandesGrdEnAttente(ISender sender)
+        {
+            var response = await sender.Send(new GetDemandesGrdEnAttente());
+
+            if (response.Status == ArdalisResultStatus.Unauthorized)
+                return Results.Unauthorized();
+
+            if (response.Status == ArdalisResultStatus.Forbidden)
+                return Results.StatusCode(403);
+
+            if (!response.IsSuccess)
+                return Results.BadRequest(response.Errors);
+
+            return Results.Ok(response.Value);
+        }
+
+        //Réponse dde info périmètre par le GRD
+
+        internal static async Task<IResult> RepondreDemandePerimetre(
+            ISender sender,
+            Guid id,
+            [FromBody] RepondreDemandePerimetreRequest request)
+            {
+                var response = await sender.Send(new RepondreDemandePerimetre(
+                    id,
+                    request.PerimetreConfirme,
+                    request.CommentaireReponseGRD));
+
+                if (response.Status == ArdalisResultStatus.Unauthorized)
+                    return Results.Unauthorized();
+
+                if (response.Status == ArdalisResultStatus.Forbidden)
+                    return Results.StatusCode(403);
+
+                if (response.Status == ArdalisResultStatus.NotFound)
+                    return Results.NotFound();
+
+                if (response.Status == ArdalisResultStatus.Invalid)
+                    return Results.BadRequest(response.ValidationErrors);
+
+                if (!response.IsSuccess)
+                    return Results.BadRequest(response.Errors);
+
+                return Results.Ok(response.Value);
+            }
 
     }
 }

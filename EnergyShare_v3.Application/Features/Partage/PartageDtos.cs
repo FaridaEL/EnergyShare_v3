@@ -36,7 +36,10 @@ namespace EnergyShare_v3.Application.Features.Partage
         bool IsInterlocuteurUnique,
 
         // Progression (UI)
-        int Progression
+        int Progression ,
+
+        //Demandes info périmetre 
+        DemandePerimetreDto? DerniereDemandePerimetre
     );
 
     // Partage add member
@@ -46,7 +49,37 @@ namespace EnergyShare_v3.Application.Features.Partage
         DateTime InvitationCodeExpiresAt
       );
 
-
+    //Dde info périmetre GRD 
+    public record DemandePerimetreDto(
+        Guid DemandeId,
+        Guid PartageId,
+        DateTime DateDemande,
+        string ResponseStatus,
+        string DetailsDemande,
+        PerimetreType? PerimetreConfirme,  //permet d'afficher la réponse du GRD
+        string? CommentaireReponseGRD
+    );
+    //TRaitement des demandes infos périmetre par le GRD
+    public record DemandeGrdDto(
+          Guid Id,
+          Guid? PartageId,
+          string? NomPartage,
+          DateTime DateDemande,
+          string DetailsDemande,
+          DdeGRDResponseStatus ResponseStatus,
+          DemandeGRDType DemandeType,
+          PerimetreType? PerimetreConfirme,
+          string? CommentaireReponseGRD
+    );
+    // Réponse GRD après traitement d'une dde d'info de périmètre .
+    public record ReponseDemandePerimetreDto(
+        Guid DemandeId,
+        Guid? PartageId,
+        PerimetreType PerimetreConfirme,
+        string ResponseStatus,
+        DateTime DateReponse,
+        string? CommentaireReponseGRD
+    );
 
 
 }

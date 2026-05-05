@@ -12,10 +12,13 @@ namespace EnergyShare_v3.IntegrationTests
     public class PartageEndpointTests : IClassFixture<CustomWebApplicationFactory>
     {
         private readonly HttpClient _client;
-        private static string? _sarahToken;
-        private static string? _julienToken;
+        private static string? _sarahToken;    //Vendeur
+        private static string? _julienToken;  //Vendeur
         private static string? _adminToken;
-        private static string? _leaToken;
+        private static string? _leaToken;   //Acheteur
+        private static string? _sibelgaToken; //GRD
+        private static string? _hugoToken;//acheteur
+        private static string? _boulangerieToken; // acheteur
 
         public PartageEndpointTests(CustomWebApplicationFactory factory)
         {
@@ -73,7 +76,8 @@ namespace EnergyShare_v3.IntegrationTests
             dto.Should().NotBeNull();
             dto!.Id.Should().Be(partageId);
             dto.Nom.Should().Be("Partage Seller Access Test");
-            dto.NombreParticipants.Should().Be(0);
+            //  on attend a minima 1 participant (le créateur) 
+            dto.NombreParticipants.Should().Be(1);
         }
 
         [Fact]
@@ -371,6 +375,236 @@ namespace EnergyShare_v3.IntegrationTests
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
 
+        //TEst pour demander les infos de périmètre au GRD :
+        [Fact]
+        public async Task DemandeInfoPerimetrePartage_WhenSellerAndPartageComplete_ShouldReturnOk()
+        {
+            // Arrange : Sarah crée un partage.
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var createResponse = await _client.PostAsJsonAsync(
+                "/api/partages",
+                new CreatePartage("Partage demande périmètre", PartageEnergieType.PairToPair));
+
+            createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+            var partageId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+            // Sarah génère un code d’invitation.
+            var invitationResponse = await _client.PostAsync(
+                $"/api/partages/{partageId}/invitation-code",
+                null);
+
+            invitationResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var invitationDto = await invitationResponse.Content.ReadFromJsonAsync<InvitationCodeDto>();
+            invitationDto.Should().NotBeNull();
+
+            // Léa rejoint le partage pour atteindre 2 participants.
+            await AuthenticateAsync("hugo.lambert@example.com");
+
+            var joinResponse = await _client.PostAsJsonAsync(
+                "/api/partages/rejoindre",
+                new RejoindrePartageRequest(invitationDto!.InvitationCode));
+
+            joinResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            // Act : Sarah demande les infos de périmètre.
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var response = await _client.PostAsync(
+                $"/api/partages/{partageId}/demande-info-perimetre",
+                null);
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var dto = await response.Content.ReadFromJsonAsync<DemandePerimetreDto>();
+
+            dto.Should().NotBeNull();
+            dto!.PartageId.Should().Be(partageId);
+            dto.DemandeId.Should().NotBeEmpty();
+            dto.ResponseStatus.Should().Be(DdeGRDResponseStatus.EnAttente.ToString());
+            dto.DetailsDemande.Should().Contain("Adresses des points d’accès concernés");
+        }
+
+        //Gestion dde perimetre par le GRD
+        //Récupérer les ddes en attente de traitement : GetDemandesGrdEnAttente
+        [Fact]
+        public async Task GetDemandesGrdEnAttente_WhenUserIsOrganismePublic_ShouldReturnOk()
+        {
+            // Arrange
+            await AuthenticateAsync("agent.sibelga@example.com");
+
+            // Act
+            var response = await _client.GetAsync("/api/partages/demandes-grd/en-attente");
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var demandes = await response.Content.ReadFromJsonAsync<List<DemandeGrdDto>>();
+
+            demandes.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GetDemandesGrdEnAttente_WhenUserIsNotAdminOrOrganismePublic_ShouldReturnForbidden()
+        {
+            // Arrange
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            // Act
+            var response = await _client.GetAsync("/api/partages/demandes-grd/en-attente");
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        [Fact]
+        public async Task GetDemandesGrdEnAttente_WithoutAuthentication_ShouldReturnUnauthorized()
+        {
+            // Arrange
+            _client.DefaultRequestHeaders.Authorization = null;
+
+            // Act
+            var response = await _client.GetAsync("/api/partages/demandes-grd/en-attente");
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+        //Comportement complet 
+
+        [Fact]
+        public async Task GetDemandesGrdEnAttente_WhenDemandeExists_ShouldReturnDemande()
+        {
+            // Arrange : Sarah crée un partage.
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var createResponse = await _client.PostAsJsonAsync(
+                "/api/partages",
+                new CreatePartage("Partage demande GRD visible", PartageEnergieType.PairToPair));
+
+            createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+            var partageId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+            // Sarah génère un code d’invitation.
+            var invitationResponse = await _client.PostAsync(
+                $"/api/partages/{partageId}/invitation-code",
+                null);
+
+            invitationResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var invitationDto = await invitationResponse.Content.ReadFromJsonAsync<InvitationCodeDto>();
+            invitationDto.Should().NotBeNull();
+
+            // Hugo rejoint le partage pour avoir 2 participants.
+            await AuthenticateAsync("contact@boulangerie-dupain.be");
+
+            var joinResponse = await _client.PostAsJsonAsync(
+                "/api/partages/rejoindre",
+                new RejoindrePartageRequest(invitationDto!.InvitationCode));
+
+            joinResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            // Sarah crée une demande info périmètre.
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var demandeResponse = await _client.PostAsync(
+                $"/api/partages/{partageId}/demande-info-perimetre",
+                null);
+
+            demandeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var demandeDto = await demandeResponse.Content.ReadFromJsonAsync<DemandePerimetreDto>();
+            demandeDto.Should().NotBeNull();
+
+            // Act : admin consulte les demandes GRD en attente.
+            await AuthenticateAsync("admin.test@example.com");
+
+            var response = await _client.GetAsync("/api/partages/demandes-grd/en-attente");
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var demandes = await response.Content.ReadFromJsonAsync<List<DemandeGrdDto>>();
+
+            demandes.Should().NotBeNull();
+            demandes.Should().Contain(d =>
+                d.Id == demandeDto!.DemandeId &&
+                d.PartageId == partageId &&
+                d.ResponseStatus == DdeGRDResponseStatus.EnAttente &&
+                d.DemandeType == DemandeGRDType.DdeInfoPerimetre);
+        }
+
+        //Répondre à une demande de périmètre en tant que GRD
+        //Test complet 
+        [Fact]
+        public async Task RepondreDemandePerimetre_WhenAgentGrd_ShouldReturnOk()
+        {
+            // Arrange : Sarah crée un partage
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var createResponse = await _client.PostAsJsonAsync(
+                "/api/partages",
+                new CreatePartage("Test GRD réponse", PartageEnergieType.PairToPair));
+
+            var partageId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+            // Invitation
+            var invitationResponse = await _client.PostAsync(
+                $"/api/partages/{partageId}/invitation-code", null);
+
+            var invitationDto = await invitationResponse.Content.ReadFromJsonAsync<InvitationCodeDto>();
+
+            // Hugo rejoint
+            await AuthenticateAsync("hugo.lambert@example.com");
+
+            await _client.PostAsJsonAsync(
+                "/api/partages/rejoindre",
+                new RejoindrePartageRequest(invitationDto!.InvitationCode));
+
+            // Sarah crée la demande
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var demandeResponse = await _client.PostAsync(
+                $"/api/partages/{partageId}/demande-info-perimetre",
+                null);
+
+            var demande = await demandeResponse.Content.ReadFromJsonAsync<DemandePerimetreDto>();
+
+            // Act : le GRD confirme le périmètre applicable.
+            await AuthenticateAsync("agent.sibelga@example.com");
+
+            var response = await _client.PostAsJsonAsync(
+                $"/api/partages/demandes-grd/{demande!.DemandeId}/repondre",
+                new RepondreDemandePerimetreRequest(
+                    PerimetreType.A,
+                    "Périmètre A confirmé par le GRD"));
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var dto = await response.Content.ReadFromJsonAsync<ReponseDemandePerimetreDto>();
+
+            dto.Should().NotBeNull();
+            dto!.PerimetreConfirme.Should().Be(PerimetreType.A);
+            dto.CommentaireReponseGRD.Should().Be("Périmètre A confirmé par le GRD");
+            dto.ResponseStatus.Should().Be(DdeGRDResponseStatus.Valide.ToString());
+        }
+
+        //  On vérifie qu'un user normal ne peut pas répondre en place de l'agent GRD
+        [Fact]
+        public async Task RepondreDemandePerimetre_WhenUserNotGrd_ShouldReturnForbidden()
+        {
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var response = await _client.PostAsJsonAsync(
+                $"/api/partages/demandes-grd/{Guid.NewGuid()}/repondre",
+                new RepondreDemandePerimetreRequest(PerimetreType.A, null));
+
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
 
 
         //authentification
@@ -391,6 +625,13 @@ namespace EnergyShare_v3.IntegrationTests
 
                 "lea.bernard@example.com" =>
                     _leaToken ??= await GetTokenAsync(email, password),
+
+                "agent.sibelga@example.com" =>
+                    _sibelgaToken ??= await GetTokenAsync(email, password),
+                "hugo.lambert@example.com" =>
+                    _hugoToken ??= await GetTokenAsync(email, password),
+                "contact@boulangerie-dupain.be" =>
+                    _boulangerieToken ??= await GetTokenAsync(email, password),
 
                 _ => await GetTokenAsync(email, password)
             };

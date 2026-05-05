@@ -2,10 +2,8 @@
 using EnergyShare_v3.Bricks.Model;
 using EnergyShare_v3.Domain.Entities.Users;
 using EnergyShare_v3.Domain.Enums;
-using System.Collections;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace EnergyShare_v3.Domain.Entities.Partages
 {
@@ -14,11 +12,6 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         //Seul l'interlocuteur unique, càd le vendeur, peut créer un partage.
         [Key]
         public Guid Id { get; set; }
-
-        
-
-        
-        
 
         [Required, MaxLength(100)]
         public string Nom { get; private set; } = null!;
@@ -340,5 +333,35 @@ namespace EnergyShare_v3.Domain.Entities.Partages
 
             return Result.Success();
         }
+        //FAire une dde info périmetre  
+        public Result AjouterDemandeGrd(DemandeGRD demande)
+        {
+            if (demande == null)
+                throw new ArgumentNullException(nameof(demande));
+
+            if (Statut == PartageEnergieStatutType.EnCoursCloture ||
+                Statut == PartageEnergieStatutType.Cloture)
+            {
+                return PartageErrors.DemandePerimetreImpossible();
+            }
+
+            DemandesGrd.Add(demande);
+            Audit.Touch(null);
+
+            return Result.Success();
+        }
+        public Result DefinirPerimetre(PerimetreType perimetre)
+        {
+            if (Statut == PartageEnergieStatutType.Cloture ||
+                Statut == PartageEnergieStatutType.EnCoursCloture)
+                return PartageErrors.DemandePerimetreImpossible();
+
+            Perimetre = perimetre;
+            Audit.Touch(null);
+
+            return Result.Success();
+        }
+
+
     }
 }

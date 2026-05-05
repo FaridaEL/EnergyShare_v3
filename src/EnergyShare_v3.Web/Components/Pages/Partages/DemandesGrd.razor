@@ -1,0 +1,283 @@
+﻿@page "/organisme-public/demandes-grd"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "OrganismePublic,Administrateur")]
+
+@using Microsoft.AspNetCore.Authorization
+@using Mediator
+@using EnergyShare_v3.Application.Features.Partage
+@using EnergyShare_v3.Domain.Enums
+
+@inject ISender Sender
+
+<PageTitle>Demandes GRD</PageTitle>
+
+<h3>Demandes GRD en attente</h3>
+
+<p class="text-muted">
+    Consultez les demandes d'information de périmètre envoyées par les créateurs de partage.
+</p>
+
+@if (isLoading)
+{
+    <p>Chargement...</p>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-warning">@errorMessage</div>
+}
+else if (!demandes.Any())
+{
+    <div class="alert alert-info">
+        Aucune demande GRD en attente.
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-header fw-bold">
+            Demandes à traiter
+        </div>
+
+        <div class="card-body">
+            <table class="table table-striped table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Partage</th>
+                        <th>Type</th>
+                        <th>Statut</th>
+                        <th>Détails</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var demande in demandes)
+                    {
+                        <tr>
+                            <td>@FormatDateTime(demande.DateDemande)</td>
+
+                            <td>
+                                @if (demande.PartageId is not null)
+                                {
+                                    <a href="@($"/organisme-public/partages/{demande.PartageId}")">
+                                        @(demande.NomPartage ?? "Partage")
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Non lié</span>
+                                }
+                            </td>
+
+                            <td>@GetDemandeTypeLabel(demande.DemandeType)</td>
+
+                            <td>
+                                <span class="badge bg-warning text-dark">
+                                    @demande.ResponseStatus
+                                </span>
+                            </td>
+
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary"
+                                        @onclick="() => ToggleDetails(demande.Id)">
+                                    Voir détails
+                                </button>
+                            </td>
+
+                            <td class="text-end">
+                                @* <button class="btn btn-sm btn-primary" disabled>
+                                    Répondre
+                                </button> *@
+                                <button class="btn btn-sm btn-primary"
+                                        @onclick="() => OuvrirFormulaireReponse(demande.Id)">
+                                    Répondre
+                                </button>
+                            </td>
+                        </tr>
+
+                        @if (selectedDemandeId == demande.Id)
+                        {
+                            <tr>
+                                <td colspan="6">
+                                    <div class="p-3 bg-light rounded">
+                                        <strong>Détails transmis :</strong>
+
+                                        <pre class="mt-2 mb-0">@demande.DetailsDemande</pre>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+
+                        @if (demandeEnTraitementId == demande.Id)
+                        {
+                            <tr>
+                                <td colspan="6">
+                                    <div class="p-3 border rounded bg-light mt-2">
+
+                                        <h6 class="fw-bold">Répondre à la demande</h6>
+
+                                        <div class="row g-3 mt-2">
+                                            <div class="col-md-3">
+                                                <label class="form-label">Périmètre confirmé</label>
+                                                <InputSelect class="form-select" @bind-Value="perimetreConfirme">
+                                                    <option value="@PerimetreType.A">A</option>
+                                                    <option value="@PerimetreType.B">B</option>
+                                                    <option value="@PerimetreType.C">C</option>
+                                                    <option value="@PerimetreType.D">D</option>
+                                                </InputSelect>
+                                            </div>
+
+                                            <div class="col-md-9">
+                                                <label class="form-label">Commentaire GRD</label>
+                                                <InputTextArea class="form-control"
+                                                               rows="3"
+                                                               @bind-Value="commentaireReponseGRD" />
+                                            </div>
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(reponseError))
+                                        {
+                                            <div class="alert alert-warning mt-3 mb-0">
+                                                @reponseError
+                                            </div>
+                                        }
+
+                                        @if (!string.IsNullOrWhiteSpace(reponseMessage))
+                                        {
+                                            <div class="alert alert-success mt-3 mb-0">
+                                                @reponseMessage
+                                            </div>
+                                        }
+
+                                        <div class="d-flex gap-2 mt-3">
+                                            <button class="btn btn-success"
+                                                    @onclick="() => EnvoyerReponse(demande.Id)"
+                                                    disabled="@isReponseLoading">
+                                                @(isReponseLoading ? "Envoi..." : "Envoyer")
+                                            </button>
+
+                                            <button class="btn btn-outline-secondary"
+                                                    @onclick="FermerFormulaireReponse"
+                                                    disabled="@isReponseLoading">
+                                                Annuler
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+
+
+
+
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    // Liste des demandes GRD en attente récupérées via le handler.
+    private IReadOnlyList<DemandeGrdDto> demandes = [];
+
+    // Permet d'afficher/masquer les détails d'une demande dans le tableau.
+    private Guid? selectedDemandeId;
+
+
+    //Var pour stocker les réponses aux demandes GRD en attente
+    private Guid? demandeEnTraitementId;
+    private PerimetreType perimetreConfirme = PerimetreType.A;
+    private string? commentaireReponseGRD;
+    private string? reponseMessage;
+    private string? reponseError;
+    private bool isReponseLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Sender.Send(new GetDemandesGrdEnAttente());
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Impossible de charger les demandes GRD.";
+            isLoading = false;
+            return;
+        }
+
+        demandes = result.Value;
+        isLoading = false;
+    }
+
+    private void ToggleDetails(Guid demandeId)
+    {
+        selectedDemandeId = selectedDemandeId == demandeId
+            ? null
+            : demandeId;
+    }
+
+    private static string FormatDateTime(DateTime date)
+        => date.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
+
+    private static string GetDemandeTypeLabel(DemandeGRDType type)
+    {
+        return type switch
+        {
+            DemandeGRDType.DdeInfoPerimetre => "Information périmètre",
+            _ => type.ToString()
+        };
+    }
+
+    //Form pour répondre à une demande GRD
+    private void OuvrirFormulaireReponse(Guid demandeId)
+    {
+        demandeEnTraitementId = demandeId;
+        perimetreConfirme = PerimetreType.A;
+        commentaireReponseGRD = null;
+        reponseError = null;
+        reponseMessage = null;
+    }
+
+    private void FermerFormulaireReponse()
+    {
+        demandeEnTraitementId = null;
+        commentaireReponseGRD = null;
+        reponseError = null;
+        reponseMessage = null;
+    }
+
+    private async Task EnvoyerReponse(Guid demandeId)
+    {
+        reponseError = null;
+        reponseMessage = null;
+        isReponseLoading = true;
+
+        var result = await Sender.Send(new RepondreDemandePerimetre(
+            demandeId,
+            perimetreConfirme,
+            commentaireReponseGRD));
+
+        isReponseLoading = false;
+
+        if (!result.IsSuccess)
+        {
+            reponseError = "Impossible d’envoyer la réponse GRD.";
+            return;
+        }
+
+        reponseMessage = "Réponse envoyée avec succès.";
+
+        // Recharge la liste pour retirer la demande des demandes en attente.
+        var refresh = await Sender.Send(new GetDemandesGrdEnAttente());
+
+        if (refresh.IsSuccess)
+        {
+            demandes = refresh.Value;
+            demandeEnTraitementId = null;
+        }
+    }
+}

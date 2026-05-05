@@ -197,47 +197,57 @@
     <Authorized>
         <h3 class="mt-4">Espace organisme public</h3>
 
-        <div class="row mt-3">
+        <p class="text-muted">
+            Gérez les demandes réglementaires liées aux partages d’énergie.
+        </p>
 
-            <!-- Demandes de validation -->
+        <div class="row g-3 mt-2">
+
+            <!-- Demandes d'information de périmètre -->
             <div class="col-md-4">
-                <div class="card border-warning">
+                <div class="card border-warning h-100">
                     <div class="card-body">
-                        <h5 class="card-title">Demandes en cours</h5>
+                        <h5 class="card-title">Demandes de périmètre</h5>
+
                         <p class="card-text">
-                            Consultez les demandes de validation de partage.
+                            Consultez les demandes d’information de périmètre envoyées par les créateurs de partage.
                         </p>
-                        <button class="btn btn-warning" disabled>
+
+                        <a href="/organisme-public/demandes-grd" class="btn btn-warning">
+                            Voir les demandes
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Futures validations de nouveaux partages -->
+            <div class="col-md-4">
+                <div class="card border-secondary h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Validations de partage</h5>
+
+                        <p class="card-text">
+                            Traitez les demandes de validation des nouveaux partages.
+                        </p>
+
+                        <button class="btn btn-outline-secondary" disabled>
                             Bientôt disponible
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Partages à suivre -->
+            <!-- Futures modifications de partages existants -->
             <div class="col-md-4">
-                <div class="card border-secondary">
+                <div class="card border-secondary h-100">
                     <div class="card-body">
-                        <h5 class="card-title">Partages d'énergie</h5>
-                        <p class="card-text">
-                            Visualisez les partages déclarés et leur statut.
-                        </p>
-                        <a href="/partages" class="btn btn-outline-secondary">
-                            Voir les partages
-                        </a>
-                    </div>
-                </div>
-            </div>
+                        <h5 class="card-title">Modifications de partage</h5>
 
-            <!-- Messages -->
-            <div class="col-mb-5">
-                <div class="card border-secondary">
-                    <div class="card-body">
-                        <h5 class="card-title">Messages</h5>
                         <p class="card-text">
-                            Répondez aux demandes d'information des utilisateurs.
+                            Suivez les demandes de modification des partages existants.
                         </p>
-                        <button class="btn btn-secondary" disabled>
+
+                        <button class="btn btn-outline-secondary" disabled>
                             Bientôt disponible
                         </button>
                     </div>
@@ -247,6 +257,9 @@
         </div>
     </Authorized>
 </AuthorizeView>
+
+
+
 
 <!-- ========================================================= -->
 <!-- ACCUEIL UTILISATEUR STANDARD                             -->
