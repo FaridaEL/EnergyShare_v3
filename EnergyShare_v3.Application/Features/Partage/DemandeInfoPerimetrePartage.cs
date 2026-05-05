@@ -117,7 +117,9 @@ namespace EnergyShare_v3.Application.Features.Partage
                 partage.Id,
                 demande.DateDemande,
                 demande.ResponseStatus.ToString(),
-                demande.DetailsDemande ?? string.Empty
+                demande.DetailsDemande ?? string.Empty, 
+                demande.PerimetreConfirme,
+                demande.CommentaireReponseGRD
             ));
         }
     }

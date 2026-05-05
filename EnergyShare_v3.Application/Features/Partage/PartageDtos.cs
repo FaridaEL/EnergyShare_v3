@@ -55,7 +55,9 @@ namespace EnergyShare_v3.Application.Features.Partage
         Guid PartageId,
         DateTime DateDemande,
         string ResponseStatus,
-        string DetailsDemande
+        string DetailsDemande,
+        PerimetreType? PerimetreConfirme,  //permet d'afficher la réponse du GRD
+        string? CommentaireReponseGRD
     );
     //TRaitement des demandes infos périmetre par le GRD
     public record DemandeGrdDto(

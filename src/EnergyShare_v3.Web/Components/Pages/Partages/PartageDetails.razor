@@ -232,6 +232,27 @@ else if (partage is not null)
                     <div>
                         <span class="metadata-label">Statut :</span>
                         <span>@demandePerimetre.ResponseStatus</span>
+                        @if (demandePerimetre.PerimetreConfirme is not null)
+                        {
+                            <div class="mt-2">
+                                <strong>Périmètre confirmé :</strong>
+                                <span class="badge bg-success ms-2">
+                                    @demandePerimetre.PerimetreConfirme
+                                </span>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(demandePerimetre.CommentaireReponseGRD))
+                        {
+                            <div class="mt-2">
+                                <strong>Commentaire du GRD :</strong>
+                                <span class="badge bg-success ms-2">
+                                    @demandePerimetre.CommentaireReponseGRD
+                                </span>
+                            </div>
+                        }
+
+
                     </div>
 
                     <div>

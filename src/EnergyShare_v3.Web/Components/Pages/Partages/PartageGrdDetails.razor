@@ -1,0 +1,98 @@
+﻿@page "/organisme-public/partages/{Id:guid}"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "OrganismePublic,Administrateur")]
+
+@using Microsoft.AspNetCore.Authorization
+@using Mediator
+@using EnergyShare_v3.Application.Features.Partage
+@using EnergyShare_v3.Domain.Enums
+
+@inject ISender Sender
+
+<PageTitle>Dossier partage - GRD</PageTitle>
+
+<h3>Dossier de partage</h3>
+
+@if (isLoading)
+{
+    <p>Chargement...</p>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-warning">@errorMessage</div>
+}
+else if (partage is not null)
+{
+    <div class="card mb-3">
+        <div class="card-header fw-bold">
+            Informations du partage
+        </div>
+
+        <div class="card-body">
+            <p><strong>Nom :</strong> @partage.Nom</p>
+            <p><strong>Type :</strong> @partage.EnergieType</p>
+            <p><strong>Statut :</strong> @partage.Statut</p>
+            <p><strong>Participants :</strong> @partage.NombreParticipants</p>
+            <p><strong>Créé le :</strong> @FormatDateTime(partage.CreatedAt)</p>
+        </div>
+    </div>
+
+    @if (partage.DerniereDemandePerimetre is not null)
+    {
+        var demande = partage.DerniereDemandePerimetre;
+
+        <div class="card border-secondary">
+            <div class="card-header fw-bold">
+                Dernière demande d'information de périmètre
+            </div>
+
+            <div class="card-body">
+                <p><strong>Statut :</strong> @demande.ResponseStatus</p>
+                <p><strong>Date :</strong> @FormatDateTime(demande.DateDemande)</p>
+
+                @if (demande.PerimetreConfirme is not null)
+                {
+                    <p>
+                        <strong>Périmètre confirmé :</strong>
+                        <span class="badge bg-success">@demande.PerimetreConfirme</span>
+                    </p>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(demande.CommentaireReponseGRD))
+                {
+                    <p><strong>Commentaire GRD :</strong> @demande.CommentaireReponseGRD</p>
+                }
+
+                <label class="form-label">Détails transmis</label>
+                <textarea class="form-control" rows="6" readonly>@demande.DetailsDemande</textarea>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private bool isLoading = true;
+    private string? errorMessage;
+    private PartageDetailsDto? partage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Sender.Send(new GetPartageById(Id));
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Impossible de charger le dossier de partage.";
+            isLoading = false;
+            return;
+        }
+
+        partage = result.Value;
+        isLoading = false;
+    }
+
+    private static string FormatDateTime(DateTime date)
+        => date.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
+}

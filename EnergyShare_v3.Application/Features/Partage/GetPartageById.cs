@@ -25,7 +25,8 @@ namespace EnergyShare_v3.Application.Features.Partage
             var currentUserId = userContext.UserId.Value;
 
             var isAdmin = userContext.IsInRole("Administrateur");
-            
+            var isOrganismePublic = userContext.IsInRole("OrganismePublic");
+
 
             var hasAccess = await context.Partages
                 .AsNoTracking()
@@ -33,6 +34,7 @@ namespace EnergyShare_v3.Application.Features.Partage
                     p.Id == query.Id &&
                     (
                         isAdmin ||
+                        isOrganismePublic ||
                         p.VendeurId == currentUserId ||
                         p.Membres.Any(m =>
                             m.ExitAt == null &&
@@ -114,7 +116,9 @@ namespace EnergyShare_v3.Application.Features.Partage
                     partage.Id,
                     d.DateDemande,
                     d.ResponseStatus.ToString(),
-                    d.DetailsDemande ?? string.Empty
+                    d.DetailsDemande ?? string.Empty,
+                    d.PerimetreConfirme,
+                    d.CommentaireReponseGRD
                 ))
                 .FirstOrDefault();
 
