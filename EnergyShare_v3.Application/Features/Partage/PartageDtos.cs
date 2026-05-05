@@ -69,10 +69,15 @@ namespace EnergyShare_v3.Application.Features.Partage
           PerimetreType? PerimetreConfirme,
           string? CommentaireReponseGRD
     );
-    public record RepondreDemandePerimetreRequest(
-          PerimetreType PerimetreConfirme,
-          string? CommentaireReponseGRD
-  );
+    // Réponse GRD après traitement d'une dde d'info de périmètre .
+    public record ReponseDemandePerimetreDto(
+        Guid DemandeId,
+        Guid? PartageId,
+        PerimetreType PerimetreConfirme,
+        string ResponseStatus,
+        DateTime DateReponse,
+        string? CommentaireReponseGRD
+    );
 
 
 }

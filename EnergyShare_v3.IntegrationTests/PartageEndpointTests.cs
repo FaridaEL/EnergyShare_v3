@@ -537,6 +537,74 @@ namespace EnergyShare_v3.IntegrationTests
                 d.DemandeType == DemandeGRDType.DdeInfoPerimetre);
         }
 
+        //Répondre à une demande de périmètre en tant que GRD
+        //Test complet 
+        [Fact]
+        public async Task RepondreDemandePerimetre_WhenAgentGrd_ShouldReturnOk()
+        {
+            // Arrange : Sarah crée un partage
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var createResponse = await _client.PostAsJsonAsync(
+                "/api/partages",
+                new CreatePartage("Test GRD réponse", PartageEnergieType.PairToPair));
+
+            var partageId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+            // Invitation
+            var invitationResponse = await _client.PostAsync(
+                $"/api/partages/{partageId}/invitation-code", null);
+
+            var invitationDto = await invitationResponse.Content.ReadFromJsonAsync<InvitationCodeDto>();
+
+            // Hugo rejoint
+            await AuthenticateAsync("hugo.lambert@example.com");
+
+            await _client.PostAsJsonAsync(
+                "/api/partages/rejoindre",
+                new RejoindrePartageRequest(invitationDto!.InvitationCode));
+
+            // Sarah crée la demande
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var demandeResponse = await _client.PostAsync(
+                $"/api/partages/{partageId}/demande-info-perimetre",
+                null);
+
+            var demande = await demandeResponse.Content.ReadFromJsonAsync<DemandePerimetreDto>();
+
+            // Act : le GRD confirme le périmètre applicable.
+            await AuthenticateAsync("agent.sibelga@example.com");
+
+            var response = await _client.PostAsJsonAsync(
+                $"/api/partages/demandes-grd/{demande!.DemandeId}/repondre",
+                new RepondreDemandePerimetreRequest(
+                    PerimetreType.A,
+                    "Périmètre A confirmé par le GRD"));
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var dto = await response.Content.ReadFromJsonAsync<ReponseDemandePerimetreDto>();
+
+            dto.Should().NotBeNull();
+            dto!.PerimetreConfirme.Should().Be(PerimetreType.A);
+            dto.CommentaireReponseGRD.Should().Be("Périmètre A confirmé par le GRD");
+            dto.ResponseStatus.Should().Be(DdeGRDResponseStatus.Valide.ToString());
+        }
+
+        //  On vérifie qu'un user normal ne peut pas répondre en place de l'agent GRD
+        [Fact]
+        public async Task RepondreDemandePerimetre_WhenUserNotGrd_ShouldReturnForbidden()
+        {
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var response = await _client.PostAsJsonAsync(
+                $"/api/partages/demandes-grd/{Guid.NewGuid()}/repondre",
+                new RepondreDemandePerimetreRequest(PerimetreType.A, null));
+
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
 
 
         //authentification

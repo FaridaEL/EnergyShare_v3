@@ -83,6 +83,13 @@ namespace EnergyShare_v3.Web.Endpoints
             // Accès réservé à l'administrateur ou à l'organisme public.
             group.MapGet("/demandes-grd/en-attente", GetDemandesGrdEnAttente)
                 .RequireAuthorization(adminOrOrganismePublicPolicy);
+            
+            //Gestion des réponses Dde info périmetre par le GRD
+            // POST /api/partages/demandes-grd/{id}/repondre
+            // Permet à l'organisme public / GRD de répondre à une demande d'information de périmètre.
+            group.MapPost("/demandes-grd/{id:guid}/repondre", RepondreDemandePerimetre)
+                .RequireAuthorization(adminOrOrganismePublicPolicy);
+
 
             return app;
         }
@@ -233,6 +240,36 @@ namespace EnergyShare_v3.Web.Endpoints
 
             return Results.Ok(response.Value);
         }
+
+        //Réponse dde info périmètre par le GRD
+
+        internal static async Task<IResult> RepondreDemandePerimetre(
+            ISender sender,
+            Guid id,
+            [FromBody] RepondreDemandePerimetreRequest request)
+            {
+                var response = await sender.Send(new RepondreDemandePerimetre(
+                    id,
+                    request.PerimetreConfirme,
+                    request.CommentaireReponseGRD));
+
+                if (response.Status == ArdalisResultStatus.Unauthorized)
+                    return Results.Unauthorized();
+
+                if (response.Status == ArdalisResultStatus.Forbidden)
+                    return Results.StatusCode(403);
+
+                if (response.Status == ArdalisResultStatus.NotFound)
+                    return Results.NotFound();
+
+                if (response.Status == ArdalisResultStatus.Invalid)
+                    return Results.BadRequest(response.ValidationErrors);
+
+                if (!response.IsSuccess)
+                    return Results.BadRequest(response.Errors);
+
+                return Results.Ok(response.Value);
+            }
 
     }
 }
