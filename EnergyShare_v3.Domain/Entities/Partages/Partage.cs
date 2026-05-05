@@ -13,11 +13,6 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         [Key]
         public Guid Id { get; set; }
 
-        
-
-        
-        
-
         [Required, MaxLength(100)]
         public string Nom { get; private set; } = null!;
         public string? Description { get; set; }
@@ -351,6 +346,17 @@ namespace EnergyShare_v3.Domain.Entities.Partages
             }
 
             DemandesGrd.Add(demande);
+            Audit.Touch(null);
+
+            return Result.Success();
+        }
+        public Result DefinirPerimetre(PerimetreType perimetre)
+        {
+            if (Statut == PartageEnergieStatutType.Cloture ||
+                Statut == PartageEnergieStatutType.EnCoursCloture)
+                return PartageErrors.DemandePerimetreImpossible();
+
+            Perimetre = perimetre;
             Audit.Touch(null);
 
             return Result.Success();

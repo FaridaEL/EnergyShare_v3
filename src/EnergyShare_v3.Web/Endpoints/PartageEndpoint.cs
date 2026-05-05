@@ -28,6 +28,12 @@ namespace EnergyShare_v3.Web.Endpoints
                 //Roles = "Administrateur,OrganismePublic"   //a implémenter plus tard
                 AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme
             };
+            //nécessaire pour afficher les ddes de périmètre en attente.
+            var adminOrOrganismePublicPolicy = new AuthorizeAttribute
+            {
+                Roles = "Administrateur,OrganismePublic",
+                AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme
+            };
 
 
             // Accès réservé pour le moment à l'administrateur,
@@ -71,6 +77,12 @@ namespace EnergyShare_v3.Web.Endpoints
             group.MapPost("/{id:guid}/demande-info-perimetre", DemandeInfoPerimetrePartage)
                 .RequireAuthorization(authenticatedUserPolicy);
 
+            //Gestion des ddes par le GRD 
+            // GET /api/partages/demandes-grd/en-attente
+            // Retourne les demandes GRD de périmètre en attente.
+            // Accès réservé à l'administrateur ou à l'organisme public.
+            group.MapGet("/demandes-grd/en-attente", GetDemandesGrdEnAttente)
+                .RequireAuthorization(adminOrOrganismePublicPolicy);
 
             return app;
         }
@@ -204,6 +216,22 @@ namespace EnergyShare_v3.Web.Endpoints
                     return Results.BadRequest(response.Errors);
 
                 return Results.Ok(response.Value);
+        }
+
+        internal static async Task<IResult> GetDemandesGrdEnAttente(ISender sender)
+        {
+            var response = await sender.Send(new GetDemandesGrdEnAttente());
+
+            if (response.Status == ArdalisResultStatus.Unauthorized)
+                return Results.Unauthorized();
+
+            if (response.Status == ArdalisResultStatus.Forbidden)
+                return Results.StatusCode(403);
+
+            if (!response.IsSuccess)
+                return Results.BadRequest(response.Errors);
+
+            return Results.Ok(response.Value);
         }
 
     }

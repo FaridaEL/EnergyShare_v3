@@ -12,10 +12,13 @@ namespace EnergyShare_v3.IntegrationTests
     public class PartageEndpointTests : IClassFixture<CustomWebApplicationFactory>
     {
         private readonly HttpClient _client;
-        private static string? _sarahToken;
-        private static string? _julienToken;
+        private static string? _sarahToken;    //Vendeur
+        private static string? _julienToken;  //Vendeur
         private static string? _adminToken;
-        private static string? _leaToken;
+        private static string? _leaToken;   //Acheteur
+        private static string? _sibelgaToken; //GRD
+        private static string? _hugoToken;//acheteur
+        private static string? _boulangerieToken; // acheteur
 
         public PartageEndpointTests(CustomWebApplicationFactory factory)
         {
@@ -398,7 +401,7 @@ namespace EnergyShare_v3.IntegrationTests
             invitationDto.Should().NotBeNull();
 
             // Léa rejoint le partage pour atteindre 2 participants.
-            await AuthenticateAsync("lea.bernard@example.com");
+            await AuthenticateAsync("hugo.lambert@example.com");
 
             var joinResponse = await _client.PostAsJsonAsync(
                 "/api/partages/rejoindre",
@@ -425,6 +428,116 @@ namespace EnergyShare_v3.IntegrationTests
             dto.DetailsDemande.Should().Contain("Adresses des points d’accès concernés");
         }
 
+        //Gestion dde perimetre par le GRD
+        //Récupérer les ddes en attente de traitement : GetDemandesGrdEnAttente
+        [Fact]
+        public async Task GetDemandesGrdEnAttente_WhenUserIsOrganismePublic_ShouldReturnOk()
+        {
+            // Arrange
+            await AuthenticateAsync("agent.sibelga@example.com");
+
+            // Act
+            var response = await _client.GetAsync("/api/partages/demandes-grd/en-attente");
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var demandes = await response.Content.ReadFromJsonAsync<List<DemandeGrdDto>>();
+
+            demandes.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GetDemandesGrdEnAttente_WhenUserIsNotAdminOrOrganismePublic_ShouldReturnForbidden()
+        {
+            // Arrange
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            // Act
+            var response = await _client.GetAsync("/api/partages/demandes-grd/en-attente");
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        [Fact]
+        public async Task GetDemandesGrdEnAttente_WithoutAuthentication_ShouldReturnUnauthorized()
+        {
+            // Arrange
+            _client.DefaultRequestHeaders.Authorization = null;
+
+            // Act
+            var response = await _client.GetAsync("/api/partages/demandes-grd/en-attente");
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+        //Comportement complet 
+
+        [Fact]
+        public async Task GetDemandesGrdEnAttente_WhenDemandeExists_ShouldReturnDemande()
+        {
+            // Arrange : Sarah crée un partage.
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var createResponse = await _client.PostAsJsonAsync(
+                "/api/partages",
+                new CreatePartage("Partage demande GRD visible", PartageEnergieType.PairToPair));
+
+            createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+            var partageId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+            // Sarah génère un code d’invitation.
+            var invitationResponse = await _client.PostAsync(
+                $"/api/partages/{partageId}/invitation-code",
+                null);
+
+            invitationResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var invitationDto = await invitationResponse.Content.ReadFromJsonAsync<InvitationCodeDto>();
+            invitationDto.Should().NotBeNull();
+
+            // Hugo rejoint le partage pour avoir 2 participants.
+            await AuthenticateAsync("contact@boulangerie-dupain.be");
+
+            var joinResponse = await _client.PostAsJsonAsync(
+                "/api/partages/rejoindre",
+                new RejoindrePartageRequest(invitationDto!.InvitationCode));
+
+            joinResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            // Sarah crée une demande info périmètre.
+            await AuthenticateAsync("sarah.dupont@example.com");
+
+            var demandeResponse = await _client.PostAsync(
+                $"/api/partages/{partageId}/demande-info-perimetre",
+                null);
+
+            demandeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var demandeDto = await demandeResponse.Content.ReadFromJsonAsync<DemandePerimetreDto>();
+            demandeDto.Should().NotBeNull();
+
+            // Act : admin consulte les demandes GRD en attente.
+            await AuthenticateAsync("admin.test@example.com");
+
+            var response = await _client.GetAsync("/api/partages/demandes-grd/en-attente");
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var demandes = await response.Content.ReadFromJsonAsync<List<DemandeGrdDto>>();
+
+            demandes.Should().NotBeNull();
+            demandes.Should().Contain(d =>
+                d.Id == demandeDto!.DemandeId &&
+                d.PartageId == partageId &&
+                d.ResponseStatus == DdeGRDResponseStatus.EnAttente &&
+                d.DemandeType == DemandeGRDType.DdeInfoPerimetre);
+        }
+
+
 
         //authentification
 
@@ -444,6 +557,13 @@ namespace EnergyShare_v3.IntegrationTests
 
                 "lea.bernard@example.com" =>
                     _leaToken ??= await GetTokenAsync(email, password),
+
+                "agent.sibelga@example.com" =>
+                    _sibelgaToken ??= await GetTokenAsync(email, password),
+                "hugo.lambert@example.com" =>
+                    _hugoToken ??= await GetTokenAsync(email, password),
+                "contact@boulangerie-dupain.be" =>
+                    _boulangerieToken ??= await GetTokenAsync(email, password),
 
                 _ => await GetTokenAsync(email, password)
             };

@@ -57,7 +57,22 @@ namespace EnergyShare_v3.Application.Features.Partage
         string ResponseStatus,
         string DetailsDemande
     );
-
+    //TRaitement des demandes infos périmetre par le GRD
+    public record DemandeGrdDto(
+          Guid Id,
+          Guid? PartageId,
+          string? NomPartage,
+          DateTime DateDemande,
+          string DetailsDemande,
+          DdeGRDResponseStatus ResponseStatus,
+          DemandeGRDType DemandeType,
+          PerimetreType? PerimetreConfirme,
+          string? CommentaireReponseGRD
+    );
+    public record RepondreDemandePerimetreRequest(
+          PerimetreType PerimetreConfirme,
+          string? CommentaireReponseGRD
+  );
 
 
 }
