@@ -81,5 +81,24 @@ namespace EnergyShare_v3.Application.Features.Partage
         string? CommentaireReponseGRD
     );
 
+    //Gestion des ddes de validation d'un nouveau partage
+        public record DemandeValidationPartageDto(
+        Guid DemandeId,
+        Guid PartageId,
+        DateTime DateDemande,
+        string ResponseStatus,
+        string DetailsDemande
+    );
+
+
+    //Réponse GRD 
+    public record ReponseDemandeValidationPartageDto(
+        Guid DemandeId,
+        Guid PartageId,
+        string ResponseStatus,
+        PartageEnergieStatutType StatutPartage,
+        DateTime DateReponse,
+        string? CommentaireReponseGRD
+    );
 
 }

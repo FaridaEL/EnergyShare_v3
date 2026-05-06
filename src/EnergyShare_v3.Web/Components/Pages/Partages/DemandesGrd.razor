@@ -89,10 +89,50 @@ else
                                 @* <button class="btn btn-sm btn-primary" disabled>
                                     Répondre
                                 </button> *@
-                                <button class="btn btn-sm btn-primary"
+                                @* <button class="btn btn-sm btn-primary"
                                         @onclick="() => OuvrirFormulaireReponse(demande.Id)">
                                     Répondre
-                                </button>
+                                </button> *@
+
+                                @* On adapte l'action affichée selon le type de demande GRD.
+                                Toutes les demandes GRD sont affichées dans le même tableau,
+                                mais elles ne se traitent pas de la même manière. Ex :
+                                - une dde d'info périmètre --> réponse attendue  : A/B/C/D ;
+                                - une dde validation d'un nouveau partage : réponses attendue: validée/refusée.   *@
+
+                                @if (demande.DemandeType == DemandeGRDType.DdeInfoPerimetre)
+                                {
+                                    @* Cas 1 : Dde info périmètre : 
+                                    On reste sur la même page et on ouvre le formulaire déjà existant.
+                                    Via le formulaire, Sibelga choisit le périmètre A/B/C/D  et peut ajouter un commentaire.  *@
+                                    <button class="btn btn-sm btn-primary"
+                                            @onclick="() => OuvrirFormulaireReponse(demande.Id)">
+                                        Répondre périmètre
+                                    </button>
+                                }
+                                else if (demande.DemandeType == DemandeGRDType.NouvelleActivation)
+                                {
+                                    @*   Cas 2 : demande de validation d'un nouveau partage.
+                                    Ici, traitement plus complet que le cas 1. -> Donc, on redirige vers une page dédiée qui affichera:
+                                    - les infos partage ;
+                                    - les participants ( points access !) ;
+                                    - les détails transmis ;
+                                    - plus tard, les boutons Valider / Refuser.  *@
+                                    <a class="btn btn-sm btn-success"
+                                       href="@($"/organisme-public/demandes-grd/{demande.Id}/validation")">
+                                        Traiter validation
+                                    </a>
+                                }
+                                else
+                                {
+                                    @*Cas par défaut : les autres types de ddes pas encore dveloppés. 
+                                    Donc, on affiche un bouton désactivé afin d'éviter une action qui ne fonctionne pas encore.  *@
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>
+                                        Non disponible
+                                    </button>
+                                }
+
+
                             </td>
                         </tr>
 
@@ -228,6 +268,9 @@ else
         return type switch
         {
             DemandeGRDType.DdeInfoPerimetre => "Information périmètre",
+            DemandeGRDType.NouvelleActivation => "Validation nouveau partage",
+            DemandeGRDType.ModificationPartageExistant => "Validation modification",
+            DemandeGRDType.CloturePartageExistant => "Clôture partage",
             _ => type.ToString()
         };
     }

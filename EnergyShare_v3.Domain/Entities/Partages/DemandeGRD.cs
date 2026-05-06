@@ -77,34 +77,115 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                     return Result.Success(demande);
             }
 
-        // Réponse du GRD 
+            // Réponse du GRD 
         public Result RepondreDemandePerimetre(
-            PerimetreType perimetreConfirme,
-            string? commentaireReponseGrd,
-            Guid agentTraitantId,
-            Guid? organismePublicId)
-                    {
-                        if (DemandeType != DemandeGRDType.DdeInfoPerimetre)
-                            return DemandeGRDErrors.TypeDemandeInvalide();
+              PerimetreType perimetreConfirme,
+              string? commentaireReponseGrd,
+              Guid agentTraitantId,
+              Guid? organismePublicId)
+                        {
+                            if (DemandeType != DemandeGRDType.DdeInfoPerimetre)
+                                return DemandeGRDErrors.TypeDemandeInvalide();
 
-                        if (ResponseStatus != DdeGRDResponseStatus.EnAttente)
-                            return DemandeGRDErrors.DemandeDejaTraitee();
+                            if (ResponseStatus != DdeGRDResponseStatus.EnAttente)
+                                return DemandeGRDErrors.DemandeDejaTraitee();
 
-                        if (agentTraitantId == Guid.Empty)
-                            return DemandeGRDErrors.AgentTraitantObligatoire();
+                            if (agentTraitantId == Guid.Empty)
+                                return DemandeGRDErrors.AgentTraitantObligatoire();
 
-                        PerimetreConfirme = perimetreConfirme;
-                            if (string.IsNullOrWhiteSpace(commentaireReponseGrd))
-                            { CommentaireReponseGRD = null;  }
-                            else
-                            { CommentaireReponseGRD = commentaireReponseGrd.Trim(); } //permet de ne pas garder des chaines vides ou composées uniquement d'espaces
+                            PerimetreConfirme = perimetreConfirme;
+                                if (string.IsNullOrWhiteSpace(commentaireReponseGrd))
+                                { CommentaireReponseGRD = null;  }
+                                else
+                                { CommentaireReponseGRD = commentaireReponseGrd.Trim(); } //permet de ne pas garder des chaines vides ou composées uniquement d'espaces
 
-            AgentTraitantId = agentTraitantId;
-                        OrganismePublicId = organismePublicId;
-                        DateReponse = DateTime.UtcNow;
-                        ResponseStatus = DdeGRDResponseStatus.Valide;
+              AgentTraitantId = agentTraitantId;
+                            OrganismePublicId = organismePublicId;
+                            DateReponse = DateTime.UtcNow;
+                            ResponseStatus = DdeGRDResponseStatus.Valide;
 
-                        return Result.Success();
+                            return Result.Success();
+            }
+
+        //Factory pour créer une demande de validation d'un nouveau partage
+
+        public static Result<DemandeGRD> CreateDemandeValidationNouveauPartage(
+            Guid partageId,
+            Guid demandeurId,
+            string? detailsDemande = null)
+                {
+                if (partageId == Guid.Empty)
+                    return DemandeGRDErrors.PartageObligatoire().Map();
+
+                if (demandeurId == Guid.Empty)
+                    return DemandeGRDErrors.DemandeurObligatoire().Map();
+
+                string detailsFinal;
+
+                if (string.IsNullOrWhiteSpace(detailsDemande))
+                { detailsFinal = "Demande de validation d'un nouveau partage.";   }
+                else
+                {  detailsFinal = detailsDemande.Trim();  }  // Trim() enlève les espaces au début et à la fin du texte.
+
+                var demande = new DemandeGRD
+                {
+                    Id = Guid.NewGuid(),
+                    DateDemande = DateTime.UtcNow,
+                    ResponseStatus = DdeGRDResponseStatus.EnAttente,
+                    DemandeType = DemandeGRDType.NouvelleActivation,
+                    DemandeurId = demandeurId,
+                    PartageId = partageId,
+                    DetailsDemande = detailsFinal
+                };
+
+                return Result.Success(demande);
         }
+
+        //Gestion des réponses du GRD à une demande de validation d'un nouveau partage : 
+        public Result RepondreDemandeValidationPartage(
+          bool isValide,
+          string? commentaireReponseGrd,
+          Guid agentTraitantId,
+          Guid? organismePublicId)
+            {
+                // Cette méthode est réservée aux demandes de validation d'un nouveau partage.
+                if (DemandeType != DemandeGRDType.NouvelleActivation)
+                    return DemandeGRDErrors.TypeDemandeInvalide();
+
+                // On ne peut répondre qu'à une demande encore en attente.
+                if (ResponseStatus != DdeGRDResponseStatus.EnAttente)
+                    return DemandeGRDErrors.DemandeDejaTraitee();
+
+                // L'agent GRD/admin qui répond doit être connu.
+                if (agentTraitantId == Guid.Empty)
+                    return DemandeGRDErrors.AgentTraitantObligatoire();
+
+                if (string.IsNullOrWhiteSpace(commentaireReponseGrd))
+                {
+                    CommentaireReponseGRD = null;
+                }
+                else
+                {
+                    // Trim() enlève les espaces au début et à la fin.
+                    CommentaireReponseGRD = commentaireReponseGrd.Trim();
+                }
+
+                AgentTraitantId = agentTraitantId;
+                OrganismePublicId = organismePublicId;
+                DateReponse = DateTime.UtcNow;
+
+                if (isValide)
+                {
+                    ResponseStatus = DdeGRDResponseStatus.Valide;
+                }
+                else
+                {
+                    ResponseStatus = DdeGRDResponseStatus.Refus;
+                }
+
+                return Result.Success();
+        }
+
+
     }
 }

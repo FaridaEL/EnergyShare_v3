@@ -1,0 +1,246 @@
+﻿@page "/organisme-public/demandes-grd/{Id:guid}/validation"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "OrganismePublic,Administrateur")]
+
+@using Microsoft.AspNetCore.Authorization
+@using Mediator
+@using EnergyShare_v3.Application.Features.Partage
+@using EnergyShare_v3.Domain.Enums
+
+@inject ISender Sender
+
+<PageTitle>Validation nouveau partage</PageTitle>
+
+<h3>Validation d’un nouveau partage</h3>
+
+<p class="text-muted">
+    Consultez les informations transmises par le créateur du partage avant de répondre à la demande.
+</p>
+
+@if (isLoading)
+{
+    <p>Chargement...</p>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-warning">@errorMessage</div>
+}
+else if (demande is not null)
+{
+    <div class="card mb-3">
+        <div class="card-header fw-bold">
+            Demande GRD
+        </div>
+
+        <div class="card-body">
+            <p><strong>Type :</strong> @GetDemandeTypeLabel(demande.DemandeType)</p>
+            <p><strong>Statut :</strong> @demande.ResponseStatus</p>
+            <p><strong>Date :</strong> @FormatDateTime(demande.DateDemande)</p>
+
+            @if (demande.PartageId is not null)
+            {
+                <p>
+                    <strong>Partage :</strong>
+                    <a href="@($"/organisme-public/partages/{demande.PartageId}")">
+                        @(demande.NomPartage ?? "Voir le partage")
+                    </a>
+                </p>
+            }
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header fw-bold">
+            Informations transmises
+        </div>
+
+        <div class="card-body">
+            <textarea class="form-control"
+                      rows="10"
+                      readonly>@demande.DetailsDemande</textarea>
+        </div>
+    </div>
+
+    @* <div class="alert alert-info">
+        La réponse validation/refus sera ajoutée à l’étape suivante.
+    </div> *@
+
+    @* =========================================================
+   TRAITEMENT DE LA DEMANDE DE VALIDATION
+   - L'agent GRD peut accepter ou refuser la demande.
+   - Le commentaire permet d'expliquer la décision.
+   ========================================================= *@
+
+    <div class="card mb-3">
+        <div class="card-header fw-bold">
+            Décision GRD
+        </div>
+
+        <div class="card-body">
+            <label class="form-label">Commentaire GRD</label>
+
+            <InputTextArea class="form-control"
+                           rows="3"
+                           @bind-Value="commentaireReponseGRD" />
+
+            @if (!string.IsNullOrWhiteSpace(reponseError))
+            {
+                <div class="alert alert-warning mt-3 mb-0">
+                    @reponseError
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(reponseMessage))
+            {
+                <div class="alert alert-success mt-3 mb-0">
+                    @reponseMessage
+                </div>
+            }
+
+            <div class="d-flex gap-2 mt-3">
+                <button type="button"
+                        class="btn btn-success"
+                        @onclick="ValiderDemande"
+                        disabled="@isReponseLoading">
+                    Valider le partage
+                </button>
+
+                <button type="button"
+                        class="btn btn-outline-danger"
+                        @onclick="RefuserDemande"
+                        disabled="@isReponseLoading">
+                    Refuser le partage
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <a href="/organisme-public/demandes-grd" class="btn btn-outline-secondary">
+        Retour aux demandes
+    </a>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private bool isLoading = true;
+    private string? errorMessage;
+    private DemandeGrdDto? demande;
+
+
+    //var pour taiter la réponse ( valide, refus+ commentaire)
+    private string? commentaireReponseGRD;
+    private string? reponseMessage;
+    private string? reponseError;
+    private bool isReponseLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Pour rester simple, on réutilise la liste des demandes en attente
+        // et on récupère celle qui correspond à l'Id de la route.
+        var result = await Sender.Send(new GetDemandesGrdEnAttente());
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Impossible de charger la demande GRD.";
+            isLoading = false;
+            return;
+        }
+
+        demande = result.Value.FirstOrDefault(d => d.Id == Id);
+
+        if (demande is null)
+        {
+            errorMessage = "Demande GRD introuvable ou déjà traitée.";
+            isLoading = false;
+            return;
+        }
+
+        if (demande.DemandeType != DemandeGRDType.NouvelleActivation)
+        {
+            errorMessage = "Cette page est réservée aux demandes de validation d’un nouveau partage.";
+            isLoading = false;
+            return;
+        }
+
+        isLoading = false;
+    }
+
+    private static string FormatDateTime(DateTime date)
+        => date.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
+
+    private static string GetDemandeTypeLabel(DemandeGRDType type)
+    {
+        return type switch
+        {
+            DemandeGRDType.NouvelleActivation => "Validation nouveau partage",
+            DemandeGRDType.DdeInfoPerimetre => "Information périmètre",
+            DemandeGRDType.ModificationPartageExistant => "Validation modification",
+            DemandeGRDType.CloturePartageExistant => "Clôture partage",
+            _ => type.ToString()
+        };
+    }
+
+    //Gestion de la réponse ( validation ou refus+ commentaire)
+    // Gestion de la réponse : validation ou refus + commentaire.
+    // Les deux boutons utilisent la même méthode privée,
+    // seule la décision change : true = valide, false = refus.
+    private async Task ValiderDemande()
+    {
+        await RepondreDemandeValidation(isValide: true);
+    }
+
+    private async Task RefuserDemande()
+    {
+        await RepondreDemandeValidation(isValide: false);
+    }
+
+    // Méthode centralisée utilisée pour "Valider  ou "Refuser le partage".
+ 
+    private async Task RepondreDemandeValidation(bool isValide)
+    {  if (demande is null)// Sécurité : on vérifie qu'une demande est bien chargée.
+            return;
+ 
+        reponseError = null; // Reset des messages UI avant traitement.
+        reponseMessage = null;
+
+        isReponseLoading = true;// Active le mode chargement pour désactiver les boutons.
+
+        // Envoi de la commande Mediator vers le handler backend.
+        var result = await Sender.Send(new RepondreDemandeValidationPartage(
+            demande.Id,
+            isValide,
+            commentaireReponseGRD));
+
+        // Fin du chargement.
+        isReponseLoading = false;
+
+      // GESTION DES ERREURS
+       if (!result.IsSuccess)
+        {
+            if (isValide)
+            { reponseError = "Impossible de valider le partage.";   }
+            else
+            { reponseError = "Impossible de refuser le partage.";  }
+
+            return;
+        }
+        if (isValide)
+        { reponseMessage = "Le partage a été validé avec succès.";   }
+        else
+        { reponseMessage = "Le partage a été refusé."; }
+  
+        // MISE À JOUR AFFICHAGE LOCAL  --> rafraîchit immédiatement le statut dans l'UI  sans recharger toute la page.
+       
+        demande = demande with
+        {
+            ResponseStatus = isValide
+                ? DdeGRDResponseStatus.Valide
+                : DdeGRDResponseStatus.Refus,
+
+            CommentaireReponseGRD = commentaireReponseGRD
+        };
+    }
+    }
+}
