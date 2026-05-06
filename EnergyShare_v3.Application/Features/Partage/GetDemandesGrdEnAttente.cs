@@ -29,12 +29,12 @@ namespace EnergyShare_v3.Application.Features.Partage
                 return Result<IReadOnlyList<DemandeGrdDto>>.Forbidden();
             }
 
-            // On récupère uniquement les ddes de périmètre en attente.
+            // On récupère toutes les ddes en attente ( périmètre + dde validations).
             // Le Partage est utilisé pour afficher le nom du partage dans l'UI GRD.
             var demandes = await context.DemandesGRD
                 .AsNoTracking()
                 .Where(d =>
-                    d.DemandeType == DemandeGRDType.DdeInfoPerimetre &&
+                    
                     d.ResponseStatus == DdeGRDResponseStatus.EnAttente)
                 .OrderBy(d => d.DateDemande)
                 .Select(d => new DemandeGrdDto(
