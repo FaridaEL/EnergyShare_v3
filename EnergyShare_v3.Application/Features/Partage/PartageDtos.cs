@@ -91,4 +91,14 @@ namespace EnergyShare_v3.Application.Features.Partage
     );
 
 
+    //Réponse GRD 
+    public record ReponseDemandeValidationPartageDto(
+        Guid DemandeId,
+        Guid PartageId,
+        string ResponseStatus,
+        PartageEnergieStatutType StatutPartage,
+        DateTime DateReponse,
+        string? CommentaireReponseGRD
+    );
+
 }

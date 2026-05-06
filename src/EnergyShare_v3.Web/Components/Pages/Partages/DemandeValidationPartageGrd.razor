@@ -98,13 +98,15 @@ else if (demande is not null)
             }
 
             <div class="d-flex gap-2 mt-3">
-                <button class="btn btn-success"
+                <button type="button"
+                        class="btn btn-success"
                         @onclick="ValiderDemande"
                         disabled="@isReponseLoading">
                     Valider le partage
                 </button>
 
-                <button class="btn btn-outline-danger"
+                <button type="button"
+                        class="btn btn-outline-danger"
                         @onclick="RefuserDemande"
                         disabled="@isReponseLoading">
                     Refuser le partage
@@ -181,16 +183,64 @@ else if (demande is not null)
     }
 
     //Gestion de la réponse ( validation ou refus+ commentaire)
-    private Task ValiderDemande()
+    // Gestion de la réponse : validation ou refus + commentaire.
+    // Les deux boutons utilisent la même méthode privée,
+    // seule la décision change : true = valide, false = refus.
+    private async Task ValiderDemande()
     {
-        //TODO : Validation à connecter au handler ou enpoint API
-        reponseMessage = "Validation à connecter au handler.";
-        return Task.CompletedTask;
+        await RepondreDemandeValidation(isValide: true);
     }
 
-    private Task RefuserDemande()
+    private async Task RefuserDemande()
     {
-        reponseMessage = "Refus à connecter au handler.";
-        return Task.CompletedTask;
+        await RepondreDemandeValidation(isValide: false);
+    }
+
+    // Méthode centralisée utilisée pour "Valider  ou "Refuser le partage".
+ 
+    private async Task RepondreDemandeValidation(bool isValide)
+    {  if (demande is null)// Sécurité : on vérifie qu'une demande est bien chargée.
+            return;
+ 
+        reponseError = null; // Reset des messages UI avant traitement.
+        reponseMessage = null;
+
+        isReponseLoading = true;// Active le mode chargement pour désactiver les boutons.
+
+        // Envoi de la commande Mediator vers le handler backend.
+        var result = await Sender.Send(new RepondreDemandeValidationPartage(
+            demande.Id,
+            isValide,
+            commentaireReponseGRD));
+
+        // Fin du chargement.
+        isReponseLoading = false;
+
+      // GESTION DES ERREURS
+       if (!result.IsSuccess)
+        {
+            if (isValide)
+            { reponseError = "Impossible de valider le partage.";   }
+            else
+            { reponseError = "Impossible de refuser le partage.";  }
+
+            return;
+        }
+        if (isValide)
+        { reponseMessage = "Le partage a été validé avec succès.";   }
+        else
+        { reponseMessage = "Le partage a été refusé."; }
+  
+        // MISE À JOUR AFFICHAGE LOCAL  --> rafraîchit immédiatement le statut dans l'UI  sans recharger toute la page.
+       
+        demande = demande with
+        {
+            ResponseStatus = isValide
+                ? DdeGRDResponseStatus.Valide
+                : DdeGRDResponseStatus.Refus,
+
+            CommentaireReponseGRD = commentaireReponseGRD
+        };
+    }
     }
 }

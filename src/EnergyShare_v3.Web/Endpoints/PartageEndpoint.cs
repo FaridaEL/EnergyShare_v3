@@ -99,6 +99,11 @@ namespace EnergyShare_v3.Web.Endpoints
             group.MapPost("/{id:guid}/demande-validation", DemandeValidationPartage)
                 .RequireAuthorization(authenticatedUserPolicy);
 
+            // POST /api/partages/demandes-grd/{id}/validation/repondre
+            // Permet au GRD/admin de valider ou refuser une demande de validation d'un nouveau partage.
+            group.MapPost("/demandes-grd/{id:guid}/validation/repondre", RepondreDemandeValidationPartage)
+                .RequireAuthorization(adminOrOrganismePublicPolicy);
+
 
             return app;
         }
@@ -287,6 +292,35 @@ namespace EnergyShare_v3.Web.Endpoints
             Guid id)
             {
                 var response = await sender.Send(new DemandeValidationPartage(id));
+
+                if (response.Status == ArdalisResultStatus.Unauthorized)
+                    return Results.Unauthorized();
+
+                if (response.Status == ArdalisResultStatus.Forbidden)
+                    return Results.StatusCode(403);
+
+                if (response.Status == ArdalisResultStatus.NotFound)
+                    return Results.NotFound();
+
+                if (response.Status == ArdalisResultStatus.Invalid)
+                    return Results.BadRequest(response.ValidationErrors);
+
+                if (!response.IsSuccess)
+                    return Results.BadRequest(response.Errors);
+
+                return Results.Ok(response.Value);
+            }
+
+        // Réponse du GRD à une demande de validation d'un nouveau partage
+        internal static async Task<IResult> RepondreDemandeValidationPartage(
+            ISender sender,
+            Guid id,
+            [FromBody] RepondreDemandeValidationPartageRequest request)
+            {
+                var response = await sender.Send(new RepondreDemandeValidationPartage(
+                    id,
+                    request.IsValide,
+                    request.CommentaireReponseGRD));
 
                 if (response.Status == ArdalisResultStatus.Unauthorized)
                     return Results.Unauthorized();
