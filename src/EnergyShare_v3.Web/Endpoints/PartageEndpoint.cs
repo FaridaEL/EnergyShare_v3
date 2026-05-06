@@ -90,6 +90,15 @@ namespace EnergyShare_v3.Web.Endpoints
             group.MapPost("/demandes-grd/{id:guid}/repondre", RepondreDemandePerimetre)
                 .RequireAuthorization(adminOrOrganismePublicPolicy);
 
+            // POST /api/partages/{id}/demande-validation
+            // Permet au vendeur de soumettre un nouveau partage au GRD.
+            // Le handler vérifie   !!:
+            // - nombre de participants
+            // - périmètre confirmé
+            // - absence de demande déjà en attente
+            group.MapPost("/{id:guid}/demande-validation", DemandeValidationPartage)
+                .RequireAuthorization(authenticatedUserPolicy);
+
 
             return app;
         }
@@ -271,5 +280,30 @@ namespace EnergyShare_v3.Web.Endpoints
                 return Results.Ok(response.Value);
             }
 
+
+        //Dde validation d'un nouveau partage 
+        internal static async Task<IResult> DemandeValidationPartage(
+            ISender sender,
+            Guid id)
+            {
+                var response = await sender.Send(new DemandeValidationPartage(id));
+
+                if (response.Status == ArdalisResultStatus.Unauthorized)
+                    return Results.Unauthorized();
+
+                if (response.Status == ArdalisResultStatus.Forbidden)
+                    return Results.StatusCode(403);
+
+                if (response.Status == ArdalisResultStatus.NotFound)
+                    return Results.NotFound();
+
+                if (response.Status == ArdalisResultStatus.Invalid)
+                    return Results.BadRequest(response.ValidationErrors);
+
+                if (!response.IsSuccess)
+                    return Results.BadRequest(response.Errors);
+
+                return Results.Ok(response.Value);
+            }
     }
 }
