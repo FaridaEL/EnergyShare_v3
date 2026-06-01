@@ -160,6 +160,17 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
+
+
+//builder.Services.Configure<IdentityOptions>(options =>
+//{
+//    options.Password.RequiredLength = 8;
+//    options.Password.RequireDigit = true;
+//    options.Password.RequireLowercase = true;
+//    options.Password.RequireUppercase = true;
+//    options.Password.RequireNonAlphanumeric = true;
+//});
+
 //audit-secrité  : limite le nombre de tentatives de connexion pour prévenir les attaques par force brute sur les endpoints d'authentification
 builder.Services.AddRateLimiter(options =>
 {
