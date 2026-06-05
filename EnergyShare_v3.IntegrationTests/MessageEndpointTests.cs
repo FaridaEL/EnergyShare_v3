@@ -1,11 +1,12 @@
 ﻿
+using EnergyShare_v3.Infrastructure.Database;
+using EnergyShare_v3.IntegrationTests.Common;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using EnergyShare_v3.Infrastructure.Database;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace EnergyShare_v3.IntegrationTests
 {
@@ -13,8 +14,6 @@ namespace EnergyShare_v3.IntegrationTests
     {
         private readonly HttpClient _client;
         private readonly CustomWebApplicationFactory _factory;
-        private static string? _sarahToken;
-        private static string? _julienToken;
 
         public MessageEndpointTests(CustomWebApplicationFactory factory)
         {
@@ -55,9 +54,9 @@ namespace EnergyShare_v3.IntegrationTests
         public async Task SendMessage_WithSarahToken_ShouldReturnOk()
         {
             // Arrange
-            await AuthenticateAsSarahAsync();
+            await TestAuthHelper.AuthenticateAsync(_client, TestUsers.Sarah);
 
-            var julienId = await GetUserIdByEmailAsync("julien.martin@example.com");
+            var julienId = await GetUserIdByEmailAsync(TestUsers.Julien);
 
             var command = new
             {
@@ -78,9 +77,9 @@ namespace EnergyShare_v3.IntegrationTests
         public async Task GetOutbox_AfterSendingMessage_ShouldContainMessage()
         {
             // Arrange
-            await AuthenticateAsSarahAsync();
+            await TestAuthHelper.AuthenticateAsync(_client, TestUsers.Sarah);
 
-            var julienId = await GetUserIdByEmailAsync("julien.martin@example.com");
+            var julienId = await GetUserIdByEmailAsync(TestUsers.Julien);
 
             var command = new
             {
@@ -106,9 +105,9 @@ namespace EnergyShare_v3.IntegrationTests
         public async Task GetInbox_AsJulien_AfterSarahSentMessage_ShouldContainMessage()
         {
             // Arrange : Sarah envoie un message à Julien
-            await AuthenticateAsSarahAsync();
+            await TestAuthHelper.AuthenticateAsync(_client, TestUsers.Sarah);
 
-            var julienId = await GetUserIdByEmailAsync("julien.martin@example.com");
+            var julienId = await GetUserIdByEmailAsync(TestUsers.Julien);
 
             var command = new
             {
@@ -121,7 +120,7 @@ namespace EnergyShare_v3.IntegrationTests
             await _client.PostAsJsonAsync("/api/messages", command);
 
             // Arrange : on remplace le token Sarah par le token Julien
-            await AuthenticateAsJulienAsync();
+            await TestAuthHelper.AuthenticateAsync(_client, TestUsers.Julien);
 
             // Act
             var response = await _client.GetAsync("/api/messages/inbox");
@@ -137,9 +136,9 @@ namespace EnergyShare_v3.IntegrationTests
         public async Task MarkMessageAsRead_AsDestinataire_ShouldReturnOk()
         {
             // Arrange : Sarah envoie un message à Julien
-            await AuthenticateAsSarahAsync();
+            await TestAuthHelper.AuthenticateAsync(_client, TestUsers.Sarah);
 
-            var julienId = await GetUserIdByEmailAsync("julien.martin@example.com");
+            var julienId = await GetUserIdByEmailAsync(TestUsers.Julien);
 
             var command = new
             {
@@ -154,7 +153,7 @@ namespace EnergyShare_v3.IntegrationTests
             var messageId = await GetLastMessageIdForDestinataireAsync(julienId);
 
             // Arrange : Julien se connecte
-            await AuthenticateAsJulienAsync();
+            await TestAuthHelper.AuthenticateAsync(_client, TestUsers.Julien);
 
             // Act
             var response = await _client.PutAsync($"/api/messages/{messageId}/read", null);
@@ -167,9 +166,9 @@ namespace EnergyShare_v3.IntegrationTests
         public async Task MarkMessageAsRead_WhenMessageBelongsToAnotherUser_ShouldReturnForbidden()
         {
             // Arrange : Sarah envoie un message à Julien
-            await AuthenticateAsSarahAsync();
+            await TestAuthHelper.AuthenticateAsync(_client, TestUsers.Sarah);
 
-            var julienId = await GetUserIdByEmailAsync("julien.martin@example.com");
+            var julienId = await GetUserIdByEmailAsync(TestUsers.Julien);
 
             var command = new
             {
@@ -188,71 +187,6 @@ namespace EnergyShare_v3.IntegrationTests
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        }
-
-        private async Task AuthenticateAsSarahAsync()
-        {
-            //await AuthenticateAsync("sarah.dupont@example.com", "Test1234");
-
-            //les tests échouent car Sarh doit se relogger pour chaque test donc on la met en cache pour éviter l'erreur 429 TooManyRequests 
-            _sarahToken ??= await GetTokenAsync("sarah.dupont@example.com", "Test1234");
-
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", _sarahToken);
-        }
-
-        private async Task AuthenticateAsJulienAsync()
-        {
-            //await AuthenticateAsync("julien.martin@example.com", "Test1234");
-
-            //le ss tests échouent car Julien doit se relogger pour chaque test donc on le met en cache pour éviter les appels redondants à l'endpoint de login (et ainsi éviter les problèmes de tokens invalides)
-            _julienToken ??= await GetTokenAsync("julien.martin@example.com", "Test1234");
-
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", _julienToken);
-        }
-
-
-        //private async Task AuthenticateAsync(string email, string password)
-        //{
-        //    _client.DefaultRequestHeaders.Authorization = null;
-
-        //    var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new
-        //    {
-        //        email,
-        //        password
-        //    });
-
-        //    loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        //    var auth = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
-
-        //    auth.Should().NotBeNull();
-        //    auth!.AccessToken.Should().NotBeNullOrWhiteSpace();
-
-        //    _client.DefaultRequestHeaders.Authorization =
-        //        new AuthenticationHeaderValue("Bearer", auth.AccessToken);
-        //}
-        private async Task<string> GetTokenAsync(string email, string password)
-        {
-            var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new
-            {
-                email,
-                password
-            });
-
-            var body = await loginResponse.Content.ReadAsStringAsync();
-
-            loginResponse.StatusCode.Should().Be(
-                HttpStatusCode.OK,
-                $"Login échoué pour {email}. Réponse API : {body}");
-
-            var auth = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
-
-            auth.Should().NotBeNull();
-            auth!.AccessToken.Should().NotBeNullOrWhiteSpace();
-
-            return auth.AccessToken;
         }
 
         private async Task<Guid> GetUserIdByEmailAsync(string email)
@@ -276,13 +210,6 @@ namespace EnergyShare_v3.IntegrationTests
                 .OrderByDescending(m => m.DateEnvoi)
                 .Select(m => m.Id)
                 .FirstAsync();
-        }
-
-        private sealed class AuthResponse
-        {
-            public string AccessToken { get; set; } = string.Empty;
-            public string RefreshToken { get; set; } = string.Empty;
-            public DateTime AccessTokenExpiresAt { get; set; }
-        }
+        } 
     }
 }

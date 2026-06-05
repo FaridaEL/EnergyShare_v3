@@ -244,7 +244,7 @@ public class PartageValidationEndpointTests
 
     private async Task AuthenticateAsync(
         string email,
-        string password = "Test1234")
+        string password = "Test1234!")
     {
         var token = email switch
         {

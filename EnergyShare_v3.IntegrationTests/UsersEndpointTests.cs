@@ -37,7 +37,7 @@ namespace EnergyShare_v3.IntegrationTests
         {
             var token = await LoginAndGetAccessTokenAsync(
                 "sarah.dupont@example.com",
-                "Test1234");
+                "Test1234!");
 
             _client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
@@ -60,7 +60,7 @@ namespace EnergyShare_v3.IntegrationTests
         {
             var token = await LoginAndGetAccessTokenAsync(
                 "sarah.dupont@example.com",
-                "Test1234");
+                "Test1234!");
 
             _client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);

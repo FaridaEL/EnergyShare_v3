@@ -1,10 +1,9 @@
-﻿using FluentAssertions;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using EnergyShare_v3.Infrastructure.Database;
+﻿using EnergyShare_v3.Infrastructure.Database;
+using EnergyShare_v3.IntegrationTests.Common;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net;
 
 namespace EnergyShare_v3.IntegrationTests
 {
@@ -19,7 +18,8 @@ namespace EnergyShare_v3.IntegrationTests
             _client = factory.CreateClient();
         }
 
-        [Fact]
+
+		[Fact]
         public async Task SearchPotentialMatches_WithoutAuthentication_ShouldReturnUnauthorized()
         {
             var pointAccessId = Guid.NewGuid();
@@ -29,19 +29,20 @@ namespace EnergyShare_v3.IntegrationTests
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
 
-        [Fact]
-        public async Task SearchPotentialMatches_WithSarahToken_ShouldReturnOk()
-        {
-            await AuthenticateAsSarahAsync();
 
-            var sourcePointAccessId = await GetSarahPointAccessIdAsync();
+		[Fact]
+		public async Task SearchPotentialMatches_WithSarahToken_ShouldReturnOk()
+		{
+			await TestAuthHelper.AuthenticateAsync(_client, TestUsers.Sarah);
 
-            var response = await _client.GetAsync($"/api/matching/potential/{sourcePointAccessId}");
+			var sourcePointAccessId = await GetPointAccessIdAsync(TestUsers.Sarah);
 
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
-        }
+			var response = await _client.GetAsync($"/api/matching/potential/{sourcePointAccessId}");
 
-        [Fact]
+			response.StatusCode.Should().Be(HttpStatusCode.OK);
+		}
+
+		[Fact]
         public async Task GetMatches_WithoutAuthentication_ShouldReturnUnauthorized()
         {
             var response = await _client.GetAsync("/api/matching");
@@ -49,50 +50,29 @@ namespace EnergyShare_v3.IntegrationTests
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
 
-        [Fact]
-        public async Task GetMatches_WithSarahToken_ShouldReturnOk()
-        {
-            await AuthenticateAsSarahAsync();
 
-            var response = await _client.GetAsync("/api/matching");
+		[Fact]
+		public async Task GetMatches_WithSarahToken_ShouldReturnOk()
+		{
+			await TestAuthHelper.AuthenticateAsync(_client, TestUsers.Sarah);
 
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
-        }
+			var response = await _client.GetAsync("/api/matching");
 
-        private async Task<Guid> GetSarahPointAccessIdAsync()
-        {
-            using var scope = _factory.Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+			response.StatusCode.Should().Be(HttpStatusCode.OK);
+		}
 
-            return await db.PointAccesses
-                .Where(pa => pa.User.Email == "sarah.dupont@example.com")
-                .Select(pa => pa.Id)
-                .FirstAsync();
-        }
 
-        private async Task AuthenticateAsSarahAsync()
-        {
-            var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new
-            {
-                email = "sarah.dupont@example.com",
-                password = "Test1234"
-            });
+		private async Task<Guid> GetPointAccessIdAsync(string userEmail)
+		{
+			using var scope = _factory.Services.CreateScope();
 
-            loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+			var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            var auth = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
-            auth.Should().NotBeNull();
-            auth!.AccessToken.Should().NotBeNullOrWhiteSpace();
+			return await db.PointAccesses
+				.Where(pa => pa.User.Email == userEmail)
+				.Select(pa => pa.Id)
+				.FirstAsync();
+		}
 
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", auth.AccessToken);
-        }
-
-        private sealed class AuthResponse
-        {
-            public string AccessToken { get; set; } = string.Empty;
-            public string RefreshToken { get; set; } = string.Empty;
-            public DateTime AccessTokenExpiresAt { get; set; }
-        }
     }
 }

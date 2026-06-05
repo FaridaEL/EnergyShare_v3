@@ -113,7 +113,7 @@ namespace EnergyShare_v3.IntegrationTests
             var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new
             {
                 email = "sarah.dupont@example.com",
-                password = "Test1234"
+                password = "Test1234!"
             });
 
             loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EnergyShare_v3.Infrastructure.Database
 {
     public static class ApplicationDbContextSeeder
-    {     // Mot de passe de test pour tous les users : Test1234
+    {     // Mot de passe de test pour tous les users : Test1234!
         public static async Task SeedAsync(
             ApplicationDbContext context,
             UserManager<User> userManager,
@@ -24,7 +24,7 @@ namespace EnergyShare_v3.Infrastructure.Database
             await CreateUserIfNotExistsAsync(
                 userManager,
                 "admin.test@example.com",
-                "Test1234",
+                "Test1234!",
                 "Admin",
                 "Test",
                 "0470000099",
@@ -51,7 +51,7 @@ namespace EnergyShare_v3.Infrastructure.Database
             var vendeur1 = await CreateUserIfNotExistsAsync(
                 userManager,
                 "sarah.dupont@example.com",
-                "Test1234", 
+                "Test1234!", 
                 "Sarah",
                 "Dupont",
                 "0470000001",
@@ -60,7 +60,7 @@ namespace EnergyShare_v3.Infrastructure.Database
             var vendeur2 = await CreateUserIfNotExistsAsync(
                 userManager,
                 "julien.martin@example.com",
-                "Test1234",
+                "Test1234!",
                 "Julien",
                 "Martin",
                 "0470000002",
@@ -69,7 +69,7 @@ namespace EnergyShare_v3.Infrastructure.Database
             var acheteur1 = await CreateUserIfNotExistsAsync(
                 userManager,
                 "lea.bernard@example.com",
-                "Test1234",
+                "Test1234!",
                 "Léa",
                 "Bernard",
                 "0470000003",
@@ -78,7 +78,7 @@ namespace EnergyShare_v3.Infrastructure.Database
             var acheteur2 = await CreateUserIfNotExistsAsync(
                 userManager,
                 "hugo.lambert@example.com",
-                "Test1234",
+                "Test1234!",
                 "Hugo",
                 "Lambert",
                 "0470000004",
@@ -87,7 +87,7 @@ namespace EnergyShare_v3.Infrastructure.Database
             var boulangerie = await CreateUserIfNotExistsAsync(
                 userManager,
                 "contact@boulangerie-dupain.be",
-                "Test1234",
+                "Test1234!",
                 null,
                 null,
                 "0220000010",
@@ -99,7 +99,7 @@ namespace EnergyShare_v3.Infrastructure.Database
             var agentSibelga = await CreateUserIfNotExistsAsync(
                 userManager,
                 "agent.sibelga@example.com",
-                "Test1234",
+                "Test1234!",
                 "Nadia",
                 "Vermeulen",
                 "0220000099",
