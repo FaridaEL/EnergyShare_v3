@@ -172,17 +172,32 @@ builder.Services.ConfigureApplicationCookie(options =>
 //});
 
 //audit-secrité  : limite le nombre de tentatives de connexion pour prévenir les attaques par force brute sur les endpoints d'authentification
-builder.Services.AddRateLimiter(options =>
-{
-    options.AddFixedWindowLimiter("login", limiterOptions =>
-    {
-        limiterOptions.PermitLimit = 5;
-        limiterOptions.Window = TimeSpan.FromMinutes(1);
-        limiterOptions.QueueLimit = 0;
-    });
+//Sauf pour les tests d'intégration qui doivent pouvoir se connecter sans se soucier de la limite de tentatives.
+//builder.Services.AddRateLimiter(options =>
+//{
+//    options.AddFixedWindowLimiter("login", limiterOptions =>
+//    {
+//        limiterOptions.PermitLimit = 5;
+//        limiterOptions.Window = TimeSpan.FromMinutes(1);
+//        limiterOptions.QueueLimit = 0;
+//    });
 
-    options.RejectionStatusCode = 429;
-});
+//    options.RejectionStatusCode = 429;
+//});
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.AddFixedWindowLimiter("login", limiterOptions =>
+        {
+            limiterOptions.PermitLimit = 5;
+            limiterOptions.Window = TimeSpan.FromMinutes(1);
+            limiterOptions.QueueLimit = 0;
+        });
+
+        options.RejectionStatusCode = 429;
+    });
+}
 
 builder.Services.AddAuthorization(options =>
 {        //Il s'agit de sipmle policies, les policies plus complexes sont définies dans le handler
@@ -343,8 +358,9 @@ app.UseWhen(  //pour les pages Blazor utiliser not found et pour les routes api 
 
 if (!app.Environment.IsEnvironment("Testing"))
 { app.UseHttpsRedirection();   //en prod/dev on force le https, mais pas en test pour faciliter les tests d’intégration sans devoir gérer les certificats.
+  app.UseRateLimiter();
 }
-app.UseRateLimiter();
+
 app.UseMiddleware<CorrelationIdMiddelware>();
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,10 +1,11 @@
-﻿using FluentAssertions;
+﻿using EnergyShare_v3.Infrastructure.Database;
+using EnergyShare_v3.IntegrationTests.Common;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using EnergyShare_v3.Infrastructure.Database;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace EnergyShare_v3.IntegrationTests
 {
@@ -18,7 +19,9 @@ namespace EnergyShare_v3.IntegrationTests
             _factory = factory;
             _client = factory.CreateClient();
         }
-
+        /// <summary>
+        /// Vérifie qu'un utilisateur non authentifié ne peut pas consulter ses profils énergie.
+        /// </summary>
         [Fact]
         public async Task GetMyProfilEnergie_WithoutAuthentication_ShouldReturnUnauthorized()
         {
@@ -27,16 +30,24 @@ namespace EnergyShare_v3.IntegrationTests
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
 
+        /// <summary>
+        /// Vérifie qu'un utilisateur authentifié peut consulter ses profils énergie.
+        /// </summary>
         [Fact]
         public async Task GetMyProfilEnergie_WithSarahToken_ShouldReturnOk()
         {
-            await AuthenticateAsSarahAsync();
+            await TestAuthHelper.AuthenticateAsync(
+            _client,
+            TestUsers.Sarah);
 
             var response = await _client.GetAsync("/api/profils-energie/me");
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
         }
 
+        /// <summary>
+        /// Vérifie qu'un utilisateur non authentifié ne peut pas modifier un profil énergie.
+        /// </summary>
         [Fact]
         public async Task UpdateProfilEnergie_WithoutAuthentication_ShouldReturnUnauthorized()
         {
@@ -57,18 +68,17 @@ namespace EnergyShare_v3.IntegrationTests
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
 
+        /// <summary>
+        /// Vérifie qu'un utilisateur peut modifier son propre profil énergie.
+        /// </summary>
         [Fact]
         public async Task UpdateProfilEnergie_WithSarahToken_ShouldReturnOk()
         {
-            await AuthenticateAsSarahAsync();
+            await TestAuthHelper.AuthenticateAsync(
+           _client,
+           TestUsers.Sarah);
 
-            using var scope = _factory.Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-            var profilId = await db.ProfilsEnergie
-                .Where(p => p.PointAccess.User.Email == "sarah.dupont@example.com")
-                .Select(p => p.Id)
-                .FirstAsync();
+           var profilId = await GetProfilIdByUserEmailAsync(TestUsers.Sarah);
 
             var request = new
             {
@@ -85,20 +95,18 @@ namespace EnergyShare_v3.IntegrationTests
             response.StatusCode.Should().Be(HttpStatusCode.OK);
         }
 
-        [Fact]     //Todo : sécuriser handler GetById en ajoutant context-user..
+        /// <summary>
+        /// Vérifie qu'un utilisateur ne peut pas consulter le profil énergie détaillé d'un autre utilisateur.
+        /// </summary>
+        
+        [Fact]    
         public async Task GetProfilEnergieById_WhenProfilBelongsToAnotherUser_ShouldReturnForbiddenOrNotFound()
         {
-            // 1. On simule une connexion en tant que Sarah
-            await AuthenticateAsSarahAsync();
+            await TestAuthHelper.AuthenticateAsync(
+            _client,
+            TestUsers.Sarah);
 
-            // 2. On récupère un profil énergie qui n'appartient PAS à Sarah
-            using var scope = _factory.Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-            var otherProfilId = await db.ProfilsEnergie
-                .Where(p => p.PointAccess.User.Email != "sarah.dupont@example.com")
-                .Select(p => p.Id)
-                .FirstAsync();
+            var otherProfilId = await GetProfilIdNotOwnedByAsync(TestUsers.Sarah);
 
             // 3. Sarah tente d'accéder à CE profil (qui ne lui appartient pas)
             var response = await _client.GetAsync($"/api/profils-energie/{otherProfilId}");
@@ -108,34 +116,38 @@ namespace EnergyShare_v3.IntegrationTests
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
 
-        private async Task AuthenticateAsSarahAsync()
+        /// <summary>
+        /// Récupère le profil énergie d'un utilisateur.
+        /// </summary>
+        private async Task<Guid> GetProfilIdByUserEmailAsync(
+            string userEmail)
         {
-            var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new
-            {
-                email = "sarah.dupont@example.com",
-                password = "Test1234!"
-            });
+            using var scope = _factory.Services.CreateScope();
 
-            loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            var db = scope.ServiceProvider
+                .GetRequiredService<ApplicationDbContext>();
 
-            var auth = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
-            auth.Should().NotBeNull();
-            auth!.AccessToken.Should().NotBeNullOrWhiteSpace();
-
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", auth.AccessToken);
-
-            var debugResponse = await _client.GetAsync("/api/debug/me");
-            var debugBody = await debugResponse.Content.ReadAsStringAsync();
-
-            debugResponse.StatusCode.Should().Be(HttpStatusCode.OK, debugBody);
+            return await db.ProfilsEnergie
+                .Where(p => p.PointAccess.User.Email == userEmail)
+                .Select(p => p.Id)
+                .FirstAsync();
         }
 
-        private sealed class AuthResponse
+        /// <summary>
+        /// Récupère un profil énergie appartenant à un autre utilisateur.
+        /// </summary>
+        private async Task<Guid> GetProfilIdNotOwnedByAsync(
+            string userEmail)
         {
-            public string AccessToken { get; set; } = string.Empty;
-            public string RefreshToken { get; set; } = string.Empty;
-            public DateTime AccessTokenExpiresAt { get; set; }
+            using var scope = _factory.Services.CreateScope();
+
+            var db = scope.ServiceProvider
+                .GetRequiredService<ApplicationDbContext>();
+
+            return await db.ProfilsEnergie
+                .Where(p => p.PointAccess.User.Email != userEmail)
+                .Select(p => p.Id)
+                .FirstAsync();
         }
     }
 }

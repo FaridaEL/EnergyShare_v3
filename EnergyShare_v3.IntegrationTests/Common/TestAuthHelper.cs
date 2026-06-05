@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -6,32 +7,19 @@ using System.Net.Http.Json;
 namespace EnergyShare_v3.IntegrationTests.Common;
 
 /// <summary>
-/// Helper commun pour l'authentification dans les tests d'intégration.
+/// Helper d'authentification pour les tests d'intégration.
 ///
-/// Cette classe effectue un vrai appel HTTP vers l'endpoint /api/auth/login, comme le ferait
-/// un utilisateur réel via l'interface.
+/// Il effectue un vrai login via l'API puis place le JWT obtenu
+/// dans le header Authorization du HttpClient.
 ///
-/// Objectifs :
-/// - éviter de dupliquer le code de login dans chaque classe de test ;
-/// - récupérer un token JWT valide ;
-/// - ajouter automatiquement ce token dans le HttpClient ;
-/// - mettre les tokens en cache pour éviter les appels répétés à /api/auth/login,
-///   notamment à cause du rate limiter qui peut renvoyer une erreur 429.
+/// Important :
+/// on ne garde pas de cache statique de token.
+/// Chaque CustomWebApplicationFactory utilise une base SQLite mémoire différente.
+/// Un token généré dans une ancienne base peut contenir un UserId inexistant
+/// dans la base actuelle, ce qui provoque des erreurs de clé étrangère.
 /// </summary>
 public static class TestAuthHelper
 {
-    /// <summary>
-    /// Cache des tokens par email.
-    ///
-    /// Clé   : email de l'utilisateur, par exemple sarah.dupont@example.com
-    /// Valeur: token JWT retourné par l'API.
-    ///
-    /// Sans cache, chaque test referait un login complet.
-    /// Avec le cache, le premier login récupère le token, puis les tests suivants
-    /// réutilisent le même token pour le même utilisateur.
-    /// </summary>
-    private static readonly Dictionary<string, string> TokenCache = new();
-
     /// <summary>
     /// Authentifie un utilisateur et configure le HttpClient avec le header :
     ///
@@ -62,11 +50,6 @@ public static class TestAuthHelper
         string email,
         string password = TestUsers.DefaultPassword)
     {
-        if (TokenCache.TryGetValue(email, out var cachedToken))
-        {
-            return cachedToken;
-        }
-
         var loginResponse = await client.PostAsJsonAsync(
             "/api/auth/login",
             new
@@ -88,16 +71,13 @@ public static class TestAuthHelper
         auth!.AccessToken.Should()
             .NotBeNullOrWhiteSpace();
 
-        TokenCache[email] = auth.AccessToken;
-
         return auth.AccessToken;
     }
 
     /// <summary>
     /// Représente uniquement la réponse JSON retournée par /api/auth/login.
     ///
-    /// Cette classe est privée car elle ne sert qu'au helper.
-    /// Elle est sealed car elle n'a pas vocation à être héritée.
+    /// privé car ne sert qu'au helper et sealed car elle n'a pas vocation à être héritée.
     /// </summary>
     private sealed class AuthResponse
     {

@@ -1,10 +1,9 @@
-﻿using FluentAssertions;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using EnergyShare_v3.Infrastructure.Database;
+﻿using EnergyShare_v3.Infrastructure.Database;
+using EnergyShare_v3.IntegrationTests.Common;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net;
 
 namespace EnergyShare_v3.IntegrationTests
 {
@@ -19,6 +18,9 @@ namespace EnergyShare_v3.IntegrationTests
             _client = factory.CreateClient();
         }
 
+        /// <summary>
+        /// Vérifie qu'un utilisateur non authentifié ne peut pas consulter ses points d'accès.
+        /// </summary>
         [Fact]
         public async Task GetMyPointAccesses_WithoutAuthentication_ShouldReturnUnauthorized()
         {
@@ -27,38 +29,47 @@ namespace EnergyShare_v3.IntegrationTests
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
 
+        /// <summary>
+        /// Vérifie qu'un utilisateur authentifié peut consulter ses propres points d'accès.
+        /// </summary>
         [Fact]
         public async Task GetMyPointAccesses_WithSarahToken_ShouldReturnOk()
         {
-            await AuthenticateAsSarahAsync();
+            await TestAuthHelper.AuthenticateAsync(
+            _client,
+            TestUsers.Sarah);
 
             var response = await _client.GetAsync("/api/points-access/me");
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
         }
 
+        /// <summary>
+        /// Vérifie qu'un utilisateur non authentifié ne peut pas désactiver un point d'accès.
+        /// </summary>
         [Fact]
         public async Task DeactivatePointAccess_WithoutAuthentication_ShouldReturnUnauthorized()
         {
-            var pointAccessId = "1b73955c-7d4e-401d-969b-dce4faf2c735";
+            var pointAccessId = Guid.NewGuid(); 
 
             var response = await _client.PostAsync($"/api/points-access/deactivate/{pointAccessId}", null);
 
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
 
+        /// <summary>
+        /// Vérifie qu'un utilisateur ne peut pas désactiver
+        /// le point d'accès appartenant à un autre utilisateur.
+        /// </summary>
         [Fact]
         public async Task DeactivatePointAccess_WhenPointBelongsToAnotherUser_ShouldReturnForbidden()
         {
-            await AuthenticateAsSarahAsync();
+            await TestAuthHelper.AuthenticateAsync(
+            _client,
+            TestUsers.Sarah);
 
-            using var scope = _factory.Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-            var otherUserPointAccessId = await db.PointAccesses
-                .Where(pa => pa.User.Email != "sarah.dupont@example.com")
-                .Select(pa => pa.Id)
-                .FirstAsync();
+            var otherUserPointAccessId =
+            await GetPointAccessIdNotOwnedByAsync(TestUsers.Sarah);
 
             var response = await _client.PostAsync(
                 $"/api/points-access/deactivate/{otherUserPointAccessId}",
@@ -67,34 +78,21 @@ namespace EnergyShare_v3.IntegrationTests
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
 
-        private async Task AuthenticateAsSarahAsync()
+        /// <summary>
+        /// Récupère un point d'accès appartenant à un autre utilisateur
+        /// que celui fourni en paramètre.
+        /// </summary>
+        private async Task<Guid> GetPointAccessIdNotOwnedByAsync(string userEmail)
         {
-            var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new
-            {
-                email = "sarah.dupont@example.com",
-                password = "Test1234!"
-            });
+            using var scope = _factory.Services.CreateScope();
 
-            loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            var db = scope.ServiceProvider
+                .GetRequiredService<ApplicationDbContext>();
 
-            var auth = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
-            auth.Should().NotBeNull();
-            auth!.AccessToken.Should().NotBeNullOrWhiteSpace();
-
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", auth.AccessToken);
-
-            var debugResponse = await _client.GetAsync("/api/debug/me");
-            var debugBody = await debugResponse.Content.ReadAsStringAsync();
-
-            debugResponse.StatusCode.Should().Be(HttpStatusCode.OK, debugBody);
-        }
-
-        private sealed class AuthResponse
-        {
-            public string AccessToken { get; set; } = string.Empty;
-            public string RefreshToken { get; set; } = string.Empty;
-            public DateTime AccessTokenExpiresAt { get; set; }
+            return await db.PointAccesses
+                .Where(pa => pa.User.Email != userEmail)
+                .Select(pa => pa.Id)
+                .FirstAsync();
         }
     }
 }

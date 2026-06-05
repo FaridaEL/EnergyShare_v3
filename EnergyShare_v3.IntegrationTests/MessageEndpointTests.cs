@@ -70,7 +70,13 @@ namespace EnergyShare_v3.IntegrationTests
             var response = await _client.PostAsJsonAsync("/api/messages", command);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+
+            var body = await response.Content.ReadAsStringAsync();
+
+            response.StatusCode.Should().Be(
+                HttpStatusCode.OK,
+                $"Réponse API : {body}");
         }
 
         [Fact]
