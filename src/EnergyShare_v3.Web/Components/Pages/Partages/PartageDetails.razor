@@ -42,7 +42,7 @@ else if (!string.IsNullOrWhiteSpace(errorMessage))
 else if (partage is not null)
 {
     @* =========================================================
-       CARD : PROGRESSION DU DOSSIER  admin du partage.
+       CARD : PROGRESSION DU DOSSIER  admin du partage.  lié au statut du dossier ( cf. backend)
        ========================================================= *@
    
     
@@ -66,10 +66,10 @@ else if (partage is not null)
                     </div>
                     @* =========================================================
                        CHECKLIST DES ÉTAPES DU DOSSIER   : ! à revoir TODO  : 
-                       - participants :  Vert si minimum atteint.
-                        - perimetre  : TODO : progression périmètre
-                        - transmission de donnés : TODO 
-                        - validation GRD : Vert si le partage est En attente validation ou Actif
+                       -1) Création du partage 
+                       - 2) participants :  Vert si minimum atteint.
+                        - 3) perimetre  : TODO : progression périmètre 
+                        - 4) validation GRD : Vert si le partage est En attente validation ou Actif
 
                        ========================================================= *@
 
@@ -79,8 +79,10 @@ else if (partage is not null)
                         <li class="@(partage.NombreParticipants >= 2 ? "text-success" : "text-muted")">
                             @(partage.NombreParticipants >= 2 ? "✔" : "○") Participants
                         </li>
-                        <li class="text-muted">○ Périmètre électrique</li>
-                        <li class="text-muted">○ Transmission des données</li>
+                        <li class="@(PerimetreConnu ? "text-success" : "text-muted")">
+                            @(PerimetreConnu ? "✔" : "○") Périmètre électrique
+                        </li>
+                            
                         <li class="@(partage.Statut == PartageEnergieStatutType.EnAttenteValidation || partage.Statut == PartageEnergieStatutType.Actif ? "text-success" : "text-muted")">
                             @(partage.Statut == PartageEnergieStatutType.EnAttenteValidation || partage.Statut == PartageEnergieStatutType.Actif ? "✔" : "○") Validation GRD
                         </li>
@@ -439,6 +441,10 @@ else if (partage is not null)
     private bool isPerimetreLoading;
     private bool HasDemandePerimetreEnAttente =>
     demandePerimetre?.ResponseStatus == "EnAttente"; //permet de désativer le bouton si une dde est en attente 
+
+    private bool PerimetreConnu =>
+    partage?.EnergieType == PartageEnergieType.MemeBatiment
+    || demandePerimetre?.PerimetreConfirme is not null;
 
     // Variables pour la dde  de validation GRD
     private DemandeValidationPartageDto? demandeValidation;
