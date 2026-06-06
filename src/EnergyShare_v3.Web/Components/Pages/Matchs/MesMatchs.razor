@@ -11,20 +11,23 @@
 <PageTitle>Mes matchs</PageTitle>
 
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
-            <h2 class="fw-bold mb-1">Mes matchs sauvegardés</h2>
-            <p class="text-muted mb-0">Retrouvez les matchs que vous avez enregistrés.</p>
+            <h2 class="fw-bold mb-1">Mes matchs</h2>
+            <p class="text-muted mb-0 d-none d-md-block">
+                Retrouvez vos contacts sauvegardés.
+            </p>
         </div>
 
-        <a class="btn btn-success rounded-pill" href="/matching/search">
+        <a class="btn btn-success rounded-pill align-self-start align-self-md-center"
+           href="/matching/search">
             Trouver un match
         </a>
     </div>
 
-    <div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card shadow-sm border-0 rounded-4 mb-4 matches-summary-card">
         <div class="card-body">
-            <div class="text-muted small">Matchs sauvegardés</div>
+            <div class="text-muted small">Total</div>
             <div class="display-6 fw-bold">@SavedMatches.Count</div>
         </div>
     </div>
@@ -46,17 +49,17 @@
     }
     else
     {
-        <div class="card shadow-sm border-0 rounded-4">
+        <div class="card shadow-sm border-0 rounded-4 matches-card">
             <div class="card-body">
-                <h5 class="fw-bold mb-3">Liste de mes matchs</h5>
+               
+                <h5 class="fw-bold mb-3">@MatchesTitle</h5>
 
-                <div class="table-responsive">
+                <div class="table-responsive saved-match-table">
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Vendeur</th>
-                                <th>Acheteur</th>
+                                @* <th>Date</th> *@
+                                <th>@ContactColumnLabel</th>
                                 <th>Distance</th>
                                 <th></th>
                             </tr>
@@ -65,27 +68,38 @@
                             @foreach (var match in SavedMatches)
                             {
                                 <tr>
-                                    <td>@match.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
-                                    <td>@match.PrenomVendeurMatch</td>
-                                    <td>@match.PrenomAcheteurMatch</td>
-                                    <td><strong>@match.DistanceCalculee km</strong></td>
-                                    <td class="text-end">
-                                       @*  <button class="btn btn-outline-primary btn-sm rounded-pill" disabled>
-                                            Contacter
-                                        </button> *@
+                                    @* <td data-label="Date">@match.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td> *@
+                                    <td data-label="@ContactColumnLabel">
+                                        <strong>@match.ContactPrenom</strong>
+                                    </td>
+                                    <td data-label="Distance">
+                                        <strong>@FormatDistance(match.DistanceCalculee)</strong>
+                                    </td>
+                                    @* <td class="text-end actions-cell">
                                         <a class="btn btn-outline-primary btn-sm rounded-pill"
                                            href="@($"/messages/send?to={match.ContactUserId}&prenom={Uri.EscapeDataString(match.ContactPrenom)}&matchId={match.MatchId}")">
                                             Contacter
                                         </a>
+                                    </td> *@
+                                    <td class="text-end actions-cell">
+                                        <a class="contact-link"
+                                           title="Contacter @match.ContactPrenom"
+                                           aria-label="Contacter @match.ContactPrenom"
+                                           href="@($"/messages/send?to={match.ContactUserId}&prenom={Uri.EscapeDataString(match.ContactPrenom)}&matchId={match.MatchId}")">
+                                            ✉
+                                        </a>
                                     </td>
+
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
+           
 
-                <p class="text-muted small mt-3 mb-0">
-                    Les informations détaillées seront enrichies avec la messagerie et les données anonymisées.
+                @* <p class="text-muted small mt-3 mb-0"> *@
+                <p class="text-muted small mt-3 mb-0 d-none d-md-block">
+                    Contactez directement vos acheteurs potentiels.
                 </p>
             </div>
         </div>
@@ -108,9 +122,52 @@
             return;
         }
 
-        SavedMatches = result.Value.ToList();
+       // SavedMatches = result.Value.ToList();
+        SavedMatches = result.Value
+         .OrderBy(m => m.DistanceCalculee)
+         .ToList();
         IsLoading = false;
     }
+
+    private static string FormatDistance(decimal distance)
+    {
+        if (distance < 0.05m)
+            return "< 50 m";
+
+        if (distance < 1m)
+            return $"{distance * 1000:N0} m";
+
+        return $"{distance:N1} km";
+    }
+
+    private static string GetMyRoleLabel(SavedMatchSummaryDto match)
+    {
+        // Idéalement à calculer côté backend dans le DTO.
+        // Ici, si ContactUserId correspond au vendeur, l’utilisateur connecté est acheteur.
+        return match.ContactUserId == match.VendeurUserId
+            ? "Vous achetez"
+            : "Vous vendez";
+    }
+
+    private bool CurrentUserIsSeller =>
+    SavedMatches.Any()
+    && SavedMatches.All(m => m.ContactUserId == m.AcheteurUserId);
+
+    private bool CurrentUserIsBuyer =>
+        SavedMatches.Any()
+        && SavedMatches.All(m => m.ContactUserId == m.VendeurUserId);
+
+    private string MatchesTitle =>
+        CurrentUserIsSeller ? "Mes acheteurs potentiels"
+        : CurrentUserIsBuyer ? "Mes vendeurs potentiels"
+        : "Mes matchs sauvegardés";
+
+    private string ContactColumnLabel =>
+        CurrentUserIsSeller ? "Acheteur"
+        : CurrentUserIsBuyer ? "Vendeur"
+        : "Match avec";
+
+  
 
     // private static string ShortId(Guid id)
     //     => id.ToString()[..8];

@@ -29,4 +29,8 @@
     <Folder Include="wwwroot\icons\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="wwwroot\matching.css" />
+  </ItemGroup>
+
 </Project>

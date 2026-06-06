@@ -1,0 +1,123 @@
+﻿/* =========================================================
+   MATCHING - styles communs aux pages Mes matchs / Trouver match
+   ========================================================= */
+
+
+/* ---------- Cartes de la page "Mes matchs" ---------- */
+/* Limite la largeur des cartes pour éviter un tableau trop étiré sur laptop */
+.matches-card,
+.matches-summary-card {
+    max-width: 600px;
+    margin-inline: auto;
+}
+
+
+/* ---------- Tableau "Mes matchs sauvegardés" ---------- */
+
+.saved-match-table table {
+    width: 100%;
+}
+
+.saved-match-table th,
+.saved-match-table td {
+    padding-inline: .75rem;
+}
+
+    /* Colonne action : enveloppe */
+    .saved-match-table th:last-child,
+    .saved-match-table td:last-child {
+        width: 48px;
+        text-align: center;
+    }
+
+
+/* ---------- Carte/tableau "Trouver un match" ---------- */
+/* Plus large car il y a plus de colonnes que dans Mes matchs */
+.match-search-card {
+    max-width: 900px;
+    margin-inline: auto;
+}
+
+.match-search-table table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.match-search-table th,
+.match-search-table td {
+    padding-inline: .5rem;
+}
+
+    /* Colonne actions : étoile + enveloppe */
+    .match-search-table th:last-child,
+    .match-search-table td:last-child {
+        width: 70px;
+        text-align: right;
+    }
+
+.actions-cell {
+    white-space: nowrap;
+}
+
+
+/* ---------- Icônes d’action ---------- */
+
+/* Étoile sauvegarde */
+.save-link,
+.save-link:link,
+.save-link:visited,
+.save-link:hover,
+.save-link:active {
+    color: #ffc107 !important;
+    font-size: 1.5rem;
+    cursor: pointer;
+    text-decoration: none !important;
+    margin-right: .4rem;
+}
+
+/* Enveloppe contacter */
+.contact-link,
+.contact-link:link,
+.contact-link:visited,
+.contact-link:hover,
+.contact-link:active {
+    color: #0d6efd !important;
+    font-size: 1.4rem;
+    text-decoration: none !important;
+}
+
+    /* Petit effet au survol */
+    .save-link:hover,
+    .contact-link:hover {
+        opacity: .75;
+    }
+
+
+/* ---------- Unités dans les en-têtes ---------- */
+/* Exemple : Quantité / kWh ou Prix / €/kWh */
+.table-unit {
+    font-size: .75rem;
+    color: #6c757d;
+    font-weight: 400;
+}
+
+
+/* ---------- Responsive mobile ---------- */
+
+@media (max-width: 768px) {
+
+    .match-search-table table {
+        font-size: .95rem;
+    }
+
+    .match-search-table th,
+    .match-search-table td {
+        padding-inline: .35rem;
+    }
+
+        /* Sur mobile, on masque le statut pour gagner de la place */
+        .match-search-table th:nth-child(5),
+        .match-search-table td:nth-child(5) {
+            display: none;
+        }
+}
