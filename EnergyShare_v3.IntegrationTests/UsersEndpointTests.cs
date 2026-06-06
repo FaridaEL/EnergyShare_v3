@@ -1,6 +1,6 @@
-﻿using FluentAssertions;
+﻿using EnergyShare_v3.IntegrationTests.Common;
+using FluentAssertions;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace EnergyShare_v3.IntegrationTests
@@ -35,12 +35,7 @@ namespace EnergyShare_v3.IntegrationTests
         [Fact]
         public async Task GetMyProfile_WithUserToken_ShouldReturnCurrentUser()
         {
-            var token = await LoginAndGetAccessTokenAsync(
-                "sarah.dupont@example.com",
-                "Test1234");
-
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", token);
+            await TestAuthHelper.AuthenticateAsync(_client, TestUsers.Sarah);
 
             var response = await _client.GetAsync("/api/users/me");
 
@@ -58,12 +53,7 @@ namespace EnergyShare_v3.IntegrationTests
         [Fact]
         public async Task UpdateMyProfile_WithUserToken_ShouldUpdatePhoneNumber()
         {
-            var token = await LoginAndGetAccessTokenAsync(
-                "sarah.dupont@example.com",
-                "Test1234");
-
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", token);
+            await TestAuthHelper.AuthenticateAsync(_client, TestUsers.Sarah);
 
             var updateResponse = await _client.PutAsJsonAsync("/api/users/me", new
             {
@@ -103,32 +93,6 @@ namespace EnergyShare_v3.IntegrationTests
             var response = await _client.GetAsync("/");
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-        }
-
-        private async Task<string> LoginAndGetAccessTokenAsync(string email, string password)
-        {
-            // Les tests utilisent le seed de test : Sarah existe avec le rôle Utilisateur.
-            var response = await _client.PostAsJsonAsync("/api/auth/login", new
-            {
-                email,
-                password
-            });
-
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-            var auth = await response.Content.ReadFromJsonAsync<AuthTestResponse>();
-
-            auth.Should().NotBeNull();
-            auth!.AccessToken.Should().NotBeNullOrWhiteSpace();
-
-            return auth.AccessToken;
-        }
-
-        private sealed class AuthTestResponse
-        {
-            public string AccessToken { get; set; } = string.Empty;
-            public string RefreshToken { get; set; } = string.Empty;
-            public DateTime AccessTokenExpiresAt { get; set; }
         }
 
         private sealed class CurrentUserProfileResponse

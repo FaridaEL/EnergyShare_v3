@@ -64,6 +64,22 @@ namespace EnergyShare_v3.Application.Features.Partage
                     ValidationSeverity.Error));
             }
 
+            //Fix : 1 EAN = 1 partage ( Sf si clôturé) 
+            var pointDejaDansUnPartage = await context.MembresPartage
+            .AnyAsync(mp =>
+                mp.PointAccessId == pointInjectionVendeur.Id
+                && mp.Partage.Statut != PartageEnergieStatutType.Cloture,
+                cancellationToken);
+
+                    if (pointDejaDansUnPartage)
+                    {
+                        return Result<Guid>.Invalid(new ValidationError(
+                            "PointAccess",
+                            "Ce point d’accès appartient déjà à un partage d’énergie. Vous ne pouvez pas créer un nouveau partage avec le même point d’accès.",
+                            "CreatePartage.PointAccessDejaUtilise",
+                            ValidationSeverity.Error));
+                    }
+
 
 
             var result = Domain.Entities.Partages.Partage.Create(

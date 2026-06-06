@@ -157,8 +157,8 @@ namespace EnergyShare_v3.Infrastructure
                     options.Password.RequiredLength = 8;
                     options.Password.RequireUppercase = true;
                     options.Password.RequireDigit = true;
-                    options.Password.RequireLowercase = false;
-                    options.Password.RequireNonAlphanumeric = false;
+                    options.Password.RequireLowercase = true;
+                    options.Password.RequireNonAlphanumeric = true;
 
                     options.Lockout.MaxFailedAccessAttempts = 5; // Protection contre les attaques par force brute.Après 5 échecs, le compte est temporairement verrouillé.
                    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
