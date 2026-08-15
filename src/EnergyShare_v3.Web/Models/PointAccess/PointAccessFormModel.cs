@@ -16,8 +16,10 @@ namespace EnergyShare_v3.Web.Models.PointAccess
         [Required(ErrorMessage = "Le fournisseur est requis.")]
         public string Fournisseur { get; set; } = string.Empty;
 
+        [RegularExpression(@"^1SJ.{0,17}$",ErrorMessage = "Le numéro de compteur doit commencer par 1SJ et contenir maximum 20 caractères.")]
         public string? SmartMeter { get; set; }
 
+        [RegularExpression(@"^5414489\d{11}$",ErrorMessage = "Le code EAN doit commencer par 5414489 et contenir exactement 18 chiffres.")]
         public string? EAN { get; set; }
 
         public bool IsInjectionPoint { get; set; }
