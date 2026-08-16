@@ -12,40 +12,77 @@
 
 <PageTitle>Envoyer un message</PageTitle>
 
-<div class="container py-4">
+<div class="page-shell py-4">
+    <div class="mb-4">
+        <h2 class="page-title mb-1">Envoyer un message</h2>
+        <p class="page-subtitle mb-0">
+            Contactez directement un utilisateur depuis un match.
+        </p>
+    </div>
+   
 
-    <div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card responsive-card shadow-sm border-0 rounded-4 mb-4">
         <div class="card-body">
-            <h5 class="fw-bold mb-3">Nouveau message</h5>
+
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <span class="bi bi-envelope-fill"></span>
+                <h5 class="fw-bold mb-0">Nouveau message</h5>
+            </div>
 
             <div class="row g-3">
-                <div class="col-md-6">
-                    @* TODO : adpater avec le nom de l'utilisateur sélectionné *@
-                    <label class="form-label">Destinataire</label>
-                    <input class="form-control" value="@DestinataireDisplayName" disabled />
+
+                <div class="col-lg-6">
+                    <label class="form-label fw-semibold">
+                        Destinataire
+                    </label>
+
+                    <input class="form-control"
+                           value="@DestinataireDisplayName"
+                           disabled />
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">Objet</label>
-                    <input class="form-control" @bind="NewMessage.ObjetMessage" />
+                <div class="col-lg-6">
+                    <label class="form-label fw-semibold">
+                        Objet
+                    </label>
+
+                    <input class="form-control"
+                           @bind="NewMessage.ObjetMessage" />
                 </div>
 
                 <div class="col-12">
-                    <label class="form-label">Message</label>
-                    <textarea class="form-control" rows="3" @bind="NewMessage.Contenu"></textarea>
+                    <label class="form-label fw-semibold">
+                        Message
+                    </label>
+
+                    <textarea class="form-control"
+                              rows="6"
+                              @bind="NewMessage.Contenu">
+                    </textarea>
                 </div>
 
-                <div class="col-12 text-end">
-                    <button class="btn btn-success rounded-pill" @onclick="SendMessageAsync">
+                <div class="col-12 d-flex justify-content-end gap-2">
+
+                   
+                    <button class="btn btn-energy-action"
+                            @onclick="SendMessageAsync">
+                        <span class="bi bi-send-fill me-1"></span>
                         Envoyer
                     </button>
+
+                    <a href="/messages"
+                       class="btn btn-energy-cancel">
+                        <span class="bi bi-x-lg me-1"></span>
+                        Annuler
+                    </a>
+
                 </div>
+
             </div>
         </div>
     </div>
-
-   
 </div>
+
 
 @code {
     private List<MessageDto> Inbox { get; set; } = [];

@@ -109,10 +109,16 @@
    LAYOUT GLOBAL RESPONSIVE ENERGYSHARE     (Début
    ========================================================= */
 
-.page-shell {
+/*.page-shell {
     width: 100%;
     max-width: 1500px;
     margin: 0 auto;
+    padding-inline: clamp(1rem, 2vw, 2rem);
+}*/
+.page-shell {
+    width: 100%;
+    max-width: none; /*1800px;*/
+    margin: 0;
     padding-inline: clamp(1rem, 2vw, 2rem);
 }
 
@@ -728,4 +734,39 @@ h1:focus {
 }
 /* =========================================================
    KPI - NOMBRE DE MATCHS   : cf. Petit indicateur visuel placé dans l'en-tête du tableau. (fin)
+   ========================================================= */
+
+/* =========================================================
+  Messages (début) 
+   ========================================================= */
+.messages-table {
+    width: 100%;
+}
+    .messages-table .message-date {
+        width: 110px;
+        white-space: nowrap;
+    }
+
+    .messages-table .message-object {
+        width: 180px;
+    }
+
+    .messages-table .message-content {
+        min-width: 360px;
+        width: 100%;
+    }
+
+    .messages-table .message-actions {
+        width: 120px;
+        white-space: nowrap;
+        text-align: center;
+    }
+.message-reply-btn {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+    
+/* =========================================================
+  Messages (Fin) 
    ========================================================= */
