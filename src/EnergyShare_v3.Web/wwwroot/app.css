@@ -25,13 +25,16 @@
     --energy-radius: 12px;
     --energy-radius-large: 18px;
     --energy-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    /* Bordures */
+    --energy-blue-border: #B9D8FF;
+    --energy-green-border: #BDE8CE;
 }
 /* =========================================================
    Variables couleurs chartes graphiques  (Fin)
    ========================================================= */
 
 /* =========================================================
-   BOUTONS - CHARTE GRAPHIQUE ENERGYSHARE    ((Debut)
+   BOUTONS - CHARTE GRAPHIQUE ENERGYSHARE    (Debut)
    ========================================================= */
 
 /* Action : créer, ajouter, modifier, rejoindre */
@@ -87,6 +90,18 @@
      color: #fff;
  }
 
+.btn-energy-edit {
+    background-color: var(--energy-surface);
+    border: 1px solid var(--energy-yellow-dark);
+    color: var(--energy-navy);
+    font-weight: 500;
+}
+ .btn-energy-edit:hover {
+    background-color: var(--energy-yellow);
+    border-color: var(--energy-yellow);
+    color: var(--energy-navy);
+ }
+
 /* =========================================================
   BOUTONS - CHARTE GRAPHIQUE ENERGYSHARE    (FIN)
    ========================================================= */
@@ -98,12 +113,6 @@ html, body {
 a, .btn-link {
     color: #006bb7;
 }
-
-/*.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
-}*/
 
 /*Utilisé dans les anciencs formulaires, on supprimera dès que rempalcer par les boutons EnergyShare*/
 .btn-primary {
@@ -129,15 +138,17 @@ h1:focus {
 }
 
 .valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
+    /*outline: 1px solid #26b050;*/
+    outline: 1px solid var(--energy-green);
 }
 
 .invalid {
-    outline: 1px solid #e50000;
+    outline: 1px solid var(--energy-danger);
 }
 
 .validation-message {
-    color: #e50000;
+    /*color: #e50000;*/
+    color: var(--energy-danger);
 }
 
 .blazor-error-boundary {
@@ -175,11 +186,13 @@ h1:focus {
 }
 
     .network-status.online {
-        background-color: #2ecc71; /* vert */
+        /*background-color: #2ecc71;*/ /* vert */
+        background-color: var(--energy-green);
     }
 
     .network-status.offline {
-        background-color: #e74c3c; /* rouge */
+        /*background-color: #e74c3c;*/ /* rouge */
+        background-color: var(--energy-danger);
     }
 /*Mise en forme section publique homePage*/
 .home-hero {
@@ -210,7 +223,6 @@ h1:focus {
     margin-bottom: 1.5rem !important;
 }
 
-
 /*Mise en forme logo*/
 
 .sidebar-logo {
@@ -220,25 +232,6 @@ h1:focus {
     justify-content: center;
     align-items: center;
 }
-
-/*.brand-block {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}*/
-
-/*.nav-logo {
-    width: 58px;
-    height: 58px;
-    object-fit: contain;
-    background: white;
-    border-radius: 12px;
-    padding: 4px;
-    display: block;
-}*/
-
 .brand-name {
     display: block;
     width: 100%;
@@ -249,20 +242,11 @@ h1:focus {
     text-align: center;
 }
 
-/*Mise en forme branding*/
-/*.card {
-    transition: all 0.2s ease;
-}*/
-/*card plys dynamique*/
- /*.card:hover {
-    
-    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-}*/
-
-
 .brand-card {
-    background: white;
-    border-radius: 18px;
+    /*background: white;
+    border-radius: 18px;*/
+    background: var(--energy-surface);
+    border-radius: var(--energy-radius-large);
     padding: 1.4rem 1.8rem;
     max-width: 570px; /* Ajuster la largeur clé */
     margin-left: auto; /* pousse à droite */
@@ -277,13 +261,6 @@ h1:focus {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.18);
 }
 
-/*.brand-energy {
-    color: #2f80ed;
-}
-
-.brand-share {
-    color: #2ca84a;
-}*/
 .brand-energy {
     color: var(--energy-blue);
 }
@@ -324,9 +301,13 @@ h1:focus {
     margin-bottom: 1rem;
 }
 
-.energy-exclamation {
+/*.energy-exclamation {
     color: #ffd700;
     text-shadow: 1px 1px 0 #1b224f;
+}*/
+.energy-exclamation {
+    color: var(--energy-yellow);
+    text-shadow: 1px 1px 0 var(--energy-navy);
 }
 
 .shortcut-row {
@@ -352,7 +333,9 @@ h1:focus {
 .shortcut-stack .shortcut-card {
      flex: 1;
 }
-/*Page Concept partage Energie*/
+/* =========================================================
+   PAGE CONCEPT       (Debut)
+   ========================================================= */
 
 .concept-page {
     max-width: 1600px;  /*élargir la largeur */
@@ -360,8 +343,10 @@ h1:focus {
 }
 
 .concept-hero {
-    background: linear-gradient(135deg, #f4f1ea 0%, #e7f1ff 100%);
-    border-radius: 20px;
+    /* background: linear-gradient(135deg, #f4f1ea 0%, #e7f1ff 100%);
+    border-radius: 20px;*/
+    background: linear-gradient( 135deg, var(--energy-background) 0%, var(--energy-blue-soft) 100% );
+    border-radius: var(--energy-radius-large);
     padding: 2.5rem;
     margin-bottom: 2rem;
 }
@@ -369,7 +354,8 @@ h1:focus {
     .concept-hero h1 {
         font-size: 2.4rem;
         font-weight: 800;
-        color: #111827;
+        /*color: #111827;*/
+        color: var(--energy-text);
     }
 
 .concept-section {
@@ -384,20 +370,26 @@ h1:focus {
 
 .concept-card,
 .benefit-card {
-    background: white;
+    /*background: white;
     border-radius: 18px;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04);*/
+    background: var(--energy-surface);
+    border-radius: var(--energy-radius-large);
+    border: 1px solid var(--energy-border);
+    box-shadow: var(--energy-shadow);
     padding: 1.6rem;
     height: 100%;
-    border: 1px solid rgba(0,0,0,0.06);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
 }
 
 .concept-number {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: #ffd700;
-    color: #1b224f;
+    /*background: #ffd700;
+    color: #1b224f;*/
+    background: var(--energy-yellow);
+    color: var(--energy-navy);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -416,8 +408,10 @@ h1:focus {
 }
 
 .concept-highlight {
-    background: #1b224f;
-    color: white;
+    /*background: #1b224f;
+    color: white;*/
+    background: var(--energy-navy);
+    color: var(--energy-surface);
     border-radius: 20px;
     padding: 2rem;
 }
@@ -428,10 +422,15 @@ h1:focus {
     object-fit: contain;
     border-radius: 20px;
     padding: 10px;
-    background: white;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    /*background: white;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);*/
+    background: var(--energy-surface);
+    box-shadow: var(--energy-shadow);
 }
 
+/* =========================================================
+   PAGE CONCEPT       (Fin)
+   ========================================================= */
 
 /*menu gauche*/
 .nav-link {
@@ -447,22 +446,6 @@ h1:focus {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-/*.nav-section-title {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    color: #9aa3b2;
-    margin: 1rem 1rem 0.5rem;
-}*/
-
-/* Icônes du menu */
-
-
-/*.nav-link span.bi {
-    width: 18px;*/ /* Taille fixe pour alignement propre */
-    /*min-width: 18px;
-    text-align: center;
-    opacity: 0.9;*/ /* Légèrement atténué pour éviter surcharge visuelle */
-/*}*/
     .nav-link span.bi {
         width: 22px;
         min-width: 22px;
@@ -518,15 +501,6 @@ h1:focus {
     display: block;
 }
 
-
-/* Nom de l’application */
-/*.brand-name {
-    color: white;
-    font-size: 1.05rem;
-    font-weight: 700;
-}*/
-
-
 /* Zone scrollable du menu */
 .nav-scrollable {
     padding-top: 0.5rem;
@@ -556,11 +530,6 @@ h1:focus {
     color: var(--energy-navy);
 }
 
-/*.profile-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr)); --> 2 colonnes
-    gap: 1rem 2rem;
-}*/
 .profile-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -583,11 +552,11 @@ h1:focus {
 }
 
 /* Smartphone / petite tablette */
-@media (max-width: 768px) {
+/*@media (max-width: 768px) {
     .profile-grid {
         grid-template-columns: 1fr;
     }
-}
+}*/
 
 /* =========================================================
    PROFIL - AFFICHAGE EN CONSULTATION      (Fin)

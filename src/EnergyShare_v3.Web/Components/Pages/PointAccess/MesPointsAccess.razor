@@ -32,20 +32,9 @@ else
     {
         <div class="alert alert-success">@successMessage</div>
     }
-    <!-- Ajout d'un bouton pour laisser la possibilité d'ajouter un nouveau point d'accès -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Mes points enregistrés</h5>
-
-        <button class="btn btn-primary"
-                type="button"
-                @onclick="ShowCreateForm">
-            <span class="bi bi-plus-circle me-2"></span>
-            Ajouter un point d'accès
-        </button>
-    </div>
-
-     <!-- Liste des points d'accès -->
-    @if (pointsAccess.Count == 0)
+      <!-- Liste des points d'accès -->
+    <h5 class="mb-3">Mes points enregistrés</h5>
+   @if (pointsAccess.Count == 0)
     {
         <div class="alert alert-info">
             Aucun point d'accès enregistré.
@@ -70,13 +59,15 @@ else
 
                             @if (point.EstActif)
                             {
-                                <button class="btn btn-outline-primary btn-sm me-2"
+                                <button class="btn btn-energy-edit btn-sm me-2"
                                         @onclick="() => EditAsync(point.Id)">
+                                    <span class="bi bi-pencil-fill me-1"></span>
                                     Modifier
                                 </button>
 
-                                <button class="btn btn-outline-danger btn-sm"
+                                <button class="btn btn-energy-danger btn-sm"
                                         @onclick="() => DeactivateAsync(point.Id)">
+                                    <span class="bi bi-x-circle me-1"></span>
                                     Désactiver
                                 </button>
                             }
@@ -87,6 +78,29 @@ else
         </div>
     }
 
+    <!-- Ajout d'un bouton pour laisser la possibilité d'ajouter un nouveau point d'accès -->
+   @*  <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Mes points enregistrés</h5>
+
+        <button class="btn btn-primary"
+                type="button"
+                @onclick="ShowCreateForm">
+            <span class="bi bi-plus-circle me-2"></span>
+            Ajouter un point d'accès
+        </button>
+    </div> *@
+    @if (!showForm)
+{
+    <div class="mt-3 mb-4">
+        <button class="btn btn-energy-action"
+                type="button"
+                @onclick="ShowCreateForm">
+            <span class="bi bi-plus-circle-fill me-1"></span>
+            Ajouter un point d'accès
+        </button>
+    </div>
+}
+    
     <!-- Formulaire création / modification -->
 
     @if (showForm)
@@ -154,7 +168,6 @@ else
                     </div>
 
 
-
                     <div class="form-check mb-3">
                         <InputCheckbox class="form-check-input" @bind-Value="formModel.IsInjectionPoint" />
                         <label class="form-check-label">
@@ -162,19 +175,19 @@ else
                         </label>
                     </div>
 
-                    <button class="btn btn-primary" type="submit">
-                        @(isEditMode ? "Enregistrer les modifications" : "Ajouter")
-                    </button>
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-energy-save"
+                                type="submit">
+                            <span class="bi bi-check-lg me-1"></span>
+                            Enregistrer
+                        </button>
 
-                    @* @if (isEditMode)
-                    {
-                        <button class="btn btn-outline-secondary ms-2" type="button" @onclick="ResetForm">
+                        <button class="btn btn-energy-cancel"
+                                type="button"
+                                @onclick="ResetForm">
                             Annuler
                         </button>
-                    } *@
-                    <button class="btn btn-outline-secondary ms-2" type="button" @onclick="ResetForm">
-                        Annuler
-                    </button>
+                    </div>
                 </EditForm>
             </div>
         </div>

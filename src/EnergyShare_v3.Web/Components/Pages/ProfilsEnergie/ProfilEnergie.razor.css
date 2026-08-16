@@ -5,13 +5,6 @@
     margin-top: 1.5rem;
 }
 
-/*.energy-profile-card {
-    border: 1px solid #d9e2ec;
-    border-radius: 18px;
-    padding: 1.5rem;
-    background: #ffffff;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-}*/
 .energy-profile-card {
     border: 1px solid var(--energy-border);
     border-radius: var(--energy-radius-large);
@@ -20,22 +13,15 @@
     box-shadow: var(--energy-shadow);
 }
 
-/*.seller-card {
-    border-color: #b9d8ff;
-    background: linear-gradient(180deg, #f4f9ff 0%, #ffffff 100%);
-}*/
-
-/*.buyer-card {
-    border-color: #bde8ce;
-    background: linear-gradient(180deg, #f4fff8 0%, #ffffff 100%);
-}*/
 .seller-card {
-    border-color: #b9d8ff;
+    /*border-color: #b9d8ff;*/
+    border-color: var(--energy-blue-border);
     background: linear-gradient( 180deg, var(--energy-blue-soft) 0%, var(--energy-surface) 100% );
 }
 
 .buyer-card {
-    border-color: #bde8ce;
+    /*border-color: #bde8ce;*/
+    border-color: var(--energy-green-border);
     background: linear-gradient( 180deg, var(--energy-green-soft) 0%, var(--energy-surface) 100% );
 }
 
@@ -66,15 +52,6 @@
     font-size: 1.4rem;
 }
 
-/*.seller-icon {
-    background: #e7f1ff;
-    color: #0d6efd;
-}
-
-.buyer-icon {
-    background: #e8f8ef;
-    color: #2dcc70;
-}*/
 .seller-icon {
     background: var(--energy-blue-soft);
     color: var(--energy-blue);
@@ -92,14 +69,6 @@
 .buyer-card h5 {
     color: var(--energy-green-dark);
 }
-
-/*.seller-card h5 {
-    color: #0d6efd;
-}
-
-.buyer-card h5 {
-    color: #1b8f4d;
-}*/
 
 @media (max-width: 768px) {
     .energy-profile-grid {
@@ -122,25 +91,15 @@
     font-size: 1.2rem;
     line-height: 1;
 }
-
-/*.seller-help {
-    border: 1px solid #b9d8ff;
-    background: #f4f9ff;
-    color: #174ea6;
-}
-
-.buyer-help {
-    border: 1px solid #bde8ce;
-    background: #f4fff8;
-    color: #1b8f4d;
-}*/
 .seller-help {
-    border: 1px solid color-mix(in srgb, var(--energy-blue) 35%, white);
+    /*border: 1px solid color-mix(in srgb, var(--energy-blue) 35%, white);*/
+    border: 1px solid var(--energy-blue-border);
     background: var(--energy-blue-soft);
     color: var(--energy-blue-dark);
 }
 .buyer-help {
-    border: 1px solid color-mix(in srgb, var(--energy-green) 35%, white);
+    /*border: 1px solid color-mix(in srgb, var(--energy-green) 35%, white);*/
+    border: 1px solid var(--energy-green-border);
     background: var(--energy-green-soft);
     color: var(--energy-green-dark);
 }
