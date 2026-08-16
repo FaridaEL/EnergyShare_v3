@@ -100,6 +100,7 @@ else if (profile is not null)
     }
     else if (editModel is not null)
     {
+        <div class="profile-section">
         <EditForm Model="editModel" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
             <ValidationSummary />
@@ -146,15 +147,19 @@ else if (profile is not null)
                 <button class="btn btn-energy-cancel"
                         type="button"
                         @onclick="CancelEdit">
+                    <span class="bi bi-x-lg me-1"></span>
                     Annuler
                 </button>
             </div>
         </EditForm>
+        </div>
     }
 
 @if (!string.IsNullOrWhiteSpace(successMessage))
     {
-        <div class="alert alert-success mt-3">@successMessage</div>
+        <div class="alert alert-success mt-3">
+            @successMessage
+        </div>
     }
 }
 

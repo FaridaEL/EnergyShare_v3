@@ -77,18 +77,6 @@ else
             }
         </div>
     }
-
-    <!-- Ajout d'un bouton pour laisser la possibilité d'ajouter un nouveau point d'accès -->
-   @*  <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Mes points enregistrés</h5>
-
-        <button class="btn btn-primary"
-                type="button"
-                @onclick="ShowCreateForm">
-            <span class="bi bi-plus-circle me-2"></span>
-            Ajouter un point d'accès
-        </button>
-    </div> *@
     @if (!showForm)
 {
     <div class="mt-3 mb-4">
@@ -129,16 +117,6 @@ else
                         <label class="form-label">Fournisseur</label>
                         <InputText class="form-control" @bind-Value="formModel.Fournisseur" />
                     </div>
-
-                   @*  <div class="mb-3">
-                        <label class="form-label">Numéro compteur intelligent</label>
-                        <InputText class="form-control" @bind-Value="formModel.SmartMeter" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Code EAN</label>
-                        <InputText class="form-control" @bind-Value="formModel.EAN" />
-                    </div> *@
 
                    @*  experience utilisateur : ajout de texte d'aide pour guider l'utilisateur sur le format attendu pour le numéro de compteur intelligent et le code EAN. *@
 
@@ -185,6 +163,7 @@ else
                         <button class="btn btn-energy-cancel"
                                 type="button"
                                 @onclick="ResetForm">
+                            <span class="bi bi-x-lg me-1"></span>
                             Annuler
                         </button>
                     </div>
@@ -193,7 +172,6 @@ else
         </div>
     }
     
-
 }
 
 @code {
@@ -336,7 +314,6 @@ else
         {
          SmartMeter = "1SJ",
             EAN = "5414489"
-        
         };
         isEditMode = false;
         showForm = true;

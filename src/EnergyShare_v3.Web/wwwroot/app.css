@@ -300,11 +300,6 @@ h1:focus {
     font-weight: 700;
     margin-bottom: 1rem;
 }
-
-/*.energy-exclamation {
-    color: #ffd700;
-    text-shadow: 1px 1px 0 #1b224f;
-}*/
 .energy-exclamation {
     color: var(--energy-yellow);
     text-shadow: 1px 1px 0 var(--energy-navy);
@@ -370,10 +365,6 @@ h1:focus {
 
 .concept-card,
 .benefit-card {
-    /*background: white;
-    border-radius: 18px;
-    border: 1px solid rgba(0,0,0,0.06);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.04);*/
     background: var(--energy-surface);
     border-radius: var(--energy-radius-large);
     border: 1px solid var(--energy-border);
@@ -386,8 +377,6 @@ h1:focus {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    /*background: #ffd700;
-    color: #1b224f;*/
     background: var(--energy-yellow);
     color: var(--energy-navy);
     display: flex;
@@ -408,8 +397,6 @@ h1:focus {
 }
 
 .concept-highlight {
-    /*background: #1b224f;
-    color: white;*/
     background: var(--energy-navy);
     color: var(--energy-surface);
     border-radius: 20px;
@@ -422,8 +409,6 @@ h1:focus {
     object-fit: contain;
     border-radius: 20px;
     padding: 10px;
-    /*background: white;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);*/
     background: var(--energy-surface);
     box-shadow: var(--energy-shadow);
 }
@@ -489,7 +474,6 @@ h1:focus {
     gap: 0.4rem;
 }
 
-
 /* Logo */
 .nav-logo {
     width: 72px; /* Taille maîtrisée */
@@ -505,7 +489,6 @@ h1:focus {
 .nav-scrollable {
     padding-top: 0.5rem;
 }
-
 
 /* =========================================================
    PROFIL - AFFICHAGE EN CONSULTATION      (Debut)
@@ -550,14 +533,6 @@ h1:focus {
 .profile-value {
     color: var(--energy-text);
 }
-
-/* Smartphone / petite tablette */
-/*@media (max-width: 768px) {
-    .profile-grid {
-        grid-template-columns: 1fr;
-    }
-}*/
-
 /* =========================================================
    PROFIL - AFFICHAGE EN CONSULTATION      (Fin)
    ========================================================= */
