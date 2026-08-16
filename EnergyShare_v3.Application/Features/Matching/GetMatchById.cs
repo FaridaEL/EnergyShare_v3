@@ -74,8 +74,7 @@ namespace EnergyShare_v3.Application.Features.Matching
                         : null,
 
                     // Disponibilité du contact
-                    // Si l'utilisateur connecté est vendeur,
-                    // on vérifie la disponibilité du point acheteur.
+                    // Si l'utilisateur connecté est vendeur, on vérifie la disponibilité du point acheteur.
                     // Sinon, on vérifie celle du point vendeur.
                     m.PointAccessVendeur.UserId == currentUserId
                         ? !m.PointAccessAcheteur.Membres.Any()

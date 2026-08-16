@@ -16,6 +16,7 @@
 
 <h3>Créer un partage</h3>
 
+<div class="page-shell py-4">
 <p class="text-muted">
     Créez un partage d’énergie. Vous serez considéré comme l’interlocuteur unique.
 </p>
@@ -37,7 +38,9 @@ else
             Vous devez d’abord posséder un point d’accès d’injection pour créer un partage.
         </div>
 
-        <a href="/mes-points-access" class="btn btn-primary">
+        <a href="/mes-points-access"
+           class="btn btn-energy-action">
+            <span class="bi bi-plus-circle-fill me-1"></span>
             Créer mon point d’accès
         </a>
     }
@@ -71,18 +74,36 @@ else
                         💡 Après la création, vous pourrez ajouter les membres du partage.
                     </div>
 
-                    <button class="btn btn-primary" type="submit" disabled="@isSaving">
+                    @* <button class="btn btn-primary" type="submit" disabled="@isSaving">
                         @(isSaving ? "Création..." : "Créer le partage")
                     </button>
 
                     <a href="/partages/my" class="btn btn-outline-secondary ms-2">
                         Annuler
-                    </a>
+                    </a> *@
+                    <div class="d-flex gap-2 mt-3">
+
+                        <button class="btn btn-energy-action"
+                                type="submit"
+                                disabled="@isSaving">
+                            <span class="bi bi-plus-circle-fill me-1"></span>
+                            @(isSaving ? "Création..." : "Créer le partage")
+                        </button>
+
+                        @* <a href="/partages/my"
+                           class="btn btn-energy-cancel">
+                            <span class="bi bi-x-lg me-1"></span>
+                            Annuler
+                        </a> *@
+
+                    </div>
                 </EditForm>
             </div>
         </div>
     }
 }
+
+</div>
 
 @code {
     private bool isLoading = true;
@@ -136,6 +157,4 @@ else
         // Navigation.NavigateTo($"/partages/my");
         Navigation.NavigateTo($"/partages/{result.Value}");
     }
-
-    
 }
