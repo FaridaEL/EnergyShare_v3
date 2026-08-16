@@ -42,24 +42,6 @@ namespace EnergyShare_v3.Application.Features.ProfilEnergie
                 select pe
             ).CountAsync(cancellationToken);
 
-
-
-            // 2. Cherche le profil énergie lié à son point d'accès
-            /*var profil = await context.ProfilsEnergie
-                .AsNoTracking()
-                .Where(pe => pe.PointAccess.UserId == userId)
-                .Select(pe => new ProfilEnergieDetailDto(
-                    pe.Id,
-                    pe.DemandeEnergie_kWh,
-                    pe.OffreEnergie_kWh,
-                    pe.PrixAchatCible_Eur,
-                    pe.PrixVenteCible_Eur,
-                    pe.PointAccessId,
-                    pe.PointAccess.UserId,
-                    pe.Audit.CreatedAt,
-                    pe.Audit.UpdatedAt
-                ))
-                .FirstOrDefaultAsync(cancellationToken);  */
             var profil = await (
                from pe in context.ProfilsEnergie.AsNoTracking()
                join pa in context.PointAccesses.AsNoTracking()
