@@ -1,3 +1,96 @@
+/* =========================================================
+   Variables couleurs chartes graphiques EnergyShare  (Debut)
+   ========================================================= */
+:root {
+    /* Couleurs principales EnergyShare */
+    --energy-blue: #2F80ED;
+    --energy-blue-dark: #2368C4;
+    --energy-green: #2CA84A;
+    --energy-green-dark: #1B8F4D;
+    --energy-yellow: #F4C430;
+    --energy-yellow-dark: #DFAF18;
+    --energy-navy: #2C3E50;
+    /* Etats */
+    --energy-danger: #DC3545;
+    /* Neutres */
+    --energy-text: #212529;
+    --energy-text-muted: #6C757D;
+    --energy-border: #DEE2E6;
+    --energy-surface: #FFFFFF;
+    --energy-background: #F8F9FA;
+    /* Couleurs de fond légères */
+    --energy-blue-soft: #F4F9FF;
+    --energy-green-soft: #F4FFF8;
+    /* Design */
+    --energy-radius: 12px;
+    --energy-radius-large: 18px;
+    --energy-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+/* =========================================================
+   Variables couleurs chartes graphiques  (Fin)
+   ========================================================= */
+
+/* =========================================================
+   BOUTONS - CHARTE GRAPHIQUE ENERGYSHARE    ((Debut)
+   ========================================================= */
+
+/* Action : créer, ajouter, modifier, rejoindre */
+.btn-energy-action {
+    background-color: var(--energy-yellow);
+    border: 1px solid var(--energy-yellow);
+    color: var(--energy-navy);
+    font-weight: 600;
+}
+
+.btn-energy-action:hover {
+   background-color: var(--energy-yellow-dark);
+   border-color: var(--energy-yellow-dark);
+   color: var(--energy-navy);
+   }
+
+/* Sauvegarde : enregistrer les données */
+.btn-energy-save {
+    background-color: var(--energy-blue);
+    border: 1px solid var(--energy-blue);
+    color: #fff;
+    font-weight: 600;
+}
+
+ .btn-energy-save:hover {
+    background-color: var(--energy-blue-dark);
+    border-color: var(--energy-blue-dark);
+    color: #fff;
+    }
+
+/* Action secondaire : annuler, retour */
+.btn-energy-cancel {
+    background-color: var(--energy-surface);
+    border: 1px solid var(--energy-text-muted);
+    color: var(--energy-text-muted);
+    font-weight: 500;
+}
+ .btn-energy-cancel:hover {
+    background-color: var(--energy-background);
+    color: var(--energy-navy);
+  }
+
+/* Action destructive */
+.btn-energy-danger {
+    background-color: var(--energy-surface);
+    border: 1px solid var(--energy-danger);
+    color: var(--energy-danger);
+}
+
+ .btn-energy-danger:hover {
+     background-color: var(--energy-danger);
+     border-color: var(--energy-danger);
+     color: #fff;
+ }
+
+/* =========================================================
+  BOUTONS - CHARTE GRAPHIQUE ENERGYSHARE    (FIN)
+   ========================================================= */
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
@@ -6,10 +99,21 @@ a, .btn-link {
     color: #006bb7;
 }
 
-.btn-primary {
+/*.btn-primary {
     color: #fff;
     background-color: #1b6ec2;
     border-color: #1861ac;
+}*/
+
+/*Utilisé dans les anciencs formulaires, on supprimera dès que rempalcer par les boutons EnergyShare*/
+.btn-primary {
+    color: #fff;
+    background-color: var(--energy-blue);
+    border-color: var(--energy-blue);
+}
+.btn-primary:hover {
+    background-color: var(--energy-blue-dark);
+    border-color: var(--energy-blue-dark);
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
@@ -92,8 +196,10 @@ h1:focus {
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    background: #ffd700;
-    color: #1b224f;
+    /*background: #ffd700;
+    color: #1b224f;*/
+    background: var(--energy-yellow);
+    color: var(--energy-navy);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -171,12 +277,19 @@ h1:focus {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.18);
 }
 
-.brand-energy {
+/*.brand-energy {
     color: #2f80ed;
 }
 
 .brand-share {
     color: #2ca84a;
+}*/
+.brand-energy {
+    color: var(--energy-blue);
+}
+
+.brand-share {
+    color: var(--energy-green);
 }
 
 .brand-heading-row {
@@ -195,7 +308,7 @@ h1:focus {
 .brand-underline {
     height: 4px;
     flex: 1;
-    background: linear-gradient(90deg, #2f80ed 0%, #2f80ed 40%, #2ca84a 100%);
+    background: linear-gradient(90deg, var(--energy-blue) 0%, var(--energy-blue) 40%, var(--energy-green) 100%);
     /*background: linear-gradient(90deg, #2f80ed, #2ca84a, #b832c4);  */
     border-radius: 999px;
 }
@@ -418,3 +531,64 @@ h1:focus {
 .nav-scrollable {
     padding-top: 0.5rem;
 }
+
+
+/* =========================================================
+   PROFIL - AFFICHAGE EN CONSULTATION      (Debut)
+   ========================================================= */
+
+.profile-section {
+    max-width: 900px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    background-color: var(--energy-surface);
+    border: 1px solid var(--energy-border);
+    border-radius: var(--energy-radius);
+}
+
+.profile-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--energy-navy);
+}
+
+/*.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); --> 2 colonnes
+    gap: 1rem 2rem;
+}*/
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+.profile-field {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.profile-label {
+    font-weight: 600;
+    color: var(--energy-text-muted);
+}
+
+.profile-value {
+    color: var(--energy-text);
+}
+
+/* Smartphone / petite tablette */
+@media (max-width: 768px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================================
+   PROFIL - AFFICHAGE EN CONSULTATION      (Fin)
+   ========================================================= */
