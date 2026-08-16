@@ -11,10 +11,12 @@
 
 <PageTitle>Mes messages</PageTitle>
 
-<div class="container py-4">
+<div class="page-shell py-4">
     <div class="mb-4">
-        <h2 class="fw-bold mb-1">Mes messages</h2>
-        <p class="text-muted mb-0">Consultez vos échanges avec vos matchs.</p>
+        <h2 class="page-title mb-1">Mes messages</h2>
+        <p class="page-subtitle mb-0">
+            Consultez vos échanges avec vos matchs.
+        </p>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(AlertMessage))
@@ -57,21 +59,23 @@
         else
         {
             <div class="card shadow-sm border-0 rounded-4">
-                <div class="card-body table-responsive">
-                    <table class="table align-middle">
+                <div class="card-body">
+
+                    <div class="table-responsive">
+                        <table class="table align-middle responsive-table messages-table">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Objet</th>
-                                <th>Contenu</th>
-                                <th>Contact</th>
-                                <th>Statut</th>
+                                   <th class="message-date">Date</th>
+                                   <th>Type</th>
+                                    <th class="message-object">Objet</th>
+                                    <th class="message-content">Contenu</th>
+                                    <th>Contact</th>
+                                    <th>Statut</th>
 
                                 @* Les actions n'ont de sens que pour les messages reçus *@
                                 @if (isInbox)
                                 {
-                                    <th class="text-end">Actions</th>
+                                        <th class="message-actions">Actions</th>
                                 }
                             </tr>
                         </thead>
@@ -80,7 +84,9 @@
                             @foreach (var message in messages)
                             {
                                 <tr>
-                                    <td>@message.DateEnvoi.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td class="message-date">
+                                            @message.DateEnvoi.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                        </td>
 
                                     <td>
                                         @if (isInbox)
@@ -93,8 +99,13 @@
                                         }
                                     </td>
 
-                                    <td>@message.ObjetMessage</td>
-                                    <td>@message.Contenu</td>
+                                        <td class="message-object">
+                                            @message.ObjetMessage
+                                        </td>
+
+                                        <td class="message-content">
+                                            @message.Contenu
+                                        </td>
 
                                     @* Inbox : contact = expéditeur / Outbox : contact = destinataire *@
                                     <td>@(isInbox ? message.NomExpediteur : message.NomDestinataire)</td>
@@ -112,16 +123,18 @@
 
                                     @if (isInbox)
                                     {
-                                        <td class="text-end">
-                                            <button class="btn btn-outline-primary btn-sm rounded-pill me-2"
-                                                    @onclick="() => ReplyTo(message)">
-                                                Répondre
-                                            </button>
+                                            <td class="message-actions">
+                                                <button class="btn btn-energy-action btn-sm message-reply-btn"
+                                                        @onclick="() => ReplyTo(message)">
+                                                    <span class="bi bi-reply-fill me-1"></span>
+                                                    Répondre
+                                                </button>
 
                                             @if (!message.IsLu)
                                             {
-                                                <button class="btn btn-outline-success btn-sm rounded-pill"
+                                                <button class="btn btn-energy-cancel btn-sm"
                                                         @onclick="() => MarkAsReadAsync(message.Id)">
+                                                    <span class="bi bi-check2 me-1"></span>
                                                     Marquer lu
                                                 </button>
                                             }
@@ -132,6 +145,8 @@
                         </tbody>
                     </table>
                 </div>
+                </div>
+
             </div>
         }
     }

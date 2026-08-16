@@ -118,16 +118,16 @@ else if (partage is not null)
        CARD : DONNÉES DU PARTAGE    : métadonnées + informations éditables du partage.
        ========================================================= *@
 
-    <div class="card mb-3">
+    @* <div class="card mb-3">
         <div class="card-header fw-bold">
             Données du partage
         </div>
 
-        <div class="card-body">
+        <div class="card-body"> *@
             @* =========================================================
                MÉTADONNÉES DU DOSSIER    : non éditable mais mise à jour auto 
                ========================================================= *@
-            <div class="metadata-box mb-3">
+            @* <div class="metadata-box mb-3">
                 <div>
                     <span class="metadata-label">Créé le :</span>
                     <span>@partage.CreatedAt.ToShortDateString()</span>
@@ -146,14 +146,14 @@ else if (partage is not null)
 
             <p class="text-muted mb-3">
                 Cette zone vous permet de compléter les informations de votre partage avant de demander une validation au GRD (Sibelga).
-            </p>
+            </p> *@
 
             @* =========================================================
                MÉTADONNÉES DU DOSSIER    : éditable 
                TODO : en cas de modification il faut idéalement dder une validation 
                TODO : déterminer quel élements sont éditables ou pas 
                ========================================================= *@
-            <div class="row g-3">
+           @*  <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Nom du partage</label>
                     <InputText class="form-control"
@@ -194,7 +194,286 @@ else if (partage is not null)
                 </div>
             </div>
         </div>
+    </div> *@
+
+    @* =========================================================
+   CARD : DONNÉES DU PARTAGE
+
+   Fonctionnement :
+   - par défaut, les informations sont affichées en consultation ;
+   - si l'utilisateur possède les droits de modification,
+     un bouton "Modifier le partage" est proposé ;
+   - les champs éditables ne sont affichés qu'après ce clic.
+   ========================================================= *@
+
+    <div class="card mb-3">
+
+        <div class="card-header fw-bold">
+            Données du partage
+        </div>
+
+        <div class="card-body">
+
+            @* =====================================================
+           MÉTADONNÉES DU DOSSIER
+           Données informatives, toujours en lecture seule.
+           ===================================================== *@
+
+            <div class="metadata-box mb-3">
+
+                <div>
+                    <span class="metadata-label">Créé le :</span>
+                    <span>@partage.CreatedAt.ToShortDateString()</span>
+                </div>
+
+                <div>
+                    <span class="metadata-label">Dernière modification le :</span>
+                    <span>@FormatDate(partage.UpdatedAt)</span>
+                </div>
+
+                <div>
+                    <span class="metadata-label">Participants :</span>
+                    <span>@partage.NombreParticipants</span>
+                </div>
+
+            </div>
+
+
+            @* =====================================================
+           MODE CONSULTATION
+           Les données sont affichées mais ne sont pas éditables.
+           ===================================================== *@
+
+            @if (!isEditMode)
+            {
+                <div class="partage-detail-grid">
+
+                    <div class="partage-detail-field">
+                        <span class="partage-detail-label">
+                            Nom du partage :
+                        </span>
+
+                        <span>
+                            @partage.Nom
+                        </span>
+                    </div>
+
+
+                    <div class="partage-detail-field">
+                        <span class="partage-detail-label">
+                            Type de partage :
+                        </span>
+
+                        <span>
+                            @(partage.EnergieType == PartageEnergieType.PairToPair
+                                ? "Pair à pair"
+                                : "Même bâtiment")
+                        </span>
+                    </div>
+
+
+                    <div class="partage-detail-field">
+                        <span class="partage-detail-label">
+                            Date de début :
+                        </span>
+
+                        <span>
+                            @(partage.DateDebut.HasValue
+                                ? partage.DateDebut.Value.ToString("dd/MM/yyyy")
+                                : "Non définie")
+                        </span>
+                    </div>
+
+
+                    <div class="partage-detail-field">
+                        <span class="partage-detail-label">
+                            Date de fin :
+                        </span>
+
+                        <span>
+                            @(partage.DateFin.HasValue
+                                ? partage.DateFin.Value.ToString("dd/MM/yyyy")
+                                : "Non définie")
+                        </span>
+                    </div>
+
+
+                    <div class="partage-detail-field partage-detail-description">
+                        <span class="partage-detail-label">
+                            Description :
+                        </span>
+
+                        <span>
+                            @(string.IsNullOrWhiteSpace(partage.Description)
+                                ? "Aucune description"
+                                : partage.Description)
+                        </span>
+                    </div>
+
+                </div>
+
+
+                @* =================================================
+               ACTION : MODIFIER LE PARTAGE
+
+               Visible uniquement si le backend indique
+               que l'utilisateur possède les droits d'édition.
+               ================================================= *@
+
+                @if (partage.CanEdit)
+                {
+                    <div class="mt-4">
+
+                        <button class="btn btn-energy-action"
+                                type="button"
+                                @onclick="EnableEdit">
+
+                            <span class="bi bi-pencil-fill me-1"></span>
+                            Modifier le partage
+
+                        </button>
+
+                    </div>
+                }
+            }
+
+
+            @* =====================================================
+           MODE ÉDITION
+           Les champs deviennent éditables uniquement
+           après avoir cliqué sur "Modifier le partage".
+           ===================================================== *@
+
+            else
+            {
+                <p class="text-muted mb-3">
+                    Modifiez les informations nécessaires puis enregistrez
+                    vos changements.
+                </p>
+
+
+                @* =================================================
+               TODO MÉTIER :
+               Déterminer ultérieurement quels champs peuvent encore
+               être modifiés selon le statut du partage.
+
+               Exemple :
+               - le type de partage pourrait devenir non modifiable
+                 après certaines étapes ;
+               - une modification importante pourrait nécessiter
+                 une nouvelle validation du GRD.
+               ================================================= *@
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Nom du partage
+                        </label>
+
+                        <InputText class="form-control"
+                                   @bind-Value="formModel.Nom" />
+
+                    </div>
+
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Type de partage
+                        </label>
+
+                        <InputSelect class="form-select"
+                                     @bind-Value="formModel.EnergieType">
+
+                            <option value="@PartageEnergieType.PairToPair">
+                                Pair à pair
+                            </option>
+
+                            <option value="@PartageEnergieType.MemeBatiment">
+                                Même bâtiment
+                            </option>
+
+                        </InputSelect>
+
+                    </div>
+
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Date de début
+                        </label>
+
+                        <InputDate class="form-control"
+                                   @bind-Value="formModel.DateDebut" />
+
+                    </div>
+
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Date de fin
+                        </label>
+
+                        <InputDate class="form-control"
+                                   @bind-Value="formModel.DateFin" />
+
+                    </div>
+
+
+                    <div class="col-12">
+
+                        <label class="form-label">
+                            Description
+                        </label>
+
+                        <InputTextArea class="form-control"
+                                       @bind-Value="formModel.Description"
+                                       rows="3" />
+
+                    </div>
+
+                </div>
+
+
+                @* =================================================
+               ACTIONS DU MODE ÉDITION
+
+               Bleu = sauvegarder les données.
+               Gris = abandonner les modifications.
+               ================================================= *@
+
+                <div class="d-flex gap-2 mt-4">
+
+                    <button class="btn btn-energy-save"
+                            type="button"
+                            @onclick="HandleUpdate">
+
+                        <span class="bi bi-check-lg me-1"></span>
+                        Enregistrer
+
+                    </button>
+
+
+                    <button class="btn btn-energy-cancel"
+                            type="button"
+                            @onclick="CancelEdit">
+
+                        <span class="bi bi-x-lg me-1"></span>
+                        Annuler
+
+                    </button>
+
+                </div>
+            }
+
+        </div>
     </div>
+
+
 
     @* =========================================================
    ACTIONS PRINCIPALES DU DOSSIER DE PARTAGE
@@ -206,9 +485,9 @@ else if (partage is not null)
         @* =========================================================
        ENREGISTRER LES MODIFICATIONS DU PARTAGE
        ========================================================= *@
-        <button class="btn btn-primary" @onclick="HandleUpdate" disabled="@(!partage.CanEdit)">
+       @*  <button class="btn btn-primary" @onclick="HandleUpdate" disabled="@(!partage.CanEdit)">
             Enregistrer les modifications
-        </button>
+        </button> *@
         @* =========================================================
        INVITER UN PARTICIPANT
        - Génère un code d’invitation sécurisé.
@@ -217,10 +496,20 @@ else if (partage is not null)
          -> une génération est déjà en cours.
        ========================================================= *@
 
-        <button class="btn btn-outline-primary"
+        @* <button class="btn btn-outline-primary"
                 @onclick="HandleInvitation"
                 disabled="@(!partage.CanEdit || isInvitationLoading)">
             @(isInvitationLoading ? "Préparation..." : "Inviter un participant")
+        </button> *@
+        <button class="btn btn-energy-action"
+                @onclick="HandleInvitation"
+                disabled="@(!partage.CanEdit || isInvitationLoading)">
+
+            <span class="bi bi-person-plus-fill me-1"></span>
+
+            @(isInvitationLoading
+                ? "Préparation..."
+                : "Inviter un participant")
         </button>
 
         @* <button class="btn btn-outline-secondary" disabled="@(!partage.CanEdit || partage.NombreParticipants < 2)">
@@ -238,14 +527,27 @@ else if (partage is not null)
        ========================================================= *@
 
 
-        <button class="btn btn-outline-secondary"
+       @*  <button class="btn btn-outline-secondary"
                 @onclick="HandleDemandePerimetre"
                 disabled="@(!partage.CanEdit 
                             || partage.NombreParticipants < 2 
                             || isPerimetreLoading
                             || HasDemandePerimetreEnAttente )">
             @(isPerimetreLoading ? "Envoi..." : "Demander info périmètre")
-        </button>
+        </button> *@
+         <button class="btn btn-energy-cancel"
+            @onclick="HandleDemandePerimetre"
+            disabled="@(!partage.CanEdit
+                        || partage.NombreParticipants < 2
+                        || isPerimetreLoading
+                        || HasDemandePerimetreEnAttente)">
+
+        <span class="bi bi-info-circle me-1"></span>
+
+        @(isPerimetreLoading
+            ? "Envoi..."
+            : "Demander info périmètre")
+    </button>
 
 
         @* <button class="btn btn-success" disabled="@(!partage.CanEdit || partage.NombreParticipants < 2)">
@@ -267,15 +569,25 @@ else if (partage is not null)
        ========================================================= *@      
             
             
-            <button class="btn btn-success"
+            @* <button class="btn btn-success"
                 @onclick="HandleDemandeValidation"
                 disabled="@(!partage.CanEdit
                                     || partage.NombreParticipants < 2
                                     || isValidationLoading
                                     || partage.Statut == PartageEnergieStatutType.EnAttenteValidation)">
             @GetValidationButtonLabel()
-        </button>
+        </button> *@
+        <button class="btn btn-success"
+                @onclick="HandleDemandeValidation"
+                disabled="@(!partage.CanEdit
+                                    || partage.NombreParticipants < 2
+                                    || isValidationLoading
+                                    || partage.Statut == PartageEnergieStatutType.EnAttenteValidation)">
 
+            <span class="bi bi-check-circle-fill me-1"></span>
+
+            @GetValidationButtonLabel()
+        </button>
 
     </div>
 
@@ -427,8 +739,12 @@ else if (partage is not null)
 
     private bool isLoading = true;
     private string? errorMessage;
-    private PartageDetailsDto? partage;
-    
+    // variaible pour pour gérer l'édition du partage : modifier, enregistrer les modifications
+    //  --> même principe que pour profil
+    private bool isEditMode = false;
+    private PartageDetailsDto? partage;// données lues depuis la base         
+    //private PartageDetailsFormModel? editModel;  // copie utilisée pendant l'édition
+
     //var pour inviter et rejoindre un partage
     private InvitationCodeDto? invitation;
     private string? invitationMessage;
@@ -467,16 +783,19 @@ else if (partage is not null)
         }
 
         partage = result.Value;
-        demandePerimetre = partage.DerniereDemandePerimetre;
+        PopulateFormModel();   // Copie les données du DTO vers le modèle éditable
+        isEditMode = false;       // Par défaut, la page est en mode consultation
+        demandePerimetre = partage.DerniereDemandePerimetre;   // Recharge la dernière demande de périmètre éventuelle
+        
         // Copie du DTO vers le modèle éditable du formulaire.
-        formModel = new PartageDetailsFormModel
-        {
-            Nom = partage.Nom,
-            Description = partage.Description,
-            EnergieType = partage.EnergieType,
-            DateDebut = partage.DateDebut,
-            DateFin = partage.DateFin
-        };
+        // formModel = new PartageDetailsFormModel
+        // {
+        //     Nom = partage.Nom,
+        //     Description = partage.Description,
+        //     EnergieType = partage.EnergieType,
+        //     DateDebut = partage.DateDebut,
+        //     DateFin = partage.DateFin
+        // };
         isLoading = false;
     }
 
@@ -533,14 +852,19 @@ else if (partage is not null)
             formModel.EnergieType,
             formModel.DateDebut,
             formModel.DateFin
-            
+
         );
 
         var result = await Sender.Send(command);
 
         if (!result.IsSuccess)
         {
-            errorMessage = "Erreur lors de la mise à jour.";
+            // errorMessage = "Erreur lors de la mise à jour.";
+            // return;
+             errorMessage = result.Errors.Any()
+                ? string.Join(" | ", result.Errors)
+                : $"Erreur lors de la mise à jour. Statut : {result.Status}";
+
             return;
         }
 
@@ -549,17 +873,18 @@ else if (partage is not null)
         if (refresh.IsSuccess)
         {
             partage = refresh.Value;
-
+            PopulateFormModel();
             // Re-synchroniser le formModel
-            formModel = new PartageDetailsFormModel
-            {
-                Nom = partage.Nom,
-                Description = partage.Description,
-                EnergieType = partage.EnergieType,
-                DateDebut = partage.DateDebut,
-                DateFin = partage.DateFin
-            };
+            // formModel = new PartageDetailsFormModel
+            // {
+            //     Nom = partage.Nom,
+            //     Description = partage.Description,
+            //     EnergieType = partage.EnergieType,
+            //     DateDebut = partage.DateDebut,
+            //     DateFin = partage.DateFin
+            // };
         }
+        isEditMode = false; // Retour au mode consultation après sauvegarde
     }
 
     private async Task HandleInvitation()
@@ -636,20 +961,20 @@ else if (partage is not null)
             return;
         }
 
-    // On conserve le DTO retourné si on veut afficher une confirmation.
-    demandeValidation = result.Value;
+        // On conserve le DTO retourné si on veut afficher une confirmation.
+        demandeValidation = result.Value;
 
-    // On recharge le partage pour afficher le nouveau statut :
-    // Inactif -> EnAttenteValidation
-    var refresh = await Sender.Send(new GetPartageById(Id));
+        // On recharge le partage pour afficher le nouveau statut :
+        // Inactif -> EnAttenteValidation
+        var refresh = await Sender.Send(new GetPartageById(Id));
 
-    if (refresh.IsSuccess)
-    {
-        partage = refresh.Value;
-        demandePerimetre = partage.DerniereDemandePerimetre;
-    }
-} 
-    
+        if (refresh.IsSuccess)
+        {
+            partage = refresh.Value;
+            demandePerimetre = partage.DerniereDemandePerimetre;
+        }
+    } 
+
     //désactivation du bouton dder valider : permet d'afficher un label explicatif à l'user.
     private string GetValidationButtonLabel()
     {
@@ -657,6 +982,48 @@ else if (partage is not null)
             return "Validation GRD en cours...";
 
         return "Demander validation GRD";
+    }
+
+    /// <summary> Passe la zone "Données du partage" en mode édition.
+    /// Le formulaire contient déjà les données chargées depuis le backend. /// </summary>
+    private void EnableEdit()
+    {
+        if (partage is null || !partage.CanEdit)
+            return;
+
+        PopulateFormModel();// Toujours repartir des données réellement enregistrées
+        errorMessage = null;
+        isEditMode = true;
+    }
+
+
+    /// <summary> Annule les modifications en cours. Les valeurs du formulaire sont rechargées depuis les données 
+    /// // actuellement enregistrées afin d'éviter de conserver des modifications non sauvegardées.   </summary>
+    private void CancelEdit()
+    {
+        if (partage is null)
+            return;
+
+        PopulateFormModel();
+
+        errorMessage = null;
+        isEditMode = false;
+    }
+    /// <summary> Recopie dans le modèle de formulaire les données actuellement enregistrées du partage.
+    /// Cette méthode est utilisée après le chargement du partage et lors d'une annulation de modification.  </summary>
+    private void PopulateFormModel()
+    {
+        if (partage is null)
+            return;
+
+        formModel = new PartageDetailsFormModel
+        {
+            Nom = partage.Nom,
+            EnergieType = partage.EnergieType,
+            DateDebut = partage.DateDebut,
+            DateFin = partage.DateFin,
+            Description = partage.Description
+        };
     }
 
 }

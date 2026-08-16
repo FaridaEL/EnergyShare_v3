@@ -21,70 +21,158 @@ else if (!string.IsNullOrWhiteSpace(errorMessage))
 {
     <div class="alert alert-warning">@errorMessage</div>
 }
-else if (model is not null)
+else if (profile is not null)
 {
-    <EditForm Model="model" OnValidSubmit="SaveAsync">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
+    @if (!isEditMode)
+    {
+        <div class="profile-section">
 
-        <h5>Informations personnelles</h5>
+            <div class="profile-section-header">
+                <span class="bi bi-person-fill"></span>
+                <span>Informations personnelles</span>
+            </div>
 
-        <div class="mb-3">
-            <label class="form-label">Email</label>
-            <input class="form-control" value="@model.Email" disabled />
+            <div class="profile-grid">
+
+                <div class="profile-field">
+                    <span class="profile-label">Email :</span>
+                    <span class="profile-value">@profile.Email</span>
+                </div>
+
+                <div class="profile-field">
+                    <span class="profile-label">Prénom :</span>
+                    <span class="profile-value">@profile.FirstName</span>
+                </div>
+
+                <div class="profile-field">
+                    <span class="profile-label">Nom :</span>
+                    <span class="profile-value">@profile.LastName</span>
+                </div>
+
+                <div class="profile-field">
+                    <span class="profile-label">Téléphone :</span>
+                    <span class="profile-value">@profile.PhoneNumber</span>
+                </div>
+
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Prénom</label>
-            <InputText class="form-control" @bind-Value="model.FirstName" />
+
+        <div class="profile-section">
+
+            <div class="profile-section-header">
+                <span class="bi bi-building"></span>
+                <span>Informations professionnelles</span>
+            </div>
+
+            <div class="profile-grid">
+
+                <div class="profile-field">
+                    <span class="profile-label">Société :</span>
+                    <span class="profile-value">@profile.SocieteName</span>
+                </div>
+
+                <div class="profile-field">
+                    <span class="profile-label">N° entreprise :</span>
+                    <span class="profile-value">@profile.NumeroEntreprise</span>
+                </div>
+
+                <div class="profile-field">
+                    <span class="profile-label">Rôle :</span>
+                    <span class="profile-value">@profile.Role</span>
+                </div>
+
+                <div class="profile-field">
+                    <span class="profile-label">Statut :</span>
+                    <span class="profile-value">@profile.Status</span>
+                </div>
+
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Nom</label>
-            <InputText class="form-control" @bind-Value="model.LastName" />
+
+        <button class="btn btn-energy-action"
+                type="button"
+                @onclick="EnableEdit">
+            <span class="bi bi-pencil-fill me-1"></span>
+            Modifier mon profil
+        </button>
+    }
+    else if (editModel is not null)
+    {
+        <div class="profile-section">
+        <EditForm Model="editModel" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <h5>Modifier mes informations</h5>
+
+            <div class="mb-3">
+                <label class="form-label">Prénom</label>
+                <InputText class="form-control"
+                           @bind-Value="editModel.FirstName" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Nom</label>
+                <InputText class="form-control"
+                           @bind-Value="editModel.LastName" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Téléphone</label>
+                <InputText class="form-control"
+                           @bind-Value="editModel.PhoneNumber" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Société</label>
+                <InputText class="form-control"
+                           @bind-Value="editModel.SocieteName" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Numéro entreprise</label>
+                <InputText class="form-control"
+                           @bind-Value="editModel.NumeroEntreprise" />
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-energy-save"
+                        type="submit">
+                    <span class="bi bi-check-lg me-1"></span>
+                    Enregistrer
+                </button>
+
+                <button class="btn btn-energy-cancel"
+                        type="button"
+                        @onclick="CancelEdit">
+                    <span class="bi bi-x-lg me-1"></span>
+                    Annuler
+                </button>
+            </div>
+        </EditForm>
         </div>
-
-        <div class="mb-3">
-            <label class="form-label">Téléphone</label>
-            <InputText class="form-control" @bind-Value="model.PhoneNumber" />
-        </div>
-
-        <h5>Informations professionnelles</h5>
-
-        <div class="mb-3">
-            <label class="form-label">Société</label>
-            <InputText class="form-control" @bind-Value="model.SocieteName" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Numéro entreprise</label>
-            <InputText class="form-control" @bind-Value="model.NumeroEntreprise" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Rôle</label>
-            <input class="form-control" value="@model.Role" disabled />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Statut</label>
-            <input class="form-control" value="@model.Status" disabled />
-        </div>
-
-        <button class="btn btn-primary" type="submit">Enregistrer</button>
-    </EditForm>
-}
+    }
 
 @if (!string.IsNullOrWhiteSpace(successMessage))
-{
-    <div class="alert alert-success mt-3">@successMessage</div>
+    {
+        <div class="alert alert-success mt-3">
+            @successMessage
+        </div>
+    }
 }
 
-@code {
+    @code {
     private bool isLoading = true;
+    private bool isEditMode = false; //on consulte la page,puis si on souhaite modifier on cliquer sur Modifier le profil
+
     private string? errorMessage;
     private string? successMessage;
-    private UserProfileFormModel? model;
+
+    private CurrentUserProfileDto? profile;       //lecture
+    private UpdateUserProfileFormModel? editModel; //Modification
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,37 +194,25 @@ else if (model is not null)
             return;
         }
 
-        var dto = result.Value;
-
-        model = new UserProfileFormModel
-        {
-            Email = dto.Email,
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            PhoneNumber = dto.PhoneNumber,
-            SocieteName = dto.SocieteName,
-            NumeroEntreprise = dto.NumeroEntreprise,
-            Role = dto.Role,
-            Status = dto.Status
-        };
-
+        profile = result.Value;
+        
         isLoading = false;
     }
 
     private async Task SaveAsync()
     {
-        if (model is null)
+        if (editModel is null)
             return;
 
         errorMessage = null;
         successMessage = null;
 
         var result = await Sender.Send(new UpdateMyUserProfile(
-            model.FirstName,
-            model.LastName,
-            model.PhoneNumber,
-            model.SocieteName,
-            model.NumeroEntreprise
+            editModel.FirstName,
+            editModel.LastName,
+            editModel.PhoneNumber,
+            editModel.SocieteName,
+            editModel.NumeroEntreprise
         ));
 
         if (!result.IsSuccess)
@@ -145,8 +221,39 @@ else if (model is not null)
             return;
         }
 
-        
+
         await LoadProfileAsync();
+        editModel = null;
+        isEditMode = false;
         successMessage = "Profil mis à jour avec succès.";
     }
+
+    private void EnableEdit()
+    {
+        if (profile is null)
+            return;
+
+        editModel = new UpdateUserProfileFormModel
+        {
+            FirstName = profile.FirstName,
+            LastName = profile.LastName,
+            PhoneNumber = profile.PhoneNumber,
+            SocieteName = profile.SocieteName,
+            NumeroEntreprise = profile.NumeroEntreprise
+        };
+
+        errorMessage = null;
+        successMessage = null;
+        isEditMode = true;
+    }
+
+    private void CancelEdit()
+    {
+        editModel = null;
+        isEditMode = false;
+
+        errorMessage = null;
+        successMessage = null;
+    }
+  
 }

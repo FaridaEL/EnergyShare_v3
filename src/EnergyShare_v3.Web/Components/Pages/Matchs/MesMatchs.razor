@@ -10,28 +10,24 @@
 
 <PageTitle>Mes matchs</PageTitle>
 
-<div class="container py-4">
+<div class="page-shell py-4">
+   
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
-            <h2 class="fw-bold mb-1">Mes matchs</h2>
-            <p class="text-muted mb-0 d-none d-md-block">
+            <h2 class="page-title mb-1">Mes matchs</h2>
+            <p class="page-subtitle mb-0">
                 Retrouvez vos contacts sauvegardés.
             </p>
         </div>
 
-        <a class="btn btn-success rounded-pill align-self-start align-self-md-center"
+        <a class="btn btn-energy-action align-self-start align-self-md-center"
            href="/matching/search">
+            <span class="bi bi-search me-1"></span>
             Trouver un match
         </a>
     </div>
 
-    <div class="card shadow-sm border-0 rounded-4 mb-4 matches-summary-card">
-        <div class="card-body">
-            <div class="text-muted small">Total</div>
-            <div class="display-6 fw-bold">@SavedMatches.Count</div>
-        </div>
-    </div>
-
+    
     @if (!string.IsNullOrWhiteSpace(Message))
     {
         <div class="alert alert-danger">@Message</div>
@@ -49,59 +45,124 @@
     }
     else
     {
-        <div class="card shadow-sm border-0 rounded-4 matches-card">
-            <div class="card-body">
-               
-                <h5 class="fw-bold mb-3">@MatchesTitle</h5>
+        <div class="row g-4 mb-4">
 
-                <div class="table-responsive saved-match-table">
-                    <table class="table align-middle">
-                        <thead>
-                            <tr>
-                                @* <th>Date</th> *@
-                                <th>@ContactColumnLabel</th>
-                                <th>Distance</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var match in SavedMatches)
-                            {
-                                <tr>
-                                    @* <td data-label="Date">@match.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td> *@
-                                    <td data-label="@ContactColumnLabel">
-                                        <strong>@match.ContactPrenom</strong>
-                                    </td>
-                                    <td data-label="Distance">
-                                        <strong>@FormatDistance(match.DistanceCalculee)</strong>
-                                    </td>
-                                    @* <td class="text-end actions-cell">
-                                        <a class="btn btn-outline-primary btn-sm rounded-pill"
-                                           href="@($"/messages/send?to={match.ContactUserId}&prenom={Uri.EscapeDataString(match.ContactPrenom)}&matchId={match.MatchId}")">
-                                            Contacter
-                                        </a>
-                                    </td> *@
-                                    <td class="text-end actions-cell">
-                                        <a class="contact-link"
-                                           title="Contacter @match.ContactPrenom"
-                                           aria-label="Contacter @match.ContactPrenom"
-                                           href="@($"/messages/send?to={match.ContactUserId}&prenom={Uri.EscapeDataString(match.ContactPrenom)}&matchId={match.MatchId}")">
-                                            ✉
-                                        </a>
-                                    </td>
-
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+            <!-- Résumé du nombre de matchs -->
+            @* <div class="col-lg-3">
+                <div class="card responsive-card shadow-sm border-0 rounded-4 h-100">
+                    <div class="card-body">
+                        <div class="text-muted">Total</div>
+                        <div class="display-6 fw-bold">@SavedMatches.Count</div>
+                    </div>
                 </div>
-           
+            </div> *@
 
-                @* <p class="text-muted small mt-3 mb-0"> *@
-                <p class="text-muted small mt-3 mb-0 d-none d-md-block">
-                    Contactez directement vos acheteurs potentiels.
-                </p>
+            <!-- Liste des matchs -->
+            <div class="col-lg-12">
+                <div class="card responsive-card shadow-sm border-0 rounded-4 h-100">
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0">@MatchesTitle</h5>
+
+                            @* <span class="badge rounded-pill text-bg-light border px-3 py-2">
+                                @SavedMatches.Count match(s)
+                            </span> *@
+                            <div class="matches-kpi">
+                                <span class="bi bi-people-fill matches-kpi-icon"></span>
+                                
+                                <span class="matches-kpi-value">
+                                    @SavedMatches.Count
+                                </span>
+                                
+                                <span class="matches-kpi-label">
+                                    match(s)
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table align-middle responsive-table">
+                                <thead>
+                                    <tr>
+                                        <th>@ContactColumnLabel</th>
+                                        <th>Distance</th>
+                                        <th>Quantité</th>
+                                        <th>Prix</th>
+                                        <th>Statut</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @foreach (var match in SavedMatches)
+                                    {
+                                        <tr>
+                                            <td data-label="@ContactColumnLabel">
+                                                <strong>@match.ContactPrenom</strong>
+                                            </td>
+
+                                            <td data-label="Distance">
+                                                <strong>@FormatDistance(match.DistanceCalculee)</strong>
+                                            </td>
+                                            <td data-label="Quantité">
+                                                @if (GetQuantity(match).HasValue)
+                                                {
+                                                    <span>@GetQuantity(match)!.Value.ToString("N0") kWh</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>-</span>
+                                                }
+                                            </td>
+
+                                            <td data-label="Prix">
+                                                @if (GetPrice(match).HasValue)
+                                                {
+                                                    <span>@GetPrice(match)!.Value.ToString("N2") €/kWh</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>-</span>
+                                                }
+                                            </td>
+
+                                            <td data-label="Statut">
+                                                @if (match.EstDisponible)
+                                                {
+                                                    <span class="badge bg-success">
+                                                        Libre
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        Occupé
+                                                    </span>
+                                                }
+                                            </td>
+
+                                            <td class="text-end">
+                                                <a class="btn btn-energy-action btn-sm"
+                                                   href="@($"/messages/send?to={match.ContactUserId}&prenom={Uri.EscapeDataString(match.ContactPrenom)}&matchId={match.MatchId}")">
+                                                    <span class="bi bi-envelope-fill me-1"></span>
+                                                    Contacter
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <p class="text-muted mt-3 mb-0">
+                            Contactez directement vos acheteurs ou vendeurs potentiels.
+                        </p>
+
+                    </div>
+                </div>
             </div>
+
         </div>
     }
 </div>
@@ -166,18 +227,17 @@
         CurrentUserIsSeller ? "Acheteur"
         : CurrentUserIsBuyer ? "Vendeur"
         : "Match avec";
+    private bool UserIsSeller(SavedMatchSummaryDto match)
+    => match.ContactUserId == match.AcheteurUserId;
 
-  
+    private decimal? GetQuantity(SavedMatchSummaryDto match)
+        => UserIsSeller(match)
+            ? match.DemandeEnergie_kWh
+            : match.OffreEnergie_kWh;
 
-    // private static string ShortId(Guid id)
-    //     => id.ToString()[..8];
-
-    // private record SavedMatchSummaryDto(
-    //     Guid MatchId,
-    //     Guid PointAccessVendeurId,
-    //     Guid PointAccessAcheteurId,
-    //     decimal DistanceCalculee,
-    //     DateTime CreatedAt);
-
+    private decimal? GetPrice(SavedMatchSummaryDto match)
+        => UserIsSeller(match)
+            ? match.PrixAchatCible_Eur
+            : match.PrixVenteCible_Eur;
 
 }

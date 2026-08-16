@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 
+@using Ardalis.Result
 @using Microsoft.AspNetCore.Authorization
 @using EnergyShare_v3.Application.Features.ProfilEnergie
 @using EnergyShare_v3.Application.Features.PointAccess
@@ -15,7 +16,8 @@
 <h3>Mon profil énergie</h3>
 
 <p class="text-muted">
-    Complétez votre profil pour trouver des matchs compatibles et disponibles.
+    Votre profil énergie sert au matching.
+    Choisissez un point d'accès et indiquez l'énergie que vous souhaitez vendre et/ou acheter afin de trouver des profils compatibles et d'être trouvé anonymement par d'autres utilisateurs.
 </p>
 
 @if (isLoading)
@@ -24,135 +26,428 @@
 }
 else
 {
+    @* =========================================================
+       MESSAGES UTILISATEUR
+       ========================================================= *@
+
     @if (!string.IsNullOrWhiteSpace(errorMessage))
     {
-        <div class="alert alert-warning">@errorMessage</div>
+        <div class="alert alert-warning">
+            @errorMessage
+        </div>
     }
 
     @if (!string.IsNullOrWhiteSpace(successMessage))
     {
-        <div class="alert alert-success">@successMessage</div>
+        <div class="alert alert-success">
+            @successMessage
+        </div>
     }
 
-    @if (pointsAccess.Count == 0)
+
+    @* =========================================================
+       AUCUN POINT D'ACCÈS ACTIF  :  Un profil énergie doit obligatoirement être lié à un point d'accès actif.
+       ========================================================= *@
+
+    @if (activePointsAccess.Count == 0)
     {
         <div class="alert alert-info">
-            Vous devez d'abord créer un point d'accès avant de compléter votre profil énergie.
+            Aucun point d'accès actif n'est disponible.
+            Vous devez d'abord créer ou activer un point d'accès
+            avant de compléter votre profil énergie.
         </div>
 
-        <a href="/mes-points-access" class="btn btn-primary">
-            Créer mon point d'accès
+        <a href="/mes-points-access"
+           class="btn btn-energy-action">
+            <span class="bi bi-plus-circle-fill me-1"></span>
+            Gérer mes points d'accès
         </a>
     }
     else
     {
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">
-                    @(isEditMode ? "Modifier mon profil énergie" : "Créer mon profil énergie")
-                </h5>
+        @* =====================================================
+           CHOIX DU POINT D'ACCÈS : 
+           - Si le user possède pls points actifs : il choisit celui dont il souhaite consulter ou modifier le profil énergie.
+          -  S'il n'en possède qu'un, celui-ci est automatiquement sélectionné et la liste n'est pas nécessaire.
+           ===================================================== *@
 
-                <p class="text-muted">
-                   @*  Indiquez si vous souhaitez acheter de l’énergie, vendre votre surplus, ou les deux. *@
-                </p>
+        @if (activePointsAccess.Count > 1)
+        {
+            <div class="card mb-4">
+                <div class="card-body">
 
-                <EditForm Model="model" OnValidSubmit="SaveAsync">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary />
+                    <label class="form-label fw-semibold">
+                        Point d'accès
+                    </label>
 
-                    <div class="energy-profile-grid">
+                    <select class="form-select"
+                            value="@selectedPointAccessId"
+                            @onchange="OnPointAccessChangedAsync">
 
-                        <!-- Vendeur -->
-                        <section class="energy-profile-card seller-card">
-                            <div class="energy-card-header">
-                                <div class="energy-icon seller-icon">⚡</div>
-                                <div>
-                                    <h5>Je vends mon surplus</h5>
-                                    @* <p>Indiquez l’énergie que vous souhaitez proposer.</p> *@
-                                </div>
-                            </div>
+                        @foreach (var point in activePointsAccess)
+                        {
+                            <option value="@point.Id">
+                                @point.AdresseLine1 - @point.CodePostal
+                            </option>
+                        }
 
-                            <div class="mb-3">
-                                <label class="form-label">Offre énergie annuelle estimée (kWh)</label>
-                                <InputNumber class="form-control" @bind-Value="model.OffreEnergie_kWh" />
-                            </div>
+                    </select>
 
-                            <div class="mb-3">
-                                <label class="form-label">Prix vente cible (€ / kWh)</label>
-                                <InputNumber class="form-control" @bind-Value="model.PrixVenteCible_Eur" />
-                            </div>
-
-                            <div class="energy-help-box seller-help">
-                                <span class="help-icon">💡</span>
-                                <span>
-                                    Indiquez la quantité d’énergie que vous souhaitez vendre
-                                    et le prix minimum que vous souhaitez obtenir.
-                                </span>
-                            </div>
-                        </section>
-
-                      
-
-                        <!-- Acheteur -->
-                        <section class="energy-profile-card buyer-card">
-                            <div class="energy-card-header">
-                                <div class="energy-icon buyer-icon">🛒</div>
-                                <div>
-                                    <h5>Je cherche de l’énergie</h5>
-                                    @* <p>Indiquez votre besoin et le prix souhaité.</p>  *@
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Demande énergie annuelle estimée (kWh)</label>
-                                <InputNumber class="form-control" @bind-Value="model.DemandeEnergie_kWh" />
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Prix achat cible (€ / kWh)</label>
-                                <InputNumber class="form-control" @bind-Value="model.PrixAchatCible_Eur" />
-                            </div>
-
-                            <div class="energy-help-box buyer-help">
-                                <span class="help-icon">💡</span>
-                                <span>
-                                    Indiquez la quantité d’énergie que vous souhaitez acheter
-                                    et le prix maximum que vous êtes prêt à payer.
-                                </span>
-                            </div>
-
-
-                        </section>
-
+                    <div class="form-text">
+                        Sélectionnez le point d'accès pour lequel vous souhaitez
+                        consulter ou définir un profil énergie.
                     </div>
 
-                    <button class="btn btn-primary mt-4" type="submit">
-                        @(isEditMode ? "Enregistrer les modifications" : "Créer mon profil énergie")
-                    </button>
-                </EditForm>
+                </div>
             </div>
-        </div>
+        }
+        else
+        {
+            @* Un seul point actif : on informe simplement l'utilisateur du point actuellement utilisé. *@
+
+            var point = activePointsAccess.First();
+
+            <div class="mb-3">
+                <span class="text-muted">Point d'accès :</span>
+                <strong>@point.AdresseLine1 - @point.CodePostal</strong>
+            </div>
+        }
+
+
+        @* =====================================================
+           MODE CONSULTATION : Un profil énergie existe déjà pour le point sélectionné.
+           Comme pour MonProfil, les données sont d'abord affichées en lecture seule.
+           ===================================================== *@
+
+        @if (currentProfile is not null && !showForm)
+        {
+            <div class="energy-profile-grid">
+
+                @* -------------------------
+                   PROFIL VENDEUR
+                   ------------------------- *@
+
+                <section class="energy-profile-card seller-card">
+
+                    <div class="energy-card-header">
+                        <div class="energy-icon seller-icon">
+                            <span class="bi bi-lightning-charge-fill"></span>
+                        </div>
+
+                        <div>
+                            <h5>Je vends mon surplus</h5>
+                        </div>
+                    </div>
+
+                    @if (currentProfile.OffreEnergie_kWh.HasValue)
+                    {
+                        <div class="mb-2">
+                            <strong>Offre annuelle :</strong>
+                            @currentProfile.OffreEnergie_kWh.Value.ToString("N0") kWh
+                        </div>
+
+                        <div>
+                            <strong>Prix de vente cible :</strong>
+                            @(currentProfile.PrixVenteCible_Eur?.ToString("N4") ?? "Non renseigné")
+                            €/kWh
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">
+                            Aucune offre d'énergie renseignée pour ce point.
+                        </p>
+                    }
+
+                </section>
+
+
+                @* -------------------------
+                   PROFIL ACHETEUR
+                   ------------------------- *@
+
+                <section class="energy-profile-card buyer-card">
+
+                    <div class="energy-card-header">
+                        <div class="energy-icon buyer-icon">
+                            <span class="bi bi-cart-fill"></span>
+                        </div>
+
+                        <div>
+                            <h5>Je cherche de l'énergie</h5>
+                        </div>
+                    </div>
+
+                    @if (currentProfile.DemandeEnergie_kWh.HasValue)
+                    {
+                        <div class="mb-2">
+                            <strong>Demande annuelle :</strong>
+                            @currentProfile.DemandeEnergie_kWh.Value.ToString("N0") kWh
+                        </div>
+
+                        <div>
+                            <strong>Prix d'achat cible :</strong>
+                            @(currentProfile.PrixAchatCible_Eur?.ToString("N4") ?? "Non renseigné")
+                            €/kWh
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">
+                            Aucune demande d'énergie renseignée pour ce point.
+                        </p>
+                    }
+
+                </section>
+
+            </div>
+            @* Action principale : jaune = démarrer une modification. *@
+
+            <div class="mt-4">
+                <button class="btn btn-energy-action"
+                        type="button"
+                        @onclick="EnableEdit">
+                    <span class="bi bi-pencil-fill me-1"></span>
+                    Modifier mon profil énergie
+                </button>
+            </div>
+        }
+        @* =====================================================
+           AUCUN PROFIL POUR LE POINT SÉLECTIONNÉ  : Le PointAccess existe bien et appartient à l'utilisateur MAIS 
+           aucun ProfilEnergie n'est encore enregistré.
+           ===================================================== *@
+
+        else if (currentProfile is null && !showForm)
+        {
+            <div class="card mb-4">
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        Aucun profil énergie pour ce point
+                    </h5>
+
+                    <p class="text-muted mb-3">
+                        Vous pouvez créer un profil énergie pour indiquer
+                        si vous souhaitez vendre votre surplus,
+                        acheter de l'énergie, ou les deux.
+                    </p>
+
+                    <button class="btn btn-energy-action"
+                            type="button"
+                            @onclick="EnableCreate">
+                        <span class="bi bi-plus-circle-fill me-1"></span>
+                        Créer mon profil énergie
+                    </button>
+
+                </div>
+            </div>
+        }
+
+        @* =====================================================
+           MODE CRÉATION / MODIFICATION   : Le même formulaire est réutilisé dans les deux cas.
+           Seul le modèle temporaire formModel est modifié.
+           ===================================================== *@
+
+        else if (showForm)
+        {
+            <div class="card mb-4">
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        @(isEditMode
+                            ? "Modifier mon profil énergie"
+                            : "Créer mon profil énergie")
+                    </h5>
+
+                    <EditForm Model="formModel"
+                              OnValidSubmit="SaveAsync">
+
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+
+                        <div class="energy-profile-grid">
+
+                            @* ================================
+                               FORMULAIRE VENDEUR
+                               ================================ *@
+
+                            <section class="energy-profile-card seller-card">
+
+                                <div class="energy-card-header">
+
+                                    <div class="energy-icon seller-icon">
+                                        <span class="bi bi-lightning-charge-fill"></span>
+                                    </div>
+
+                                    <div>
+                                        <h5>Je vends mon surplus</h5>
+                                    </div>
+
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Offre énergie annuelle estimée (kWh)
+                                    </label>
+
+                                    <InputNumber class="form-control"
+                                                 @bind-Value="formModel.OffreEnergie_kWh" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Prix vente cible (€ / kWh)
+                                    </label>
+
+                                    <InputNumber class="form-control"
+                                                 @bind-Value="formModel.PrixVenteCible_Eur" />
+                                </div>
+
+                                <div class="energy-help-box seller-help">
+
+                                    <span class="bi bi-lightbulb help-icon"></span>
+
+                                    <span>
+                                        Indiquez la quantité d'énergie que vous souhaitez vendre
+                                        et le prix minimum que vous souhaitez obtenir.
+                                    </span>
+
+                                </div>
+
+                            </section>
+                            @* ================================
+                               FORMULAIRE ACHETEUR
+                               ================================ *@
+
+                            <section class="energy-profile-card buyer-card">
+
+                                <div class="energy-card-header">
+
+                                    <div class="energy-icon buyer-icon">
+                                        <span class="bi bi-cart-fill"></span>
+                                    </div>
+
+                                    <div>
+                                        <h5>Je cherche de l'énergie</h5>
+                                    </div>
+
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Demande énergie annuelle estimée (kWh)
+                                    </label>
+
+                                    <InputNumber class="form-control"
+                                                 @bind-Value="formModel.DemandeEnergie_kWh" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Prix achat cible (€ / kWh)
+                                    </label>
+
+                                    <InputNumber class="form-control"
+                                                 @bind-Value="formModel.PrixAchatCible_Eur" />
+                                </div>
+
+                                <div class="energy-help-box buyer-help">
+
+                                    <span class="bi bi-lightbulb help-icon"></span>
+
+                                    <span>
+                                        Indiquez la quantité d'énergie que vous souhaitez acheter
+                                        et le prix maximum que vous êtes prêt à payer.
+                                    </span>
+
+                                </div>
+
+                            </section>
+
+                        </div>
+
+
+                        @* ================================
+                           BOUTONS SELON LA CHARTE ENERGYSHARE   ( Bleu = enregistrer   et Gris = annuler )
+                           ================================ *@
+
+                        <div class="d-flex gap-2 mt-4">
+
+                            <button class="btn btn-energy-save"
+                                    type="submit">
+                                <span class="bi bi-check-lg me-1"></span>
+                                Enregistrer
+                            </button>
+
+                            <button class="btn btn-energy-cancel"
+                                    type="button"
+                                    @onclick="CancelEdit">
+                                <span class="bi bi-x-lg me-1"></span>
+                                Annuler
+                            </button>
+
+                        </div>
+
+                    </EditForm>
+
+                </div>
+            </div>
+        }
     }
 }
 
+
 @code {
+
+    // =========================================================
+    // ÉTAT GÉNÉRAL DE LA PAGE
+    // =========================================================
+
     private bool isLoading = true;
-    private bool isEditMode = false;
+    private bool showForm = false;    // Indique si le formulaire est actuellement affiché.
+
+    private bool isEditMode = false; // Permet de distinguer une création d'une modification.
 
     private string? errorMessage;
     private string? successMessage;
 
-    private ProfilEnergieFormModel model = new();
-    private List<PointAccessSummaryDto> pointsAccess = [];
+
+    // =========================================================
+    // DONNÉES DU POINT D'ACCÈS
+    // =========================================================
+
+    // On conserve uniquement les points d'accès actifs :un point désactivé ne doit plus participer au matching.
+    private List<PointAccessSummaryDto> activePointsAccess = [];
+    private Guid selectedPointAccessId;  // Point d'accès actuellement sélectionné.
+
+    // =========================================================
+    // PROFIL ÉNERGIE
+    // =========================================================
+
+    // Profil actuellement enregistré en base. Cet objet est utilisé uniquement pour la consultation.
+    private ProfilEnergieDetailDto? currentProfile;
+
+    // Modèle temporaire utilisé uniquement pendant  la création ou la modification du formulaire.
+    private ProfilEnergieFormModel formModel = new();
+
+    // =========================================================
+    // INITIALISATION
+    // =========================================================
 
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
     }
 
+    /// <summary>
+    /// Charge les points d'accès actifs de l'utilisateur, sélectionne automatiquement le premier,
+    /// puis charge son éventuel profil énergie.
+    /// </summary>
     private async Task LoadAsync()
     {
         isLoading = true;
+
         errorMessage = null;
         successMessage = null;
 
@@ -165,97 +460,249 @@ else
             return;
         }
 
-        pointsAccess = pointsResult.Value.ToList();
+        // Seuls les points actifs peuvent être utilisés pour créer un profil énergie et effectuer du matching.
+        activePointsAccess = pointsResult.Value
+            .Where(p => p.EstActif)
+            .ToList();
 
-        var profilResult = await Sender.Send(new GetMyProfilEnergie());
-
-        if (profilResult.IsSuccess)
+        if (activePointsAccess.Count == 0)
         {
-            var dto = profilResult.Value;
-
-            model = new ProfilEnergieFormModel
-            {
-                Id = dto.Id,
-                DemandeEnergie_kWh = dto.DemandeEnergie_kWh,
-                OffreEnergie_kWh = dto.OffreEnergie_kWh,
-                PrixAchatCible_Eur = dto.PrixAchatCible_Eur,
-                PrixVenteCible_Eur = dto.PrixVenteCible_Eur
-            };
-
-            isEditMode = true;
+            isLoading = false;
+            return;
         }
-        else
-        {
-            model = new ProfilEnergieFormModel();
-            isEditMode = false;
-        }
+
+        // Pour simplifier l'expérience utilisateur,le premier point actif est sélectionné automatiquement.
+        selectedPointAccessId = activePointsAccess.First().Id;
+
+        await LoadProfileForSelectedPointAsync();
 
         isLoading = false;
     }
+    /// <summary>
+    /// Recherche le profil énergie lié au point d'accès sélectionné. L'absence de profil n'est pas considérée comme une erreur :
+    /// elle permet simplement de proposer sa création.
+    /// </summary>
+    private async Task LoadProfileForSelectedPointAsync()
+    {
+        currentProfile = null;
 
+        showForm = false;
+        isEditMode = false;
+
+        errorMessage = null;
+
+        if (selectedPointAccessId == Guid.Empty)
+            return;
+
+        var profilResult = await Sender.Send(
+            new GetMyProfilEnergieByPointAccessId(selectedPointAccessId));
+
+        if (profilResult.IsSuccess)
+        {
+            currentProfile = profilResult.Value;
+            return;
+        }
+
+        // NotFound signifie ici que le point existe, mais qu'aucun profil énergie n'est encore défini.
+        // Ce n'est donc pas une erreur pour l'utilisateur.
+        if (profilResult.Status == ResultStatus.NotFound)
+        {
+            currentProfile = null;
+            return;
+        }
+
+        errorMessage = "Impossible de charger le profil énergie.";
+    }
+    // =========================================================
+    // CHANGEMENT DE POINT D'ACCÈS
+    // =========================================================
+
+    /// <summary>
+    /// Recharge le profil lorsqu'un utilisateur possédant plusieurs points d'accès en sélectionne un autre.
+    /// </summary>
+    private async Task OnPointAccessChangedAsync(ChangeEventArgs e)
+    {
+        if (!Guid.TryParse(e.Value?.ToString(), out var pointAccessId))
+            return;
+
+        selectedPointAccessId = pointAccessId;
+
+        successMessage = null;
+        errorMessage = null;
+
+        await LoadProfileForSelectedPointAsync();
+    }
+
+    // =========================================================
+    // CRÉATION
+    // =========================================================
+
+    /// <summary>
+    /// Prépare un formulaire vide pour créer le profil énergie du point sélectionné.
+    /// </summary>
+    private void EnableCreate()
+    {
+        formModel = new ProfilEnergieFormModel();
+
+        isEditMode = false;
+        showForm = true;
+
+        errorMessage = null;
+        successMessage = null;
+    }
+    // =========================================================
+    // MODIFICATION
+    // =========================================================
+
+    /// <summary>
+    /// Crée une copie temporaire du profil existant. Les modifications ne touchent donc pas directement
+    /// les données affichées tant que l'utilisateur  n'a pas cliqué sur Enregistrer.
+    /// </summary>
+    private void EnableEdit()
+    {
+        if (currentProfile is null)
+            return;
+
+        formModel = new ProfilEnergieFormModel
+        {
+            Id = currentProfile.Id,
+
+            DemandeEnergie_kWh =  currentProfile.DemandeEnergie_kWh,
+
+            OffreEnergie_kWh = currentProfile.OffreEnergie_kWh,
+
+            PrixAchatCible_Eur = currentProfile.PrixAchatCible_Eur,
+
+            PrixVenteCible_Eur = currentProfile.PrixVenteCible_Eur
+        };
+
+        isEditMode = true;
+        showForm = true;
+
+        errorMessage = null;
+        successMessage = null;
+    }
+    // =========================================================
+    // ANNULATION
+    // =========================================================
+
+    /// <summary>
+    /// Abandonne le brouillon sans modifier   le profil actuellement enregistré.
+    /// </summary>
+    private void CancelEdit()
+    {
+        formModel = new ProfilEnergieFormModel();
+
+        showForm = false;
+        isEditMode = false;
+
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    // =========================================================
+    // ENREGISTREMENT
+    // =========================================================
+
+    /// <summary>
+    /// Crée ou met à jour le profil énergie selon l'état actuel du formulaire.
+    /// </summary>
     private async Task SaveAsync()
     {
         errorMessage = null;
         successMessage = null;
 
+        // Le profil doit contenir au minimum une offre ou une demande d'énergie.
         if (!HasAtLeastOneSide())
         {
-            errorMessage = "Complétez au minimum une partie : achat ou vente.";
+            errorMessage =
+                "Complétez au minimum une partie : achat ou vente.";
+
             return;
         }
 
+        if (selectedPointAccessId == Guid.Empty)
+        {
+            errorMessage =
+                "Aucun point d'accès actif n'est sélectionné.";
+
+            return;
+        }
+        // -----------------------------------------------------
+        // MODIFICATION
+        // -----------------------------------------------------
+
         if (isEditMode)
         {
-            var result = await Sender.Send(new UpdateProfilEnergie(
-                model.Id,
-                model.DemandeEnergie_kWh,
-                model.OffreEnergie_kWh,
-                model.PrixAchatCible_Eur,
-                model.PrixVenteCible_Eur));
+            var result = await Sender.Send(
+                new UpdateProfilEnergie(
+                    formModel.Id,
+                    formModel.DemandeEnergie_kWh,
+                    formModel.OffreEnergie_kWh,
+                    formModel.PrixAchatCible_Eur,
+                    formModel.PrixVenteCible_Eur));
 
             if (!result.IsSuccess)
             {
-                errorMessage = "La mise à jour du profil énergie a échoué.";
+                errorMessage =
+                    "La mise à jour du profil énergie a échoué.";
+
                 return;
             }
 
-            successMessage = "Profil énergie mis à jour avec succès.";
+            // Recharge la version réellement enregistrée  plutôt que de modifier artificiellement currentProfile.
+            await LoadProfileForSelectedPointAsync();
+
+            successMessage =
+                "Profil énergie mis à jour avec succès.";
         }
+
+        // -----------------------------------------------------
+        // CRÉATION
+        // -----------------------------------------------------
+
         else
         {
-            var pointAccessId = pointsAccess
-                .Where(p => p.EstActif)
-                .Select(p => p.Id)
-                .FirstOrDefault();
-
-            if (pointAccessId == Guid.Empty)
-            {
-                errorMessage = "Aucun point d'accès actif disponible.";
-                return;
-            }
-
-            var result = await Sender.Send(new CreateProfilEnergie(
-                model.DemandeEnergie_kWh,
-                model.OffreEnergie_kWh,
-                model.PrixAchatCible_Eur,
-                model.PrixVenteCible_Eur,
-                pointAccessId));
+            var result = await Sender.Send(
+                new CreateProfilEnergie(
+                    formModel.DemandeEnergie_kWh,
+                    formModel.OffreEnergie_kWh,
+                    formModel.PrixAchatCible_Eur,
+                    formModel.PrixVenteCible_Eur,
+                    selectedPointAccessId));
 
             if (!result.IsSuccess)
             {
-                errorMessage = "La création du profil énergie a échoué.";
+                errorMessage =
+                    "La création du profil énergie a échoué.";
+
                 return;
             }
 
-            successMessage = "Profil énergie créé avec succès.";
-            await LoadAsync();
+            // Le profil nouvellement créé devient directement le profil affiché en consultation.
+            await LoadProfileForSelectedPointAsync();
+
+            successMessage =
+                "Profil énergie créé avec succès.";
         }
     }
 
+    // =========================================================
+    // VALIDATION UI
+    // =========================================================
+
+    /// <summary>
+    /// Un profil énergie doit représenter au minimum  une intention d'achat ou une intention de vente.
+    /// </summary>
     private bool HasAtLeastOneSide()
     {
-        var wantsToBuy = model.DemandeEnergie_kWh.HasValue && model.DemandeEnergie_kWh > 0;
-        var wantsToSell = model.OffreEnergie_kWh.HasValue && model.OffreEnergie_kWh > 0;
+        var wantsToBuy =
+            formModel.DemandeEnergie_kWh.HasValue
+            && formModel.DemandeEnergie_kWh.Value > 0;
+
+        var wantsToSell =
+            formModel.OffreEnergie_kWh.HasValue
+            && formModel.OffreEnergie_kWh.Value > 0;
 
         return wantsToBuy || wantsToSell;
     }

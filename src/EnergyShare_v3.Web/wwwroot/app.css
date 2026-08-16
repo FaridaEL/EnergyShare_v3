@@ -1,15 +1,279 @@
-html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+/* =========================================================
+   Variables couleurs chartes graphiques EnergyShare  (Debut)
+   ========================================================= */
+:root {
+    /* Couleurs principales EnergyShare */
+    --energy-blue: #2F80ED;
+    --energy-blue-dark: #2368C4;
+    --energy-green: #2CA84A;
+    --energy-green-dark: #1B8F4D;
+    --energy-yellow: #F4C430;
+    --energy-yellow-dark: #DFAF18;
+    --energy-navy: #2C3E50;
+    /* Etats */
+    --energy-danger: #DC3545;
+    /* Neutres */
+    --energy-text: #212529;
+    --energy-text-muted: #6C757D;
+    --energy-border: #DEE2E6;
+    --energy-surface: #FFFFFF;
+    --energy-background: #F8F9FA;
+    /* Couleurs de fond légères */
+    --energy-blue-soft: #F4F9FF;
+    --energy-green-soft: #F4FFF8;
+    /* Design */
+    --energy-radius: 12px;
+    --energy-radius-large: 18px;
+    --energy-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    /* Bordures */
+    --energy-blue-border: #B9D8FF;
+    --energy-green-border: #BDE8CE;
+}
+/* =========================================================
+   Variables couleurs chartes graphiques  (Fin)
+   ========================================================= */
+
+/* =========================================================
+   BOUTONS - CHARTE GRAPHIQUE ENERGYSHARE    (Debut)
+   ========================================================= */
+
+/* Action : créer, ajouter, modifier, rejoindre */
+.btn-energy-action {
+    background-color: var(--energy-yellow);
+    border: 1px solid var(--energy-yellow);
+    color: var(--energy-navy);
+    font-weight: 600;
 }
 
+.btn-energy-action:hover {
+   background-color: var(--energy-yellow-dark);
+   border-color: var(--energy-yellow-dark);
+   color: var(--energy-navy);
+   }
+
+/* Sauvegarde : enregistrer les données */
+.btn-energy-save {
+    background-color: var(--energy-blue);
+    border: 1px solid var(--energy-blue);
+    color: #fff;
+    font-weight: 600;
+}
+
+ .btn-energy-save:hover {
+    background-color: var(--energy-blue-dark);
+    border-color: var(--energy-blue-dark);
+    color: #fff;
+    }
+
+/* Action secondaire : annuler, retour */
+.btn-energy-cancel {
+    background-color: var(--energy-surface);
+    border: 1px solid var(--energy-text-muted);
+    color: var(--energy-text-muted);
+    font-weight: 500;
+}
+ .btn-energy-cancel:hover {
+    background-color: var(--energy-background);
+    color: var(--energy-navy);
+  }
+
+/* Action destructive */
+.btn-energy-danger {
+    background-color: var(--energy-surface);
+    border: 1px solid var(--energy-danger);
+    color: var(--energy-danger);
+}
+
+ .btn-energy-danger:hover {
+     background-color: var(--energy-danger);
+     border-color: var(--energy-danger);
+     color: #fff;
+ }
+
+.btn-energy-edit {
+    background-color: var(--energy-surface);
+    border: 1px solid var(--energy-yellow-dark);
+    color: var(--energy-navy);
+    font-weight: 500;
+}
+ .btn-energy-edit:hover {
+    background-color: var(--energy-yellow);
+    border-color: var(--energy-yellow);
+    color: var(--energy-navy);
+ }
+
+/* =========================================================
+  BOUTONS - CHARTE GRAPHIQUE ENERGYSHARE    (FIN)
+   ========================================================= */
+/* =========================================================
+   LAYOUT GLOBAL RESPONSIVE ENERGYSHARE     (Début
+   ========================================================= */
+
+/*.page-shell {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding-inline: clamp(1rem, 2vw, 2rem);
+}*/
+.page-shell {
+    width: 100%;
+    max-width: none; /*1800px;*/
+    margin: 0;
+    padding-inline: clamp(1rem, 2vw, 2rem);
+}
+
+/*.page-title {
+    font-size: clamp(1.6rem, 2.2vw, 2.4rem);
+    font-weight: 700;
+}
+
+.page-subtitle {
+    font-size: clamp(0.95rem, 1vw, 1.1rem);
+    color: var(--energy-text-muted);
+}*/
+
+.responsive-card {
+    width: 100%;
+}
+
+.responsive-table {
+    width: 100%;
+    min-width: 720px;
+}
+
+   /* .responsive-table th,
+    .responsive-table td {
+        font-size: clamp(0.9rem, 0.9vw, 1rem);
+        padding: 0.85rem 1rem;
+    }*/
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* =========================================================
+   LAYOUT GLOBAL RESPONSIVE ENERGYSHARE  (Fin)
+   ========================================================= */
+
+/*html, body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}*/
+html {
+    font-size: 16px;
+}
+
+body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: clamp(1rem, 0.3vw + 0.9rem, 1.1rem);
+    line-height: 1.5;
+    color: var(--energy-text);
+}
+
+/* =========================================================
+   TYPOGRAPHIE GLOBALE ENERGYSHARE  (Début)
+   ========================================================= */
+
+h1 {
+    font-size: clamp(2rem, 3vw, 3rem);
+    font-weight: 700;
+}
+
+h2,
+.page-title {
+    font-size: clamp(1.7rem, 2.2vw, 2.4rem);
+    font-weight: 700;
+}
+
+h3 {
+    font-size: clamp(1.45rem, 1.8vw, 2rem);
+    font-weight: 700;
+}
+
+h4,
+h5 {
+    font-size: clamp(1.05rem, 1vw, 1.25rem);
+    font-weight: 600;
+}
+
+.page-subtitle {
+    font-size: clamp(0.95rem, 0.6vw + 0.85rem, 1.1rem);
+    color: var(--energy-text-muted);
+}
+
+.btn {
+    font-size: clamp(0.95rem, 0.4vw + 0.85rem, 1.05rem);
+}
+
+/*.responsive-table th {
+    font-size: clamp(0.95rem, 0.6vw, 1.05rem);
+    font-weight: 700;
+}
+
+.responsive-table td {
+    font-size: clamp(0.95rem, 0.55vw, 1.05rem);
+}
+
+.responsive-table th,
+.responsive-table td {
+    padding: clamp(0.75rem, 1vw, 1rem);
+}*/
+.responsive-table th {
+    font-size: clamp(1rem, 0.75vw, 1.15rem);
+    font-weight: 700;
+}
+
+.responsive-table td {
+    font-size: clamp(1rem, 0.7vw, 1.1rem);
+}
+
+.responsive-table th,
+.responsive-table td {
+    padding: clamp(0.85rem, 1.1vw, 1.1rem);
+}
+
+/* =========================================================
+   TYPOGRAPHIE GLOBALE ENERGYSHARE    (Fin)
+   ========================================================= */
 a, .btn-link {
     color: #006bb7;
 }
 
+/* =========================================================
+   ALIGNEMENT GLOBAL DES ITEMS DE NAVIGATION   (Début)
+   ========================================================= */
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+    /* Zone fixe réservée à chaque icône */
+    .nav-link .bi {
+        width: 1.4rem;
+        min-width: 1.4rem;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+/* =========================================================
+   ALIGNEMENT GLOBAL DES ITEMS DE NAVIGATION   (fin)
+   ========================================================= */
+
+
+/*Utilisé dans les anciencs formulaires, on supprimera dès que rempalcer par les boutons EnergyShare*/
 .btn-primary {
     color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: var(--energy-blue);
+    border-color: var(--energy-blue);
+}
+.btn-primary:hover {
+    background-color: var(--energy-blue-dark);
+    border-color: var(--energy-blue-dark);
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
@@ -25,15 +289,17 @@ h1:focus {
 }
 
 .valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
+    /*outline: 1px solid #26b050;*/
+    outline: 1px solid var(--energy-green);
 }
 
 .invalid {
-    outline: 1px solid #e50000;
+    outline: 1px solid var(--energy-danger);
 }
 
 .validation-message {
-    color: #e50000;
+    /*color: #e50000;*/
+    color: var(--energy-danger);
 }
 
 .blazor-error-boundary {
@@ -71,11 +337,13 @@ h1:focus {
 }
 
     .network-status.online {
-        background-color: #2ecc71; /* vert */
+        /*background-color: #2ecc71;*/ /* vert */
+        background-color: var(--energy-green);
     }
 
     .network-status.offline {
-        background-color: #e74c3c; /* rouge */
+        /*background-color: #e74c3c;*/ /* rouge */
+        background-color: var(--energy-danger);
     }
 /*Mise en forme section publique homePage*/
 .home-hero {
@@ -92,8 +360,10 @@ h1:focus {
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    background: #ffd700;
-    color: #1b224f;
+    /*background: #ffd700;
+    color: #1b224f;*/
+    background: var(--energy-yellow);
+    color: var(--energy-navy);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -104,7 +374,6 @@ h1:focus {
     margin-bottom: 1.5rem !important;
 }
 
-
 /*Mise en forme logo*/
 
 .sidebar-logo {
@@ -114,25 +383,6 @@ h1:focus {
     justify-content: center;
     align-items: center;
 }
-
-/*.brand-block {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}*/
-
-/*.nav-logo {
-    width: 58px;
-    height: 58px;
-    object-fit: contain;
-    background: white;
-    border-radius: 12px;
-    padding: 4px;
-    display: block;
-}*/
-
 .brand-name {
     display: block;
     width: 100%;
@@ -143,20 +393,11 @@ h1:focus {
     text-align: center;
 }
 
-/*Mise en forme branding*/
-/*.card {
-    transition: all 0.2s ease;
-}*/
-/*card plys dynamique*/
- /*.card:hover {
-    
-    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-}*/
-
-
 .brand-card {
-    background: white;
-    border-radius: 18px;
+    /*background: white;
+    border-radius: 18px;*/
+    background: var(--energy-surface);
+    border-radius: var(--energy-radius-large);
     padding: 1.4rem 1.8rem;
     max-width: 570px; /* Ajuster la largeur clé */
     margin-left: auto; /* pousse à droite */
@@ -172,11 +413,11 @@ h1:focus {
 }
 
 .brand-energy {
-    color: #2f80ed;
+    color: var(--energy-blue);
 }
 
 .brand-share {
-    color: #2ca84a;
+    color: var(--energy-green);
 }
 
 .brand-heading-row {
@@ -195,7 +436,7 @@ h1:focus {
 .brand-underline {
     height: 4px;
     flex: 1;
-    background: linear-gradient(90deg, #2f80ed 0%, #2f80ed 40%, #2ca84a 100%);
+    background: linear-gradient(90deg, var(--energy-blue) 0%, var(--energy-blue) 40%, var(--energy-green) 100%);
     /*background: linear-gradient(90deg, #2f80ed, #2ca84a, #b832c4);  */
     border-radius: 999px;
 }
@@ -210,10 +451,9 @@ h1:focus {
     font-weight: 700;
     margin-bottom: 1rem;
 }
-
 .energy-exclamation {
-    color: #ffd700;
-    text-shadow: 1px 1px 0 #1b224f;
+    color: var(--energy-yellow);
+    text-shadow: 1px 1px 0 var(--energy-navy);
 }
 
 .shortcut-row {
@@ -239,7 +479,9 @@ h1:focus {
 .shortcut-stack .shortcut-card {
      flex: 1;
 }
-/*Page Concept partage Energie*/
+/* =========================================================
+   PAGE CONCEPT       (Debut)
+   ========================================================= */
 
 .concept-page {
     max-width: 1600px;  /*élargir la largeur */
@@ -247,8 +489,10 @@ h1:focus {
 }
 
 .concept-hero {
-    background: linear-gradient(135deg, #f4f1ea 0%, #e7f1ff 100%);
-    border-radius: 20px;
+    /* background: linear-gradient(135deg, #f4f1ea 0%, #e7f1ff 100%);
+    border-radius: 20px;*/
+    background: linear-gradient( 135deg, var(--energy-background) 0%, var(--energy-blue-soft) 100% );
+    border-radius: var(--energy-radius-large);
     padding: 2.5rem;
     margin-bottom: 2rem;
 }
@@ -256,7 +500,8 @@ h1:focus {
     .concept-hero h1 {
         font-size: 2.4rem;
         font-weight: 800;
-        color: #111827;
+        /*color: #111827;*/
+        color: var(--energy-text);
     }
 
 .concept-section {
@@ -271,20 +516,20 @@ h1:focus {
 
 .concept-card,
 .benefit-card {
-    background: white;
-    border-radius: 18px;
+    background: var(--energy-surface);
+    border-radius: var(--energy-radius-large);
+    border: 1px solid var(--energy-border);
+    box-shadow: var(--energy-shadow);
     padding: 1.6rem;
     height: 100%;
-    border: 1px solid rgba(0,0,0,0.06);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
 }
 
 .concept-number {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: #ffd700;
-    color: #1b224f;
+    background: var(--energy-yellow);
+    color: var(--energy-navy);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -303,8 +548,8 @@ h1:focus {
 }
 
 .concept-highlight {
-    background: #1b224f;
-    color: white;
+    background: var(--energy-navy);
+    color: var(--energy-surface);
     border-radius: 20px;
     padding: 2rem;
 }
@@ -315,14 +560,18 @@ h1:focus {
     object-fit: contain;
     border-radius: 20px;
     padding: 10px;
-    background: white;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    background: var(--energy-surface);
+    box-shadow: var(--energy-shadow);
 }
 
+/* =========================================================
+   PAGE CONCEPT       (Fin)
+   ========================================================= */
 
 /*menu gauche*/
 .nav-link {
-    font-size: 0.95rem; /* Taille légèrement augmentée pour lisibilité */
+    /*font-size: 0.95rem;*/ /* Taille légèrement augmentée pour lisibilité */
+    font-size: clamp(0.95rem, 0.45vw + 0.85rem, 1.05rem);
     font-weight: 500; /* Semi-bold pour meilleure hiérarchie */
     display: flex; /* Permet alignement icône + texte */
     align-items: center; /* Alignement vertical */
@@ -334,20 +583,17 @@ h1:focus {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-/*.nav-section-title {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    color: #9aa3b2;
-    margin: 1rem 1rem 0.5rem;
-}*/
-
-/* Icônes du menu */
-.nav-link span.bi {
-    width: 18px; /* Taille fixe pour alignement propre */
-    min-width: 18px;
-    text-align: center;
-    opacity: 0.9; /* Légèrement atténué pour éviter surcharge visuelle */
-}
+    .nav-link span.bi {
+        width: 22px;
+        min-width: 22px;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.05rem;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.9);
+        opacity: 0.9;
+    }
 
 
 /* Effet au survol */
@@ -380,7 +626,6 @@ h1:focus {
     gap: 0.4rem;
 }
 
-
 /* Logo */
 .nav-logo {
     width: 72px; /* Taille maîtrisée */
@@ -392,16 +637,172 @@ h1:focus {
     display: block;
 }
 
-
-/* Nom de l’application */
-/*.brand-name {
-    color: white;
-    font-size: 1.05rem;
-    font-weight: 700;
-}*/
-
-
 /* Zone scrollable du menu */
 .nav-scrollable {
     padding-top: 0.5rem;
 }
+
+/* =========================================================
+   PROFIL - AFFICHAGE EN CONSULTATION      (Debut)
+   ========================================================= */
+
+.profile-section {
+    max-width: 900px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    background-color: var(--energy-surface);
+    border: 1px solid var(--energy-border);
+    border-radius: var(--energy-radius);
+}
+
+.profile-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--energy-navy);
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+.profile-field {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.profile-label {
+    font-weight: 600;
+    color: var(--energy-text-muted);
+}
+
+.profile-value {
+    color: var(--energy-text);
+}
+/* =========================================================
+   PROFIL - AFFICHAGE EN CONSULTATION      (Fin)
+   ========================================================= */
+
+/* =========================================================
+   KPI - NOMBRE DE MATCHS   : cf. Petit indicateur visuel placé dans l'en-tête du tableau. (début)
+   ========================================================= */
+
+.matches-kpi {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 1rem;
+    background: var(--energy-green-soft);
+    border: 1px solid var(--energy-green-border);
+    border-radius: 999px;
+    color: var(--energy-green-dark);
+    white-space: nowrap;
+}
+
+.matches-kpi-icon {
+    font-size: 1.35rem;
+    color: var(--energy-green);
+}
+
+.matches-kpi-value {
+    font-size: clamp(1.3rem, 1.5vw, 1.7rem);
+    font-weight: 700;
+    line-height: 1;
+}
+
+.matches-kpi-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+/* Sur mobile on aura un indicateur plus compcte logo et valeur*/
+@media (max-width: 576px) {
+    .matches-kpi {
+        padding: 0.5rem 0.75rem;
+        gap: 0.45rem;
+    }
+
+    .matches-kpi-label {
+        display: none;
+    }
+}
+/* =========================================================
+   KPI - NOMBRE DE MATCHS   : cf. Petit indicateur visuel placé dans l'en-tête du tableau. (fin)
+   ========================================================= */
+
+/* =========================================================
+  Messages (début) 
+   ========================================================= */
+.messages-table {
+    width: 100%;
+}
+    .messages-table .message-date {
+        width: 110px;
+        white-space: nowrap;
+    }
+
+    .messages-table .message-object {
+        width: 180px;
+    }
+
+    .messages-table .message-content {
+        min-width: 360px;
+        width: 100%;
+    }
+
+    .messages-table .message-actions {
+        width: 120px;
+        white-space: nowrap;
+        text-align: center;
+    }
+.message-reply-btn {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+    
+/* =========================================================
+  Messages (Fin) 
+   ========================================================= */
+
+/* =========================================================
+   DONNÉES DU PARTAGE - MODE CONSULTATION   (Début)
+   ========================================================= */
+
+.partage-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 2rem;
+}
+
+.partage-detail-field {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+}
+
+.partage-detail-label {
+    font-weight: 700;
+    color: var(--energy-navy);
+}
+.partage-detail-description {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+   .partage-detail-grid {
+        grid-template-columns: 1fr;
+    }
+    .partage-detail-description {
+        grid-column: auto;
+  }
+}
+/* =========================================================
+   DONNÉES DU PARTAGE - MODE CONSULTATION   (Fin)
+   ========================================================= */

@@ -32,66 +32,9 @@ else
     {
         <div class="alert alert-success">@successMessage</div>
     }
-
-    <!-- Formulaire création / modification -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">
-                @(isEditMode ? "Modifier le point d'accès" : "Ajouter un point d'accès")
-            </h5>
-
-            <EditForm Model="formModel" OnValidSubmit="SaveAsync">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-
-                <div class="mb-3">
-                    <label class="form-label">Adresse</label>
-                    <InputText class="form-control" @bind-Value="formModel.AdresseLine1" />
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Code postal</label>
-                    <InputText class="form-control" @bind-Value="formModel.CodePostal" />
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Fournisseur</label>
-                    <InputText class="form-control" @bind-Value="formModel.Fournisseur" />
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Numéro compteur intelligent</label>
-                    <InputText class="form-control" @bind-Value="formModel.SmartMeter" />
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Code EAN</label>
-                    <InputText class="form-control" @bind-Value="formModel.EAN" />
-                </div>
-
-                <div class="form-check mb-3">
-                    <InputCheckbox class="form-check-input" @bind-Value="formModel.IsInjectionPoint" />
-                    <label class="form-check-label">
-                        Ce point injecte de l'énergie sur le réseau
-                    </label>
-                </div>
-
-                <button class="btn btn-primary" type="submit">
-                    @(isEditMode ? "Enregistrer les modifications" : "Ajouter")
-                </button>
-
-                @if (isEditMode)
-                {
-                    <button class="btn btn-outline-secondary ms-2" type="button" @onclick="ResetForm">
-                        Annuler
-                    </button>
-                }
-            </EditForm>
-        </div>
-    </div>
-
-    <!-- Liste des points d'accès -->
-    @if (pointsAccess.Count == 0)
+      <!-- Liste des points d'accès -->
+    <h5 class="mb-3">Mes points enregistrés</h5>
+   @if (pointsAccess.Count == 0)
     {
         <div class="alert alert-info">
             Aucun point d'accès enregistré.
@@ -116,13 +59,15 @@ else
 
                             @if (point.EstActif)
                             {
-                                <button class="btn btn-outline-primary btn-sm me-2"
+                                <button class="btn btn-energy-edit btn-sm me-2"
                                         @onclick="() => EditAsync(point.Id)">
+                                    <span class="bi bi-pencil-fill me-1"></span>
                                     Modifier
                                 </button>
 
-                                <button class="btn btn-outline-danger btn-sm"
+                                <button class="btn btn-energy-danger btn-sm"
                                         @onclick="() => DeactivateAsync(point.Id)">
+                                    <span class="bi bi-x-circle me-1"></span>
                                     Désactiver
                                 </button>
                             }
@@ -132,11 +77,107 @@ else
             }
         </div>
     }
+    @if (!showForm)
+{
+    <div class="mt-3 mb-4">
+        <button class="btn btn-energy-action"
+                type="button"
+                @onclick="ShowCreateForm">
+            <span class="bi bi-plus-circle-fill me-1"></span>
+            Ajouter un point d'accès
+        </button>
+    </div>
+}
+    
+    <!-- Formulaire création / modification -->
+
+    @if (showForm)
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">
+                    @(isEditMode ? "Modifier le point d'accès" : "Ajouter un point d'accès")
+                </h5>
+
+                <EditForm Model="formModel" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label class="form-label">Adresse</label>
+                        <InputText class="form-control" @bind-Value="formModel.AdresseLine1" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Code postal</label>
+                        <InputText class="form-control" @bind-Value="formModel.CodePostal" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Fournisseur</label>
+                        <InputText class="form-control" @bind-Value="formModel.Fournisseur" />
+                    </div>
+
+                   @*  experience utilisateur : ajout de texte d'aide pour guider l'utilisateur sur le format attendu pour le numéro de compteur intelligent et le code EAN. *@
+
+                    <div class="mb-3">
+                        <label class="form-label">Numéro compteur intelligent</label>
+
+                        <InputText class="form-control"
+                                   maxlength="20"
+                                   @bind-Value="formModel.SmartMeter" />
+
+                        <div class="form-text">
+                            Commence par <strong>1SJ</strong> — maximum 20 caractères.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Code EAN</label>
+
+                        <InputText class="form-control"
+                                   maxlength="18"
+                                   inputmode="numeric"
+                                   @bind-Value="formModel.EAN" />
+
+                        <div class="form-text">
+                            Commence par <strong>5414489</strong> — 18 chiffres au total.
+                        </div>
+                    </div>
+
+
+                    <div class="form-check mb-3">
+                        <InputCheckbox class="form-check-input" @bind-Value="formModel.IsInjectionPoint" />
+                        <label class="form-check-label">
+                            Ce point injecte de l'énergie sur le réseau
+                        </label>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-energy-save"
+                                type="submit">
+                            <span class="bi bi-check-lg me-1"></span>
+                            Enregistrer
+                        </button>
+
+                        <button class="btn btn-energy-cancel"
+                                type="button"
+                                @onclick="ResetForm">
+                            <span class="bi bi-x-lg me-1"></span>
+                            Annuler
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+    
 }
 
 @code {
     private bool isLoading = true;
     private bool isEditMode = false;
+    private bool showForm = false; //le form de création d'un point d'accès n'est pas affiché par défaut
 
     private string? errorMessage;
     private string? successMessage;
@@ -241,6 +282,7 @@ else
         };
 
         isEditMode = true;
+        showForm = true;
     }
 
     private async Task DeactivateAsync(Guid id)
@@ -264,5 +306,16 @@ else
     {
         formModel = new PointAccessFormModel();
         isEditMode = false;
+        showForm = false;
+    }
+    private void ShowCreateForm()
+    {
+        formModel = new PointAccessFormModel
+        {
+         SmartMeter = "1SJ",
+            EAN = "5414489"
+        };
+        isEditMode = false;
+        showForm = true;
     }
 }

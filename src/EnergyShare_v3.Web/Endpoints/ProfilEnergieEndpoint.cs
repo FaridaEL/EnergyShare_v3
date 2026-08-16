@@ -21,6 +21,7 @@ namespace EnergyShare_v3.Web.Endpoints
                 });
 
             group.MapGet("/me", GetMyProfilEnergie);
+            group.MapGet("/me/point-access/{pointAccessId:guid}", GetMyProfilEnergieByPointAccessId);
             group.MapGet("", GetProfilsEnergie);
             group.MapGet("/{id:guid}", GetProfilEnergieById);
             group.MapPost("", CreateProfilEnergie);
@@ -81,6 +82,12 @@ namespace EnergyShare_v3.Web.Endpoints
         internal static async Task<IResult> GetMyProfilEnergie(ISender sender)
         {
             var response = await sender.Send(new GetMyProfilEnergie());
+            return response.ToMinimalApiResult();
+        }     
+
+        internal static async Task<IResult> GetMyProfilEnergieByPointAccessId(ISender sender,Guid pointAccessId)
+        {
+            var response = await sender.Send(new GetMyProfilEnergieByPointAccessId(pointAccessId));
             return response.ToMinimalApiResult();
         }
     }
