@@ -20,6 +20,13 @@ namespace EnergyShare_v3.Application.Features.Matching
 
         Guid ContactUserId,     // pour envoyer le message  : dépend du context qui est connecté c'est soit le vendeur soit l'acheteur
         string ContactPrenom,    // pour afficher dans l'UI
+
+        decimal? OffreEnergie_kWh,
+        decimal? DemandeEnergie_kWh,
+        decimal? PrixVenteCible_Eur,
+        decimal? PrixAchatCible_Eur,
+
+        bool EstDisponible,
         
         decimal DistanceCalculee,
         DateTime CreatedAt

@@ -53,6 +53,33 @@ namespace EnergyShare_v3.Application.Features.Matching
                         ? (m.PointAccessAcheteur.User.FirstName ?? "Acheteur")
                         : (m.PointAccessVendeur.User.FirstName ?? "Vendeur"),
 
+                    // Informations énergétiques du vendeur
+                    m.PointAccessVendeur.ProfilEnergie != null
+                        ? m.PointAccessVendeur.ProfilEnergie.OffreEnergie_kWh
+                        : null,
+
+                    // Informations énergétiques de l'acheteur
+                    m.PointAccessAcheteur.ProfilEnergie != null
+                        ? m.PointAccessAcheteur.ProfilEnergie.DemandeEnergie_kWh
+                        : null,
+
+                    // Prix cible vendeur
+                    m.PointAccessVendeur.ProfilEnergie != null
+                        ? m.PointAccessVendeur.ProfilEnergie.PrixVenteCible_Eur
+                        : null,
+
+                    // Prix cible acheteur
+                    m.PointAccessAcheteur.ProfilEnergie != null
+                        ? m.PointAccessAcheteur.ProfilEnergie.PrixAchatCible_Eur
+                        : null,
+
+                    // Disponibilité du contact
+                    // Si l'utilisateur connecté est vendeur,
+                    // on vérifie la disponibilité du point acheteur.
+                    // Sinon, on vérifie celle du point vendeur.
+                    m.PointAccessVendeur.UserId == currentUserId
+                        ? !m.PointAccessAcheteur.Membres.Any()
+                        : !m.PointAccessVendeur.Membres.Any(),
                     m.DistanceCalculee,
                     m.Audit.CreatedAt
                 ))
