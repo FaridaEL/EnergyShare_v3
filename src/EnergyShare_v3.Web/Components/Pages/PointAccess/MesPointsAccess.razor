@@ -207,8 +207,11 @@ else
                         </p>
 
                         <div class="alert alert-warning mt-3 mb-0">
-                            Ce point ne sera plus disponible pour les opérations
-                            nécessitant un point d'accès actif.
+                            <strong>Attention :</strong>
+                            ce point ne pourra plus être utilisé pour le matching
+                            ni pour participer à un partage d'énergie.
+                            S'il participe encore à un partage en cours,
+                            sa désactivation sera refusée.
                         </div>
 
                     </div>
@@ -358,7 +361,11 @@ else
 
         if (!result.IsSuccess)
         {
-            errorMessage = "La désactivation du point d'accès a échoué.";
+            // Si le backend renvoie une règle métier explicite,
+            // on l'affiche directement à l'utilisateur.
+            errorMessage = result.Errors.Any()
+                ? string.Join(" | ", result.Errors)
+                : "La désactivation du point d'accès a échoué.";
             return;
         }
 
