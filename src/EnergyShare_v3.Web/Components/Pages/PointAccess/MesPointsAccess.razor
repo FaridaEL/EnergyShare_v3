@@ -65,8 +65,13 @@ else
                                     Modifier
                                 </button>
 
-                                <button class="btn btn-energy-danger btn-sm"
+                                @* <button class="btn btn-energy-danger btn-sm"
                                         @onclick="() => DeactivateAsync(point.Id)">
+                                    <span class="bi bi-x-circle me-1"></span>
+                                    Désactiver
+                                </button> *@
+                                <button class="btn btn-energy-danger btn-sm"
+                                        @onclick="() => AskDeactivate(point)">
                                     <span class="bi bi-x-circle me-1"></span>
                                     Désactiver
                                 </button>
@@ -172,6 +177,64 @@ else
         </div>
     }
     
+    @if (pointToDeactivate is not null)
+    {
+        <div class="modal fade show d-block"
+             tabindex="-1"
+             style="background-color: rgba(0,0,0,0.45);">
+
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            Confirmer la désactivation
+                        </h5>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <p>
+                            Voulez-vous vraiment désactiver ce point d'accès ?
+                        </p>
+
+                        <p class="fw-semibold mb-1">
+                            @pointToDeactivate.AdresseLine1
+                        </p>
+
+                        <p class="text-muted mb-0">
+                            @pointToDeactivate.CodePostal
+                        </p>
+
+                        <div class="alert alert-warning mt-3 mb-0">
+                            Ce point ne sera plus disponible pour les opérations
+                            nécessitant un point d'accès actif.
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+
+                        <button class="btn btn-energy-cancel"
+                                type="button"
+                                @onclick="CancelDeactivate">
+                            <span class="bi bi-x-lg me-1"></span>
+                            Annuler
+                        </button>
+
+                        <button class="btn btn-energy-danger"
+                                type="button"
+                                @onclick="ConfirmDeactivateAsync">
+                            <span class="bi bi-exclamation-triangle-fill me-1"></span>
+                            Confirmer la désactivation
+                        </button>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {
@@ -183,6 +246,7 @@ else
     private string? successMessage;
 
     private List<PointAccessSummaryDto> pointsAccess = [];
+    private PointAccessSummaryDto? pointToDeactivate; // Variable pour stocker le point d'accès à désactiver et pour confirmer avant de désactiver
     private PointAccessFormModel formModel = new();
 
     protected override async Task OnInitializedAsync()
@@ -317,5 +381,29 @@ else
         };
         isEditMode = false;
         showForm = true;
+    }
+    //Méthodes pour gérer la désactivation d'un point d'accès avec confirmation
+    private void AskDeactivate(PointAccessSummaryDto point)
+    {
+        pointToDeactivate = point;
+
+        errorMessage = null;
+        successMessage = null;
+    }
+    private void CancelDeactivate()
+    {
+        pointToDeactivate = null;
+    }
+
+    private async Task ConfirmDeactivateAsync()
+    {
+        if (pointToDeactivate is null)
+            return;
+
+        var id = pointToDeactivate.Id;
+
+        pointToDeactivate = null;
+
+        await DeactivateAsync(id);
     }
 }
