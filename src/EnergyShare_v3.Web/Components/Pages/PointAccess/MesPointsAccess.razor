@@ -34,16 +34,44 @@ else
     }
       <!-- Liste des points d'accès -->
     <h5 class="mb-3">Mes points enregistrés</h5>
+    <div class="form-check mb-3">
+        <InputCheckbox class="form-check-input"
+                       @bind-Value="showInactivePoints" />
+
+        <label class="form-check-label">
+            Afficher les points désactivés
+        </label>
+    </div>
+
+    @if (showInactivePoints)
+    {
+        <div class="alert alert-info mb-3">
+            Les points d'accès désactivés sont conservés temporairement afin
+            de préserver l'historique des opérations et des partages d'énergie.
+            Leur conservation et leur suppression sont gérées conformément
+            à la politique de conservation des données.
+        </div>
+    }
+
    @if (pointsAccess.Count == 0)
     {
         <div class="alert alert-info">
             Aucun point d'accès enregistré.
         </div>
     }
+    else if (!HasActivePoints && !showInactivePoints)  // cas où l'utilisateur a des points d'accès mais tous sont désactivés et qu'il n'a pas coché la case pour les afficher
+    {
+        <div class="alert alert-info">
+            Vous n'avez actuellement aucun point d'accès actif.
+            Vous pouvez afficher vos points désactivés ou ajouter un nouveau point d'accès.
+        </div>
+    }
     else
     {
         <div class="row">
-            @foreach (var point in pointsAccess)
+            @* @foreach (var point in pointsAccess) *@
+            @foreach (var point in pointsAccess
+                .Where(p => p.EstActif || showInactivePoints))
             {
                 <div class="col-md-4 mb-3">
                     <div class="card @(point.EstActif ? "border-success" : "border-secondary")">
@@ -244,6 +272,11 @@ else
     private bool isLoading = true;
     private bool isEditMode = false;
     private bool showForm = false; //le form de création d'un point d'accès n'est pas affiché par défaut
+    private bool showInactivePoints = false; //par défaut, on n'affiche pas les points d'accès désactivés dans la liste
+    private bool HasActivePoints
+    {
+        get { return pointsAccess.Any(p => p.EstActif); }   //propriété calculée pour savoir si l'utilisateur a au moins un point d'accès actif : cas où tout ses points sont désactivés !
+    }
 
     private string? errorMessage;
     private string? successMessage;
