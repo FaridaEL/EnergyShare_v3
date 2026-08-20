@@ -162,8 +162,16 @@ else
         }
 
         //hasInjectionPoint = pointsResult.Value.Any(p => p.EstActif && p.IsInjectionPoint);
-        injectionPoints = pointsResult.Value.Where(p => p.EstActif && p.IsInjectionPoint).ToList();
+        injectionPoints = pointsResult.Value
+            .Where(p => p.EstActif && p.IsInjectionPoint)
+            .ToList();
 
+        // S'il n'existe qu'un seul point injecteur disponible,
+        // il est sélectionné automatiquement pour simplifier le parcours.
+        if (injectionPoints.Count == 1)
+        {
+            model.PointAccessId = injectionPoints[0].Id;
+        }
         isLoading = false;
     }
 

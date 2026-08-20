@@ -98,6 +98,82 @@ public class TestDataFactory
     }
 
 
+
+
+
+    /// <summary>
+    /// Crée un vendeur de test avec un point d'accès actif d'injection
+    /// et retourne à la fois :
+    /// - l'email du vendeur ;
+    /// - le vrai PointAccessId créé.
+    ///
+    /// Cette méthode est utilisée par les tests qui doivent réellement
+    /// créer un partage avec un PointAccessId valide.
+    /// </summary>
+    public async Task<(string Email, Guid PointAccessId)>
+        CreateSellerWithInjectionPointDataAsync()
+    {
+        var email = GenerateUniqueEmail("seller");
+        var ean = GenerateUniqueEan();
+        var smartMeter = GenerateUniqueSmartMeter();
+
+        // 1. Création du compte vendeur
+        var registerResponse = await _client.PostAsJsonAsync(
+            "/api/auth/register",
+            new
+            {
+                email,
+                password = TestUsers.DefaultPassword,
+                firstName = "Seller",
+                lastName = "Integration"
+            });
+
+        var registerBody =
+            await registerResponse.Content.ReadAsStringAsync();
+
+        registerResponse.StatusCode.Should().Be(
+            HttpStatusCode.OK,
+            $"Création utilisateur test échouée. Réponse API : {registerBody}");
+
+        // 2. Authentification
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            email);
+
+        // 3. Création du point d'accès injecteur
+        var createPointCommand = new CreatePointAccess(
+            AdresseLine1: "Rue Test Integration 1",
+            CodePostal: "1000",
+            Fournisseur: "Engie",
+            SmartMeter: smartMeter,
+            EAN: ean,
+            IsInjectionPoint: true);
+
+        var pointAccessResponse = await _client.PostAsJsonAsync(
+            "/api/points-access",
+            createPointCommand);
+
+        var pointAccessBody =
+            await pointAccessResponse.Content.ReadAsStringAsync();
+
+        if (pointAccessResponse.StatusCode != HttpStatusCode.OK &&
+            pointAccessResponse.StatusCode != HttpStatusCode.Created)
+        {
+            throw new Exception(
+                $"Création point d'accès test échouée. Réponse API : {pointAccessBody}");
+        }
+
+        // 4. Récupération du vrai Id du point créé
+        var pointAccessId = await pointAccessResponse.Content
+            .ReadFromJsonAsync<Guid>();
+
+        pointAccessId.Should().NotBeEmpty();
+
+        // 5. Retour email + PointAccessId
+        return (
+            Email: email,
+            PointAccessId: pointAccessId);
+    }
     /// <summary>
     /// Crée un acheteur avec un point de consommation.
     ///

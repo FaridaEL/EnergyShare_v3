@@ -27,17 +27,28 @@ public class PartageInvitationEndpointTests
     [Fact]
     public async Task GetInvitationCodePartage_WhenUserIsSeller_ShouldReturnOk()
     {
-        await _dataFactory.CreateSellerWithInjectionPointAsync();
+        // Création d'un vendeur avec un vrai point d'accès d'injection.
+        // La méthode "Data" permet de récupérer à la fois :
+        // - l'email du vendeur ;
+        // - l'identifiant réel de son point d'accès.
+        var seller = await _dataFactory
+            .CreateSellerWithInjectionPointDataAsync();
 
-        var partageId = await CreatePartageAsync("Partage invitation code");
+        // Création du partage avec le vrai PointAccessId du vendeur.
+        var partageId = await CreatePartageAsync(
+            "Partage invitation code",
+            seller.PointAccessId);
 
+        // Le HttpClient est déjà authentifié avec le vendeur créé,
+        // on peut donc demander le code d'invitation de son partage.
         var response = await _client.PostAsync(
             $"/api/partages/{partageId}/invitation-code",
             content: null);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var dto = await response.Content.ReadFromJsonAsync<InvitationCodeDto>();
+        var dto = await response.Content
+            .ReadFromJsonAsync<InvitationCodeDto>();
 
         dto.Should().NotBeNull();
         dto!.PartageId.Should().Be(partageId);
@@ -53,10 +64,17 @@ public class PartageInvitationEndpointTests
     [Fact]
     public async Task GetInvitationCodePartage_WhenUserIsNotSeller_ShouldReturnForbidden()
     {
-        await _dataFactory.CreateSellerWithInjectionPointAsync();
+        // Création d'un vendeur avec un vrai point d'accès d'injection.
+        var seller = await _dataFactory
+            .CreateSellerWithInjectionPointDataAsync();
 
-        var partageId = await CreatePartageAsync("Partage invitation interdit");
+        // Création du partage avec le vrai PointAccessId du vendeur.
+        var partageId = await CreatePartageAsync(
+            "Partage invitation interdit",
+            seller.PointAccessId);
 
+        // Connexion avec un autre utilisateur :
+        // il ne doit pas pouvoir récupérer le code d'invitation du vendeur.
         await TestAuthHelper.AuthenticateAsync(
             _client,
             TestUsers.Julien);
@@ -67,7 +85,6 @@ public class PartageInvitationEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
-
     /// <summary>
     /// Vérifie qu'un utilisateur avec un point d'accès actif peut rejoindre
     /// un partage via un code d'invitation valide.
@@ -78,12 +95,20 @@ public class PartageInvitationEndpointTests
     [Fact]
     public async Task RejoindrePartage_WithValidInvitationCode_ShouldReturnOk()
     {
-        await _dataFactory.CreateSellerWithInjectionPointAsync();
+        // Création du vendeur avec récupération de son vrai PointAccessId.
+        var seller = await _dataFactory
+            .CreateSellerWithInjectionPointDataAsync();
 
-        var partageId = await CreatePartageAsync("Partage à rejoindre");
+        // Création du partage avec le vrai point d'injection du vendeur.
+        var partageId = await CreatePartageAsync(
+            "Partage à rejoindre",
+            seller.PointAccessId);
 
+        // Génération du code d'invitation.
         var invitationCode = await CreateInvitationCodeAsync(partageId);
 
+        // Création de l'acheteur avec son point de consommation.
+        // Pour le moment, on conserve l'ancienne logique de rejoindre un partage.
         await _dataFactory.CreateBuyerWithConsumptionPointAsync();
 
         var response = await _client.PostAsJsonAsync(
@@ -92,7 +117,8 @@ public class PartageInvitationEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var joinedPartageId = await response.Content.ReadFromJsonAsync<Guid>();
+        var joinedPartageId = await response.Content
+            .ReadFromJsonAsync<Guid>();
 
         joinedPartageId.Should().Be(partageId);
     }
@@ -131,13 +157,21 @@ public class PartageInvitationEndpointTests
     /// <summary>
     /// Helper local : crée un partage avec l'utilisateur actuellement authentifié.
     /// </summary>
-    private async Task<Guid> CreatePartageAsync(string nom)
+    /// <summary>
+    /// Helper local : crée un partage avec l'utilisateur actuellement authentifié.
+    /// Le PointAccessId doit correspondre à un vrai point d'accès
+    /// actif et injecteur appartenant à cet utilisateur.
+    /// </summary>
+    private async Task<Guid> CreatePartageAsync(
+        string nom,
+        Guid pointAccessId)
     {
         var createResponse = await _client.PostAsJsonAsync(
             "/api/partages",
             new CreatePartage(
                 Nom: nom,
-                EnergieType: PartageEnergieType.PairToPair));
+                EnergieType: PartageEnergieType.PairToPair,
+                PointAccessId: pointAccessId));
 
         var body = await createResponse.Content.ReadAsStringAsync();
 
@@ -145,7 +179,8 @@ public class PartageInvitationEndpointTests
             HttpStatusCode.Created,
             $"Création du partage échouée. Réponse API : {body}");
 
-        var partageId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+        var partageId = await createResponse.Content
+            .ReadFromJsonAsync<Guid>();
 
         partageId.Should().NotBeEmpty();
 
