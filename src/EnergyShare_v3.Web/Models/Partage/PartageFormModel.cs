@@ -11,5 +11,8 @@ namespace EnergyShare_v3.Web.Models.Partage
 
         [Required]
         public PartageEnergieType EnergieType { get; set; } = PartageEnergieType.PairToPair;
+
+        [Required(ErrorMessage = "Veuillez sélectionner un point d'accès.")]
+        public Guid? PointAccessId { get; set; }
     }
 }
