@@ -22,72 +22,125 @@ public class PartageValidationEndpointTests
 
 
 
-    //Validation d'un partage complet 
+    // Validation d'un partage complet
     [Fact]
     public async Task DemandeValidationPartage_WhenSellerAndPartageReady_ShouldReturnOk()
     {
-        // Arrange
-        var sellerEmail =
-            await _dataFactory.CreateSellerWithInjectionPointAsync();
+        // =========================================================
+        // 1. CRÉATION DU VENDEUR AVEC SON VRAI POINT D'INJECTION
+        // =========================================================
 
-        await TestAuthHelper.AuthenticateAsync(_client, sellerEmail);
+        var seller = await _dataFactory
+            .CreateSellerWithInjectionPointDataAsync();
+
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            seller.Email);
+
+
+        // =========================================================
+        // 2. CRÉATION DU PARTAGE AVEC LE VRAI POINTACCESSID
+        // =========================================================
 
         var createResponse = await _client.PostAsJsonAsync(
             "/api/partages",
             new CreatePartage(
                 "Partage Validation Test",
-                PartageEnergieType.MemeBatiment));
+                PartageEnergieType.MemeBatiment,
+                seller.PointAccessId));
 
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var partageId =
             await createResponse.Content.ReadFromJsonAsync<Guid>();
 
+        partageId.Should().NotBeEmpty();
+
+
+        // =========================================================
+        // 3. CRÉATION DE L'ACHETEUR
+        // =========================================================
 
         var buyerEmail =
             await _dataFactory.CreateBuyerWithConsumptionPointAsync();
 
-        await TestAuthHelper.AuthenticateAsync(_client, buyerEmail);
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            buyerEmail);
+
+
+        // =========================================================
+        // 4. L'ACHETEUR NE PEUT PAS GÉNÉRER LE CODE D'INVITATION
+        // =========================================================
 
         var invitationResponse =
             await _client.PostAsync(
                 $"/api/partages/{partageId}/invitation-code",
                 null);
 
-        invitationResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        invitationResponse.StatusCode.Should().Be(
+            HttpStatusCode.Forbidden);
 
-        // retour vendeur
-        await TestAuthHelper.AuthenticateAsync(_client, sellerEmail);
+
+        // =========================================================
+        // 5. RETOUR VENDEUR POUR GÉNÉRER LE CODE
+        // =========================================================
+
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            seller.Email);
 
         invitationResponse =
             await _client.PostAsync(
                 $"/api/partages/{partageId}/invitation-code",
                 null);
 
-        invitationResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        invitationResponse.StatusCode.Should().Be(
+            HttpStatusCode.OK);
 
         var invitation =
             await invitationResponse.Content
                 .ReadFromJsonAsync<InvitationCodeDto>();
 
-        await TestAuthHelper.AuthenticateAsync(_client, buyerEmail);
+        invitation.Should().NotBeNull();
+
+
+        // =========================================================
+        // 6. L'ACHETEUR REJOINT LE PARTAGE
+        // =========================================================
+
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            buyerEmail);
 
         var joinResponse = await _client.PostAsJsonAsync(
             "/api/partages/rejoindre",
             new RejoindrePartageRequest(
                 invitation!.InvitationCode));
 
-        joinResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        joinResponse.StatusCode.Should().Be(
+            HttpStatusCode.OK);
 
-        // Act
-        await TestAuthHelper.AuthenticateAsync(_client, sellerEmail);
+
+        // =========================================================
+        // 7. LE VENDEUR DEMANDE LA VALIDATION GRD
+        // =========================================================
+
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            seller.Email);
 
         var response = await _client.PostAsync(
             $"/api/partages/{partageId}/demande-validation",
             null);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // =========================================================
+        // 8. VÉRIFICATIONS
+        // =========================================================
+
+        response.StatusCode.Should().Be(
+            HttpStatusCode.OK);
 
         var dto =
             await response.Content
@@ -101,31 +154,36 @@ public class PartageValidationEndpointTests
             .Be(DdeGRDResponseStatus.EnAttente.ToString());
     }
 
-
-    //Validation refusée car pas de périmètre
+    // Validation refusée car pas de périmètre
     [Fact]
     public async Task DemandeValidationPartage_WhenPairToPairWithoutPerimetre_ShouldReturnBadRequest()
     {
-        var sellerEmail =
-            await _dataFactory.CreateSellerWithInjectionPointAsync();
+        // Création du vendeur avec récupération de son vrai PointAccessId.
+        var seller = await _dataFactory
+            .CreateSellerWithInjectionPointDataAsync();
 
+        // Création de l'acheteur.
         var buyerEmail =
             await _dataFactory.CreateBuyerWithConsumptionPointAsync();
 
-        await TestAuthHelper.AuthenticateAsync(_client, sellerEmail);
+        // Retour sur le vendeur pour créer le partage.
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            seller.Email);
 
         var createResponse = await _client.PostAsJsonAsync(
             "/api/partages",
             new CreatePartage(
                 "Partage Sans Périmètre",
-                PartageEnergieType.PairToPair));
+                PartageEnergieType.PairToPair,
+                seller.PointAccessId));
 
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var partageId =
             await createResponse.Content.ReadFromJsonAsync<Guid>();
 
-
+        // Le vendeur génère le code d'invitation.
         var invitationResponse =
             await _client.PostAsync(
                 $"/api/partages/{partageId}/invitation-code",
@@ -135,51 +193,66 @@ public class PartageValidationEndpointTests
             await invitationResponse.Content
                 .ReadFromJsonAsync<InvitationCodeDto>();
 
-
-        await TestAuthHelper.AuthenticateAsync(_client, buyerEmail);
+        // L'acheteur rejoint le partage.
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            buyerEmail);
 
         await _client.PostAsJsonAsync(
             "/api/partages/rejoindre",
             new RejoindrePartageRequest(
                 invitation!.InvitationCode));
 
-        await TestAuthHelper.AuthenticateAsync(_client, sellerEmail);
+        // Retour vendeur pour demander la validation.
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            seller.Email);
 
         var response = await _client.PostAsync(
             $"/api/partages/{partageId}/demande-validation",
             null);
 
+        // PairToPair sans périmètre confirmé => refus.
         response.StatusCode.Should()
             .Be(HttpStatusCode.BadRequest);
     }
 
 
-    //Utilsateur non vendeur tente de demander validation
+    // Utilisateur non vendeur tente de demander validation
     [Fact]
     public async Task DemandeValidationPartage_WhenUserIsNotSeller_ShouldReturnForbidden()
     {
-        var sellerEmail =
-            await _dataFactory.CreateSellerWithInjectionPointAsync();
+        // Création du vrai vendeur + récupération de son PointAccessId.
+        var seller = await _dataFactory
+            .CreateSellerWithInjectionPointDataAsync();
 
-        await TestAuthHelper.AuthenticateAsync(_client, sellerEmail);
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            seller.Email);
 
+        // Le partage est créé avec le vrai point injecteur du vendeur.
         var createResponse = await _client.PostAsJsonAsync(
             "/api/partages",
             new CreatePartage(
                 "Partage sécurisé",
-                PartageEnergieType.MemeBatiment));
+                PartageEnergieType.MemeBatiment,
+                seller.PointAccessId));
 
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var partageId =
             await createResponse.Content.ReadFromJsonAsync<Guid>();
 
-
+        // Création d'un autre utilisateur.
         var otherUser =
             await _dataFactory.CreateBuyerWithConsumptionPointAsync();
 
-        await TestAuthHelper.AuthenticateAsync(_client, otherUser);
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            otherUser);
 
+        // Cet utilisateur ne doit pas pouvoir demander
+        // la validation du partage du vendeur.
         var response = await _client.PostAsync(
             $"/api/partages/{partageId}/demande-validation",
             null);
@@ -188,30 +261,37 @@ public class PartageValidationEndpointTests
             .Be(HttpStatusCode.Forbidden);
     }
 
-    //Validation déjà en attente 
+    // Validation déjà en attente
     [Fact]
     public async Task DemandeValidationPartage_WhenValidationAlreadyPending_ShouldReturnBadRequest()
     {
-        var sellerEmail =
-            await _dataFactory.CreateSellerWithInjectionPointAsync();
+        // Création du vendeur avec récupération du vrai PointAccessId.
+        var seller = await _dataFactory
+            .CreateSellerWithInjectionPointDataAsync();
 
+        // Création de l'acheteur.
         var buyerEmail =
             await _dataFactory.CreateBuyerWithConsumptionPointAsync();
 
-        await TestAuthHelper.AuthenticateAsync(_client, sellerEmail);
+        // Retour vendeur.
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            seller.Email);
 
+        // Création du partage avec le vrai point injecteur.
         var createResponse = await _client.PostAsJsonAsync(
             "/api/partages",
             new CreatePartage(
                 "Partage doublon validation",
-                PartageEnergieType.MemeBatiment));
+                PartageEnergieType.MemeBatiment,
+                seller.PointAccessId));
 
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var partageId =
             await createResponse.Content.ReadFromJsonAsync<Guid>();
 
-
+        // Génération du code d'invitation.
         var invitationResponse =
             await _client.PostAsync(
                 $"/api/partages/{partageId}/invitation-code",
@@ -221,22 +301,30 @@ public class PartageValidationEndpointTests
             await invitationResponse.Content
                 .ReadFromJsonAsync<InvitationCodeDto>();
 
-
-        await TestAuthHelper.AuthenticateAsync(_client, buyerEmail);
+        // L'acheteur rejoint le partage.
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            buyerEmail);
 
         await _client.PostAsJsonAsync(
             "/api/partages/rejoindre",
             new RejoindrePartageRequest(
                 invitation!.InvitationCode));
 
-        await TestAuthHelper.AuthenticateAsync(_client, sellerEmail);
+        // Retour vendeur.
+        await TestAuthHelper.AuthenticateAsync(
+            _client,
+            seller.Email);
 
+        // Première demande : acceptée.
         var firstResponse = await _client.PostAsync(
             $"/api/partages/{partageId}/demande-validation",
             null);
 
         firstResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
+        // Deuxième demande : refusée car une demande
+        // est déjà en attente.
         var secondResponse = await _client.PostAsync(
             $"/api/partages/{partageId}/demande-validation",
             null);
@@ -336,48 +424,75 @@ public class PartageValidationEndpointTests
     }
 
     /// <summary>
-    /// Crée un partage "Même bâtiment" complet et introduit
+    /// Crée un partage "Même bâtiment" complet puis introduit
     /// une demande de validation GRD.
     ///
-    /// Le type MêmeBatiment évite ici la demande préalable de périmètre,
-    /// car le périmètre A est défini automatiquement par la logique métier.
+    /// Le scénario réalisé est le suivant :
+    /// - création d'un vendeur avec un vrai point d'accès injecteur ;
+    /// - création du partage avec ce PointAccessId ;
+    /// - génération d'un code d'invitation ;
+    /// - création d'un acheteur avec un point de consommation ;
+    /// - l'acheteur rejoint le partage ;
+    /// - retour sur le vendeur ;
+    /// - introduction de la demande de validation GRD.
+    ///
+    /// La méthode retourne l'identifiant de la demande GRD créée.
     /// </summary>
-    private async Task<Guid> CreateValidationRequestForMemeBatimentAsync(string nomPartage)
+    private async Task<Guid> CreateValidationRequestForMemeBatimentAsync(
+        string nomPartage)
     {
-        var sellerEmail = await _dataFactory.CreateSellerWithInjectionPointAsync();
+        // 1. Création du vendeur avec récupération :
+        // - de son email ;
+        // - du vrai PointAccessId de son point injecteur.
+        var seller = await _dataFactory
+            .CreateSellerWithInjectionPointDataAsync();
 
+        // 2. Création du partage avec le vrai point d'accès du vendeur.
         var partageId = await CreatePartageAsync(
             nomPartage,
-            PartageEnergieType.MemeBatiment);
+            PartageEnergieType.MemeBatiment,
+            seller.PointAccessId);
 
-        var invitationCode = await CreateInvitationCodeAsync(partageId);
+        // 3. Génération du code d'invitation.
+        var invitationCode =
+            await CreateInvitationCodeAsync(partageId);
 
-        await _dataFactory.CreateBuyerWithConsumptionPointAsync();
+        // 4. Création d'un acheteur avec un point de consommation.
+        // La méthode laisse le HttpClient authentifié avec cet acheteur.
+        await _dataFactory
+            .CreateBuyerWithConsumptionPointAsync();
 
+        // 5. L'acheteur rejoint le partage.
         var joinResponse = await _client.PostAsJsonAsync(
             "/api/partages/rejoindre",
-            new RejoindrePartageRequest(invitationCode));
+            new RejoindrePartageRequest(
+                invitationCode));
 
-        var joinBody = await joinResponse.Content.ReadAsStringAsync();
+        var joinBody =
+            await joinResponse.Content.ReadAsStringAsync();
 
         joinResponse.StatusCode.Should().Be(
             HttpStatusCode.OK,
             $"Rejoindre partage échoué. Réponse API : {joinBody}");
 
+        // 6. Retour sur le vendeur.
         await TestAuthHelper.AuthenticateAsync(
             _client,
-            sellerEmail);
+            seller.Email);
 
+        // 7. Le vendeur introduit la demande de validation GRD.
         var demandeResponse = await _client.PostAsync(
             $"/api/partages/{partageId}/demande-validation",
             null);
 
-        var demandeBody = await demandeResponse.Content.ReadAsStringAsync();
+        var demandeBody =
+            await demandeResponse.Content.ReadAsStringAsync();
 
         demandeResponse.StatusCode.Should().Be(
             HttpStatusCode.OK,
             $"Demande de validation échouée. Réponse API : {demandeBody}");
 
+        // 8. Lecture et vérification du DTO retourné.
         var demandeDto = await demandeResponse.Content
             .ReadFromJsonAsync<DemandeValidationPartageDto>();
 
@@ -389,16 +504,20 @@ public class PartageValidationEndpointTests
 
     /// <summary>
     /// Crée un partage avec l'utilisateur actuellement authentifié.
+    /// Le PointAccessId doit correspondre à un vrai point d'accès
+    /// actif et injecteur appartenant à cet utilisateur.
     /// </summary>
     private async Task<Guid> CreatePartageAsync(
         string nom,
-        PartageEnergieType energieType)
+        PartageEnergieType energieType,
+        Guid pointAccessId)
     {
         var createResponse = await _client.PostAsJsonAsync(
             "/api/partages",
             new CreatePartage(
                 Nom: nom,
-                EnergieType: energieType));
+                EnergieType: energieType,
+                PointAccessId: pointAccessId));
 
         var body = await createResponse.Content.ReadAsStringAsync();
 

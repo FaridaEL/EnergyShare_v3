@@ -5,12 +5,14 @@ using EnergyShare_v3.Domain.Enums;
 using FluentValidation;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
+using System.Drawing;
 
 namespace EnergyShare_v3.Application.Features.Partage
 {
     public record CreatePartage(
      string Nom,
-     PartageEnergieType EnergieType//,
+     PartageEnergieType EnergieType,
+     Guid PointAccessId
     // Guid VendeurId
  ) : ICommand<Result<Guid>>;
 
@@ -23,6 +25,9 @@ namespace EnergyShare_v3.Application.Features.Partage
                 .WithMessage("Le nom du partage est requis")
                 .MaximumLength(100);
 
+            RuleFor(x => x.PointAccessId)
+                .NotEmpty()
+                .WithMessage("Le point d'accès est requis");
             /*
             RuleFor(x => x.VendeurId)
                 .NotEmpty()
@@ -50,6 +55,7 @@ namespace EnergyShare_v3.Application.Features.Partage
             // C’est ce point d’accès qui sera ajouté comme première participation du partage.
             var pointInjectionVendeur = await context.PointAccesses
                 .FirstOrDefaultAsync(p =>
+                    p.Id == command.PointAccessId &&  // on récupère le point d’accès sélectionné par le vendeur dans la commande et non plus le premier de la liste !
                     p.UserId == vendeurId &&
                     p.EstActif &&
                     p.IsInjectionPoint,
@@ -59,7 +65,8 @@ namespace EnergyShare_v3.Application.Features.Partage
             {
                 return Result<Guid>.Invalid(new ValidationError(
                     "PointAccess",
-                    "Vous devez d’abord déclarer un point d’accès d’injection actif pour créer un partage.",
+                    "Le point d'accès sélectionné n'est pas valide ou n'est pas disponible pour créer un partage.",
+                    //"Vous devez d’abord déclarer un point d’accès d’injection actif pour créer un partage.",
                     "CreatePartage.PointInjectionObligatoire",
                     ValidationSeverity.Error));
             }
@@ -116,8 +123,6 @@ namespace EnergyShare_v3.Application.Features.Partage
 
             if (!ajoutResult.IsSuccess)
                 return Result<Guid>.Invalid(ajoutResult.ValidationErrors);
-
-
 
             await context.Partages.AddAsync(partage, cancellationToken);
 

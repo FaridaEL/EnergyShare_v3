@@ -737,6 +737,30 @@ h1:focus {
    ========================================================= */
 
 /* =========================================================
+   FILTRES - MES MATCHS (début)
+   ========================================================= */
+
+.matches-filter-panel {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    background: var(--energy-surface);
+    border: 1px solid var(--energy-border);
+    border-radius: var(--energy-radius-large);
+    box-shadow: var(--energy-shadow);
+}
+.matches-filter-panel .form-label {
+    margin-bottom: 0.4rem;
+}
+
+@media (max-width: 992px) {
+    .matches-filter-panel {
+        padding: 1rem;
+    }
+}
+/* =========================================================
+   FILTRES - MES MATCHS (Fin)
+   ========================================================= */
+/* =========================================================
   Messages (début) 
    ========================================================= */
 .messages-table {

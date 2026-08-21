@@ -6,8 +6,11 @@
 @using Mediator
 @using EnergyShare_v3.Application.Features.PointAccess
 @using EnergyShare_v3.Web.Models.PointAccess
+@using EnergyShare_v3.Application.Interfaces
+@using EnergyShare_v3.Application.Features.Geocoding
 
 @inject ISender Sender
+@inject IGeocodingService GeocodingService //permet au composant blazor d'utiliser le service de géocodage pour valider les adresses'
 
 <PageTitle>Mes points d'accès</PageTitle>
 
@@ -34,16 +37,44 @@ else
     }
       <!-- Liste des points d'accès -->
     <h5 class="mb-3">Mes points enregistrés</h5>
+    <div class="form-check mb-3">
+        <InputCheckbox class="form-check-input"
+                       @bind-Value="showInactivePoints" />
+
+        <label class="form-check-label">
+            Afficher les points désactivés
+        </label>
+    </div>
+
+    @if (showInactivePoints)
+    {
+        <div class="alert alert-info mb-3">
+            Les points d'accès désactivés sont conservés temporairement afin
+            de préserver l'historique des opérations et des partages d'énergie.
+            Leur conservation et leur suppression sont gérées conformément
+            à la politique de conservation des données.
+        </div>
+    }
+
    @if (pointsAccess.Count == 0)
     {
         <div class="alert alert-info">
             Aucun point d'accès enregistré.
         </div>
     }
+    else if (!HasActivePoints && !showInactivePoints)  // cas où l'utilisateur a des points d'accès mais tous sont désactivés et qu'il n'a pas coché la case pour les afficher
+    {
+        <div class="alert alert-info">
+            Vous n'avez actuellement aucun point d'accès actif.
+            Vous pouvez afficher vos points désactivés ou ajouter un nouveau point d'accès.
+        </div>
+    }
     else
     {
         <div class="row">
-            @foreach (var point in pointsAccess)
+            @* @foreach (var point in pointsAccess) *@
+            @foreach (var point in pointsAccess
+                .Where(p => p.EstActif || showInactivePoints))
             {
                 <div class="col-md-4 mb-3">
                     <div class="card @(point.EstActif ? "border-success" : "border-secondary")">
@@ -65,8 +96,13 @@ else
                                     Modifier
                                 </button>
 
-                                <button class="btn btn-energy-danger btn-sm"
+                                @* <button class="btn btn-energy-danger btn-sm"
                                         @onclick="() => DeactivateAsync(point.Id)">
+                                    <span class="bi bi-x-circle me-1"></span>
+                                    Désactiver
+                                </button> *@
+                                <button class="btn btn-energy-danger btn-sm"
+                                        @onclick="() => AskDeactivate(point)">
                                     <span class="bi bi-x-circle me-1"></span>
                                     Désactiver
                                 </button>
@@ -103,10 +139,43 @@ else
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
-                    <div class="mb-3">
+                    @* <div class="mb-3">
                         <label class="form-label">Adresse</label>
                         <InputText class="form-control" @bind-Value="formModel.AdresseLine1" />
+                    </div> *@
+
+                    <div class="mb-3 position-relative">
+                        <label class="form-label">Adresse</label>
+
+                        <input class="form-control"
+                               value="@formModel.AdresseLine1"
+                               @oninput="SearchAddressAsync"
+                               autocomplete="off" />
+
+                        @if (isSearchingAddress)
+                        {
+                            <div class="form-text">
+                                Recherche d'adresses...
+                            </div>
+                        }
+
+                        @if (addressSuggestions.Count > 0)
+                        {
+                            <div class="list-group position-absolute w-100 shadow-sm"
+                                 style="z-index: 1000;">
+
+                                @foreach (var suggestion in addressSuggestions)
+                                {
+                                    <button type="button"
+                                            class="list-group-item list-group-item-action"
+                                            @onclick="() => SelectAddress(suggestion)">
+                                        @suggestion.DisplayText
+                                    </button>
+                                }
+                            </div>
+                        }
                     </div>
+
 
                     <div class="mb-3">
                         <label class="form-label">Code postal</label>
@@ -172,19 +241,92 @@ else
         </div>
     }
     
+    @if (pointToDeactivate is not null)
+    {
+        <div class="modal fade show d-block"
+             tabindex="-1"
+             style="background-color: rgba(0,0,0,0.45);">
+
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            Confirmer la désactivation
+                        </h5>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <p>
+                            Voulez-vous vraiment désactiver ce point d'accès ?
+                        </p>
+
+                        <p class="fw-semibold mb-1">
+                            @pointToDeactivate.AdresseLine1
+                        </p>
+
+                        <p class="text-muted mb-0">
+                            @pointToDeactivate.CodePostal
+                        </p>
+
+                        <div class="alert alert-warning mt-3 mb-0">
+                            <strong>Attention :</strong>
+                            ce point ne pourra plus être utilisé pour le matching
+                            ni pour participer à un partage d'énergie.
+                            S'il participe encore à un partage en cours,
+                            sa désactivation sera refusée.
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+
+                        <button class="btn btn-energy-cancel"
+                                type="button"
+                                @onclick="CancelDeactivate">
+                            <span class="bi bi-x-lg me-1"></span>
+                            Annuler
+                        </button>
+
+                        <button class="btn btn-energy-danger"
+                                type="button"
+                                @onclick="ConfirmDeactivateAsync">
+                            <span class="bi bi-exclamation-triangle-fill me-1"></span>
+                            Confirmer la désactivation
+                        </button>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {
     private bool isLoading = true;
     private bool isEditMode = false;
     private bool showForm = false; //le form de création d'un point d'accès n'est pas affiché par défaut
+    private bool showInactivePoints = false; //par défaut, on n'affiche pas les points d'accès désactivés dans la liste
+    private bool HasActivePoints
+    {
+        get { return pointsAccess.Any(p => p.EstActif); }   //propriété calculée pour savoir si l'utilisateur a au moins un point d'accès actif : cas où tout ses points sont désactivés !
+    }
 
     private string? errorMessage;
     private string? successMessage;
 
     private List<PointAccessSummaryDto> pointsAccess = [];
+    private PointAccessSummaryDto? pointToDeactivate; // Variable pour stocker le point d'accès à désactiver et pour confirmer avant de désactiver
     private PointAccessFormModel formModel = new();
 
+    //variables pour la recherche d'adresse et autocomplétion
+    private List<AddressSuggestion> addressSuggestions = [];  // Liste des adresses proposées par UrbIS.
+    private bool isSearchingAddress;  // Indique qu'une recherche est actuellement en cours. --> Peut servir à afficher "Recherche..." dans l'interface.
+    private CancellationTokenSource? addressSearchCts; //sert à annuler une ancienne recherche UrbIS quand l’utilisateur continue à taper vant que la réponse UrbIS soit revenue.
+    
+    
     protected override async Task OnInitializedAsync()
     {
         await LoadPointsAccessAsync();
@@ -294,7 +436,11 @@ else
 
         if (!result.IsSuccess)
         {
-            errorMessage = "La désactivation du point d'accès a échoué.";
+            // Si le backend renvoie une règle métier explicite,
+            // on l'affiche directement à l'utilisateur.
+            errorMessage = result.Errors.Any()
+                ? string.Join(" | ", result.Errors)
+                : "La désactivation du point d'accès a échoué.";
             return;
         }
 
@@ -318,4 +464,79 @@ else
         isEditMode = false;
         showForm = true;
     }
+    //Méthodes pour gérer la désactivation d'un point d'accès avec confirmation
+    private void AskDeactivate(PointAccessSummaryDto point)
+    {
+        pointToDeactivate = point;
+
+        errorMessage = null;
+        successMessage = null;
+    }
+    private void CancelDeactivate()
+    {
+        pointToDeactivate = null;
+    }
+
+    private async Task ConfirmDeactivateAsync()
+    {
+        if (pointToDeactivate is null)
+            return;
+
+        var id = pointToDeactivate.Id;
+
+        pointToDeactivate = null;
+
+        await DeactivateAsync(id);
+    }
+
+    private async Task SearchAddressAsync(ChangeEventArgs e)
+    {
+        var searchText = e.Value?.ToString() ?? string.Empty;// Récupère le texte saisi dans le champ Adresse.
+
+        formModel.AdresseLine1 = searchText; // On garde le formulaire synchronisé avec la saisie utilisateur.
+
+        if (searchText.Length < 3)    // On ne lance pas de recherche UrbIS pour 1 ou 2 caractères!
+        {
+            addressSuggestions.Clear();
+            return;
+        }
+
+        addressSearchCts?.Cancel();  // Si une ancienne recherche est encore en cours, on l'annule avant d'en lancer une nouvelle.
+        addressSearchCts = new CancellationTokenSource();  // Nouveau "jeton d'annulation" pour la nouvelle recherche.
+
+        isSearchingAddress = true;
+
+        try
+        {
+            var results = await GeocodingService.SearchAddressesAsync(
+                street: searchText,
+                number: null,
+                postalCode: formModel.CodePostal,
+                cancellationToken: addressSearchCts.Token);
+
+            addressSuggestions = results
+                .Take(8)
+                .ToList();
+        }
+        catch (OperationCanceledException)
+        {
+            // Ce n'est pas une vraie erreur : cela signifie simplement qu'une nouvelle recherche
+            // a remplacé la précédente.
+        }
+        finally
+        {
+            isSearchingAddress = false;
+        }
+    }
+    private void SelectAddress(AddressSuggestion suggestion)
+    { 
+        formModel.AdresseLine1 =// On reconstruit le format actuellement utilisé dans la DB.
+            $"{suggestion.Street} {suggestion.Number}".Trim();
+
+        formModel.CodePostal = suggestion.PostalCode; // Le code postal est rempli automatiquement.
+
+        addressSuggestions.Clear();// Une fois l'adresse choisie, on masque les suggestions.
+    }
+
+
 }

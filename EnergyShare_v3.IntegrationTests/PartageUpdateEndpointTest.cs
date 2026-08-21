@@ -49,9 +49,15 @@ public class PartageUpdateEndpointTests
     [Fact]
     public async Task UpdatePartage_WhenUserIsSeller_ShouldReturnSuccess()
     {
-        await _dataFactory.CreateSellerWithInjectionPointAsync();
+        // Création d'un vendeur dynamique avec un vrai point d'accès d'injection actif.
+        // La méthode "Data" permet de récupérer son PointAccessId.
+        var seller = await _dataFactory
+            .CreateSellerWithInjectionPointDataAsync();
 
-        var partageId = await CreatePartageAsync("Partage à modifier");
+        // Création du partage avec le vrai point d'accès du vendeur.
+        var partageId = await CreatePartageAsync(
+            "Partage à modifier",
+            seller.PointAccessId);
 
         var request = new UpdatePartageRequest(
             Nom: "Partage modifié integration",
@@ -92,9 +98,16 @@ public class PartageUpdateEndpointTests
     [Fact]
     public async Task UpdatePartage_WhenUserIsNotSeller_ShouldReturnForbidden()
     {
-        await _dataFactory.CreateSellerWithInjectionPointAsync();
+       // Création d'un vendeur dynamique avec un vrai point d'accès d'injection actif.
+    // La méthode "Data" permet de récupérer le PointAccessId réel du vendeur.
+    var seller = await _dataFactory
+        .CreateSellerWithInjectionPointDataAsync();
 
-        var partageId = await CreatePartageAsync("Partage sécurisé");
+    // Création du partage avec le vrai point d'accès du vendeur.
+    var partageId = await CreatePartageAsync(
+        "Partage sécurisé",
+        seller.PointAccessId);
+
 
         await TestAuthHelper.AuthenticateAsync(
             _client,
@@ -121,9 +134,14 @@ public class PartageUpdateEndpointTests
     [Fact]
     public async Task UpdatePartage_WhenDateFinIsBeforeDateDebut_ShouldReturnBadRequest()
     {
-        await _dataFactory.CreateSellerWithInjectionPointAsync();
+        // Création d'un vendeur avec un vrai point d'accès d'injection actif.
+        var seller = await _dataFactory
+            .CreateSellerWithInjectionPointDataAsync();
 
-        var partageId = await CreatePartageAsync("Partage validation dates");
+        // Création du partage avec le vrai PointAccessId du vendeur.
+        var partageId = await CreatePartageAsync(
+            "Partage validation dates",
+            seller.PointAccessId);
 
         var request = new UpdatePartageRequest(
             Nom: "Partage validation dates",
@@ -141,13 +159,17 @@ public class PartageUpdateEndpointTests
 
     /// <summary>
     /// Helper local : crée un partage avec l'utilisateur actuellement authentifié.
-    /// Le HttpClient doit donc déjà être authentifié avant d'appeler cette méthode.
+    /// Le PointAccessId doit correspondre à un vrai point d'accès
+    /// actif et injecteur appartenant à cet utilisateur.
     /// </summary>
-    private async Task<Guid> CreatePartageAsync(string nom)
+    private async Task<Guid> CreatePartageAsync(
+        string nom,
+        Guid pointAccessId)
     {
         var createCommand = new CreatePartage(
             Nom: nom,
-            EnergieType: PartageEnergieType.PairToPair);
+            EnergieType: PartageEnergieType.PairToPair,
+            PointAccessId: pointAccessId);
 
         var createResponse = await _client.PostAsJsonAsync(
             "/api/partages",

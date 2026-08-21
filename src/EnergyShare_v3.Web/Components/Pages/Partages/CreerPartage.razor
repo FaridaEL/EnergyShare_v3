@@ -32,7 +32,7 @@ else
         <div class="alert alert-warning">@errorMessage</div>
     }
 
-    @if (!hasInjectionPoint)
+    @if (injectionPoints.Count == 0)
     {
         <div class="alert alert-info">
             Vous devez d’abord posséder un point d’accès d’injection pour créer un partage.
@@ -53,6 +53,34 @@ else
                 <EditForm Model="model" OnValidSubmit="CreateAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
+
+                     <div class="mb-3">
+                        <label class="form-label">Point d'accès injecteur</label>
+
+                        <InputSelect class="form-select"
+                                     @bind-Value="model.PointAccessId">
+
+                            <option value="">Sélectionnez un point d'accès</option>
+
+                            @foreach (var point in injectionPoints)
+                            {
+                                @* <option value="@point.Id">
+                                    @FormatEan(point.EAN) — @point.AdresseLine1 - @point.CodePostal
+                                </option> *@
+
+                                <option value="@point.Id">
+                                    @point.EAN — @point.AdresseLine1 - @point.CodePostal
+                                </option>
+                            }
+
+                        </InputSelect>
+
+                        <small class="text-muted">
+                            Seuls vos points d'accès actifs injectant de l'énergie
+                            peuvent être utilisés pour créer un partage.
+                        </small>
+                    </div>
+                    
 
                     <div class="mb-3">
                         <label class="form-label">Nom du partage</label>
@@ -108,8 +136,8 @@ else
 @code {
     private bool isLoading = true;
     private bool isSaving = false;
-    private bool hasInjectionPoint = false;
-
+    // private bool hasInjectionPoint = false;
+    private List<PointAccessSummaryDto> injectionPoints = []; // un utilisateur peut avoir plusieurs points d'accès d'injection
     private string? errorMessage;
 
     private PartageFormModel model = new();
@@ -133,8 +161,17 @@ else
             return;
         }
 
-        hasInjectionPoint = pointsResult.Value.Any(p => p.EstActif && p.IsInjectionPoint);
+        //hasInjectionPoint = pointsResult.Value.Any(p => p.EstActif && p.IsInjectionPoint);
+        injectionPoints = pointsResult.Value
+            .Where(p => p.EstActif && p.IsInjectionPoint)
+            .ToList();
 
+        // S'il n'existe qu'un seul point injecteur disponible,
+        // il est sélectionné automatiquement pour simplifier le parcours.
+        if (injectionPoints.Count == 1)
+        {
+            model.PointAccessId = injectionPoints[0].Id;
+        }
         isLoading = false;
     }
 
@@ -143,9 +180,21 @@ else
         isSaving = true;
         errorMessage = null;
 
+        // var result = await Sender.Send(new CreatePartage(
+        //     model.Nom,
+        //     model.EnergieType));
+        if (!model.PointAccessId.HasValue)
+        {
+            errorMessage = "Veuillez sélectionner un point d'accès.";
+            isSaving = false;
+            return;
+        }
+
         var result = await Sender.Send(new CreatePartage(
             model.Nom,
-            model.EnergieType));
+            model.EnergieType,
+            model.PointAccessId.Value));
+
 
         if (!result.IsSuccess)
         {
@@ -157,4 +206,14 @@ else
         // Navigation.NavigateTo($"/partages/my");
         Navigation.NavigateTo($"/partages/{result.Value}");
     }
+
+    // private static string FormatEan(string? ean)
+    // {
+    //     if (string.IsNullOrWhiteSpace(ean))
+    //         return "EAN non renseigné";
+
+    //     return ean.Length <= 6
+    //         ? ean
+    //         : $"••••••{ean[^6..]}"; // on affiche les 6 derniers caractères de l'EAN pour des raisons de confidentialité
+    // }
 }

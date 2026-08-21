@@ -212,16 +212,38 @@ public class PartageGrdPerimetreEndpointTests
     /// avec le vendeur, car c'est lui qui doit effectuer les actions suivantes
     /// sur le partage.
     /// </summary>
+    /// <summary>
+    /// Crée un partage complet pour les tests d'intégration :
+    /// - création d'un vendeur avec un point d'accès injecteur actif ;
+    /// - création du partage avec le vrai PointAccessId du vendeur ;
+    /// - génération d'un code d'invitation ;
+    /// - création d'un acheteur avec un point de consommation ;
+    /// - l'acheteur rejoint le partage.
+    ///
+    /// À la fin, le HttpClient est ré-authentifié avec le vendeur
+    /// afin que les actions suivantes soient réalisées avec le bon utilisateur.
+    /// </summary>
     private async Task<Guid> CreateCompletePartageAsync(string nom)
     {
-        var sellerEmail = await _dataFactory.CreateSellerWithInjectionPointAsync();
+        // 1. Création du vendeur.
+        // On utilise la méthode "Data" car CreatePartage exige maintenant
+        // le vrai PointAccessId du point injecteur sélectionné.
+        var seller = await _dataFactory
+            .CreateSellerWithInjectionPointDataAsync();
 
-        var partageId = await CreatePartageAsync(nom);
+        // 2. Création du partage avec le vrai point d'accès du vendeur.
+        var partageId = await CreatePartageAsync(
+            nom,
+            seller.PointAccessId);
 
+        // 3. Génération du code d'invitation.
         var invitationCode = await CreateInvitationCodeAsync(partageId);
 
+        // 4. Création d'un acheteur avec un point de consommation.
+        // Pour le moment, on conserve l'ancienne logique de rejoindre un partage.
         await _dataFactory.CreateBuyerWithConsumptionPointAsync();
 
+        // 5. L'acheteur rejoint le partage avec le code d'invitation.
         var joinResponse = await _client.PostAsJsonAsync(
             "/api/partages/rejoindre",
             new RejoindrePartageRequest(invitationCode));
@@ -232,23 +254,29 @@ public class PartageGrdPerimetreEndpointTests
             HttpStatusCode.OK,
             $"Rejoindre partage échoué. Réponse API : {joinBody}");
 
+        // 6. On se ré-authentifie avec le vendeur pour poursuivre le test.
         await TestAuthHelper.AuthenticateAsync(
             _client,
-            sellerEmail);
+            seller.Email);
 
         return partageId;
     }
 
     /// <summary>
     /// Crée un partage avec l'utilisateur actuellement authentifié.
+    /// Le PointAccessId reçu doit correspondre à un vrai point d'accès
+    /// actif et injecteur appartenant à cet utilisateur.
     /// </summary>
-    private async Task<Guid> CreatePartageAsync(string nom)
+    private async Task<Guid> CreatePartageAsync(
+        string nom,
+        Guid pointAccessId)
     {
         var createResponse = await _client.PostAsJsonAsync(
             "/api/partages",
             new CreatePartage(
                 Nom: nom,
-                EnergieType: PartageEnergieType.PairToPair));
+                EnergieType: PartageEnergieType.PairToPair,
+                PointAccessId: pointAccessId));
 
         var body = await createResponse.Content.ReadAsStringAsync();
 

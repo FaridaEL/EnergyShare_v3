@@ -11,10 +11,16 @@
 <PageTitle>Mes matchs</PageTitle>
 
 <div class="page-shell py-4">
-   
+
+    @* =========================================================
+       EN-TÊTE DE LA PAGE
+       ========================================================= *@
+
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+
         <div>
             <h2 class="page-title mb-1">Mes matchs</h2>
+
             <p class="page-subtitle mb-0">
                 Retrouvez vos contacts sauvegardés.
             </p>
@@ -22,145 +28,382 @@
 
         <a class="btn btn-energy-action align-self-start align-self-md-center"
            href="/matching/search">
+
             <span class="bi bi-search me-1"></span>
             Trouver un match
+
         </a>
+
     </div>
 
-    
+
+    @* =========================================================
+       MESSAGE D'ERREUR GLOBAL
+       ========================================================= *@
+
     @if (!string.IsNullOrWhiteSpace(Message))
     {
-        <div class="alert alert-danger">@Message</div>
+        <div class="alert alert-danger">
+            @Message
+        </div>
     }
+
+
+    @* =========================================================
+       CHARGEMENT DES DONNÉES
+       ========================================================= *@
 
     @if (IsLoading)
     {
         <p>Chargement...</p>
     }
+
+    @* =========================================================
+       AUCUN MATCH SAUVEGARDÉ
+       ========================================================= *@
+
     else if (SavedMatches.Count == 0)
     {
         <div class="alert alert-info rounded-4">
             Aucun match sauvegardé pour le moment.
         </div>
     }
+
+    @* =========================================================
+       LISTE DES MATCHS SAUVEGARDÉS
+       ========================================================= *@
+
     else
     {
-        <div class="row g-4 mb-4">
+        <div class="card responsive-card shadow-sm border-0 rounded-4 mb-4">
 
-            <!-- Résumé du nombre de matchs -->
-            @* <div class="col-lg-3">
-                <div class="card responsive-card shadow-sm border-0 rounded-4 h-100">
-                    <div class="card-body">
-                        <div class="text-muted">Total</div>
-                        <div class="display-6 fw-bold">@SavedMatches.Count</div>
+            <div class="card-body">
+
+                @* =================================================
+                   EN-TÊTE DU TABLEAU
+                   Affiche le rôle du contact et le nombre de résultats
+                   actuellement visibles après filtrage.
+                   ================================================= *@
+
+                <div class="d-flex flex-column flex-md-row
+                    justify-content-between
+                    align-items-md-center
+                    gap-3 mb-3">
+
+                    <h5 class="fw-bold mb-0">
+                        @MatchesTitle
+                    </h5>
+
+
+                    @* KPI : nombre de matchs correspondant
+                       aux filtres actuellement appliqués *@
+
+                    <div class="matches-kpi">
+
+                        <span class="bi bi-people-fill matches-kpi-icon"></span>
+
+                        <span class="matches-kpi-value">
+                            @FilteredSavedMatches.Count()
+                        </span>
+
+                        <span class="matches-kpi-label">
+                            match(s)
+                        </span>
+
                     </div>
+
                 </div>
-            </div> *@
 
-            <!-- Liste des matchs -->
-            <div class="col-lg-12">
-                <div class="card responsive-card shadow-sm border-0 rounded-4 h-100">
-                    <div class="card-body">
 
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0">@MatchesTitle</h5>
+                @* =================================================
+                   FILTRES DES MATCHS SAUVEGARDÉS
 
-                            @* <span class="badge rounded-pill text-bg-light border px-3 py-2">
-                                @SavedMatches.Count match(s)
-                            </span> *@
-                            <div class="matches-kpi">
-                                <span class="bi bi-people-fill matches-kpi-icon"></span>
-                                
-                                <span class="matches-kpi-value">
-                                    @SavedMatches.Count
+                   Même logique visuelle que sur la page
+                   "Trouver un match".
+
+                   Les filtres sont appliqués uniquement côté UI :
+                   - recherche sur le nom du contact ;
+                   - distance maximale ;
+                   - disponibilité du contact.
+                   ================================================= *@
+
+                <div class="matches-filter-panel mb-4">
+
+                    <div class="row g-3 align-items-end">
+
+                        @* -----------------------------------------
+                           RECHERCHE PAR NOM DU CONTACT
+                           ----------------------------------------- *@
+
+                        <div class="col-lg-5">
+
+                            <label class="form-label fw-semibold">
+                                Rechercher
+                            </label>
+
+                            <div class="input-group">
+
+                                <span class="input-group-text">
+                                    <span class="bi bi-search"></span>
                                 </span>
-                                
-                                <span class="matches-kpi-label">
-                                    match(s)
-                                </span>
+
+                                <input class="form-control"
+                                       placeholder="Nom du contact..."
+                                       @bind="matchSearchText"
+                                       @bind:event="oninput" />
+
                             </div>
+
                         </div>
 
-                        <div class="table-responsive">
-                            <table class="table align-middle responsive-table">
-                                <thead>
-                                    <tr>
-                                        <th>@ContactColumnLabel</th>
-                                        <th>Distance</th>
-                                        <th>Quantité</th>
-                                        <th>Prix</th>
-                                        <th>Statut</th>
-                                        <th class="text-end">Action</th>
-                                    </tr>
-                                </thead>
 
-                                <tbody>
-                                    @foreach (var match in SavedMatches)
-                                    {
-                                        <tr>
-                                            <td data-label="@ContactColumnLabel">
-                                                <strong>@match.ContactPrenom</strong>
-                                            </td>
+                        @* -----------------------------------------
+                           FILTRE SUR LA DISTANCE MAXIMALE
+                           La valeur est exprimée en kilomètres.
+                           ----------------------------------------- *@
 
-                                            <td data-label="Distance">
-                                                <strong>@FormatDistance(match.DistanceCalculee)</strong>
-                                            </td>
-                                            <td data-label="Quantité">
-                                                @if (GetQuantity(match).HasValue)
-                                                {
-                                                    <span>@GetQuantity(match)!.Value.ToString("N0") kWh</span>
-                                                }
-                                                else
-                                                {
-                                                    <span>-</span>
-                                                }
-                                            </td>
+                        <div class="col-lg-3">
 
-                                            <td data-label="Prix">
-                                                @if (GetPrice(match).HasValue)
-                                                {
-                                                    <span>@GetPrice(match)!.Value.ToString("N2") €/kWh</span>
-                                                }
-                                                else
-                                                {
-                                                    <span>-</span>
-                                                }
-                                            </td>
+                            <label class="form-label fw-semibold">
+                                Distance maximale (km)
+                            </label>
 
-                                            <td data-label="Statut">
-                                                @if (match.EstDisponible)
-                                                {
-                                                    <span class="badge bg-success">
-                                                        Libre
-                                                    </span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-secondary">
-                                                        Occupé
-                                                    </span>
-                                                }
-                                            </td>
+                            <InputNumber class="form-control"
+                                         @bind-Value="maxDistanceKm"
+                                         min="0"
+                                         step="0.5"
+                                         placeholder="Ex. 5" />
 
-                                            <td class="text-end">
-                                                <a class="btn btn-energy-action btn-sm"
-                                                   href="@($"/messages/send?to={match.ContactUserId}&prenom={Uri.EscapeDataString(match.ContactPrenom)}&matchId={match.MatchId}")">
-                                                    <span class="bi bi-envelope-fill me-1"></span>
-                                                    Contacter
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
                         </div>
 
-                        <p class="text-muted mt-3 mb-0">
-                            Contactez directement vos acheteurs ou vendeurs potentiels.
-                        </p>
+
+                        @* -----------------------------------------
+                           FILTRE SUR LA DISPONIBILITÉ
+                           ----------------------------------------- *@
+
+                        <div class="col-lg-2">
+
+                            <label class="form-label fw-semibold">
+                                Statut
+                            </label>
+
+                            <select class="form-select"
+                                    @bind="matchStatusFilter">
+
+                                <option value="all">
+                                    Tous
+                                </option>
+
+                                <option value="available">
+                                    Libre
+                                </option>
+
+                                <option value="busy">
+                                    Occupé
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        @* -----------------------------------------
+                           RÉINITIALISATION DES FILTRES
+                           ----------------------------------------- *@
+
+                        <div class="col-lg-2">
+
+                            <button class="btn btn-energy-cancel w-100"
+                                    type="button"
+                                    @onclick="ResetMatchFilters">
+
+                                <span class="bi bi-arrow-counterclockwise me-1"></span>
+                                Réinitialiser
+
+                            </button>
+
+                        </div>
 
                     </div>
+
                 </div>
+
+
+                @* =================================================
+                   AUCUN RÉSULTAT APRÈS FILTRAGE
+
+                   Attention :
+                   ici SavedMatches contient bien des données,
+                   mais aucune ne correspond aux filtres choisis.
+                   ================================================= *@
+
+                @if (!FilteredSavedMatches.Any())
+                {
+                    <div class="alert alert-info mb-0">
+
+                        Aucun match ne correspond aux critères sélectionnés.
+
+                    </div>
+                }
+
+                @* =================================================
+                   TABLEAU DES MATCHS FILTRÉS
+                   ================================================= *@
+
+                else
+                {
+                    <div class="table-responsive">
+
+                        <table class="table align-middle responsive-table">
+
+                            <thead>
+
+                                <tr>
+                                    <th>@ContactColumnLabel</th>
+                                    <th>Distance</th>
+                                    <th>Quantité</th>
+                                    <th>Prix</th>
+                                    <th>Statut</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var match in FilteredSavedMatches)
+                                {
+                                    <tr>
+
+                                        @* ---------------------------------
+                                           CONTACT
+                                           --------------------------------- *@
+
+                                        <td data-label="@ContactColumnLabel">
+
+                                            <strong>
+                                                @match.ContactPrenom
+                                            </strong>
+
+                                        </td>
+
+
+                                        @* ---------------------------------
+                                           DISTANCE
+                                           --------------------------------- *@
+
+                                        <td data-label="Distance">
+
+                                            <strong>
+                                                @FormatDistance(match.DistanceCalculee)
+                                            </strong>
+
+                                        </td>
+
+
+                                        @* ---------------------------------
+                                           QUANTITÉ D'ÉNERGIE
+
+                                           La quantité affichée dépend du rôle
+                                           de l'utilisateur connecté :
+                                           vendeur ou acheteur.
+                                           --------------------------------- *@
+
+                                        <td data-label="Quantité">
+
+                                            @if (GetQuantity(match).HasValue)
+                                            {
+                                                <span>
+                                                    @GetQuantity(match)!.Value.ToString("N0") kWh
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span>-</span>
+                                            }
+
+                                        </td>
+
+
+                                        @* ---------------------------------
+                                           PRIX CIBLE
+
+                                           Comme pour la quantité, le prix
+                                           affiché dépend du rôle du user.
+                                           --------------------------------- *@
+
+                                        <td data-label="Prix">
+
+                                            @if (GetPrice(match).HasValue)
+                                            {
+                                                <span>
+                                                    @GetPrice(match)!.Value.ToString("N2") €/kWh
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span>-</span>
+                                            }
+
+                                        </td>
+
+
+                                        @* ---------------------------------
+                                           STATUT DE DISPONIBILITÉ
+                                           --------------------------------- *@
+
+                                        <td data-label="Statut">
+
+                                            @if (match.EstDisponible)
+                                            {
+                                                <span class="badge bg-success">
+                                                    Libre
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">
+                                                    Occupé
+                                                </span>
+                                            }
+
+                                        </td>
+
+
+                                        @* ---------------------------------
+                                           ACTION : CONTACTER LE MATCH
+                                           --------------------------------- *@
+
+                                        <td class="text-end">
+
+                                            <a class="btn btn-energy-action btn-sm"
+                                               href="@($"/messages/send?to={match.ContactUserId}&prenom={Uri.EscapeDataString(match.ContactPrenom)}&matchId={match.MatchId}")">
+
+                                                <span class="bi bi-envelope-fill me-1"></span>
+                                                Contacter
+
+                                            </a>
+
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    @* =================================================
+                       TEXTE D'AIDE
+                       ================================================= *@
+
+                    <p class="text-muted mt-3 mb-0">
+                        Contactez directement vos acheteurs ou vendeurs potentiels.
+                    </p>
+                }
+
             </div>
 
         </div>
@@ -172,6 +415,55 @@
     private bool IsLoading { get; set; } = true;
     private string? Message { get; set; }
 
+    //Filtrage : variables élements de filtrage   + méthodes de filtrage
+    private string matchSearchText = string.Empty;
+    private string matchStatusFilter = "all";
+    private decimal? maxDistanceKm;
+   
+    private IEnumerable<SavedMatchSummaryDto> FilteredSavedMatches
+    {
+        get
+        {
+            var query = SavedMatches.AsEnumerable();
+
+            // Recherche sur le prénom affiché
+            if (!string.IsNullOrWhiteSpace(matchSearchText))
+            {
+                query = query.Where(match =>
+                    match.ContactPrenom.Contains(
+                    matchSearchText,
+                    StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Filtre sur la distance maximale
+            if (maxDistanceKm.HasValue && maxDistanceKm.Value >= 0)
+            {
+                query = query.Where(match =>
+                    match.DistanceCalculee <= maxDistanceKm.Value);
+            }
+
+            // Filtre sur le statut
+            if (matchStatusFilter == "available")
+            {
+                query = query.Where(match => match.EstDisponible);
+            }
+            else if (matchStatusFilter == "busy")
+            {
+                query = query.Where(match => !match.EstDisponible);
+            }
+
+            return query;
+        }
+    }
+    private void ResetMatchFilters()
+    {
+        matchSearchText = string.Empty;
+        matchStatusFilter = "all";
+        maxDistanceKm = null;
+    }
+
+    //Filtrage fin
+    
     protected override async Task OnInitializedAsync()
     {
         var result = await Sender.Send(new GetMatchesQuery());

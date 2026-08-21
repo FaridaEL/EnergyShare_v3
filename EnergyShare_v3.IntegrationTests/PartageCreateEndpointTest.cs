@@ -22,7 +22,7 @@ namespace EnergyShare_v3.IntegrationTests.Partage
         {
             var command = new CreatePartage(
                 Nom: "Partage Test Integration",
-                EnergieType: PartageEnergieType.PairToPair);
+                EnergieType: PartageEnergieType.PairToPair, PointAccessId: Guid.NewGuid());
 
             var response = await _client.PostAsJsonAsync("/api/partages", command);
 
@@ -32,14 +32,18 @@ namespace EnergyShare_v3.IntegrationTests.Partage
         [Fact]
         public async Task CreatePartage_WithSellerToken_ShouldReturnCreated()
         {
-            var sellerEmail = await _dataFactory.CreateSellerWithInjectionPointAsync();
+            // Création d'un vendeur avec un vrai point d'accès d'injection.
+            // La version "Data" retourne à la fois l'email et le PointAccessId.
+            //var sellerEmail = await _dataFactory.CreateSellerWithInjectionPointAsync();
+            var seller = await _dataFactory.CreateSellerWithInjectionPointDataAsync();
 
-            await TestAuthHelper.AuthenticateAsync(_client, sellerEmail);
+            await TestAuthHelper.AuthenticateAsync(_client, seller.Email);
             //await AuthenticateAsync("sarah.dupont@example.com");
 
             var command = new CreatePartage(
                 Nom: "Partage Test Integration",
-                EnergieType: PartageEnergieType.PairToPair);
+                EnergieType: PartageEnergieType.PairToPair, 
+                PointAccessId: seller.PointAccessId);
 
             var response = await _client.PostAsJsonAsync("/api/partages", command);
 

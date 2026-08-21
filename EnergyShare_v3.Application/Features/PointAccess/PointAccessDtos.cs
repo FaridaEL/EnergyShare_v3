@@ -22,6 +22,7 @@
         Guid Id,
         string? AdresseLine1,
         string? CodePostal,
+        string? EAN,
         bool IsInjectionPoint,
         string Fournisseur,
         bool EstActif,

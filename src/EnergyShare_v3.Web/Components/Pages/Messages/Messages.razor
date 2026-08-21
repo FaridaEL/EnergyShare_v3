@@ -41,6 +41,9 @@
         </li>
     </ul>
 
+
+
+
     @if (IsLoading)
     {
         <p>Chargement...</p>
@@ -49,6 +52,7 @@
     {
         var messages = ActiveTab == "inbox" ? Inbox : Outbox;
         var isInbox = ActiveTab == "inbox";
+        var filteredMessages = GetFilteredMessages(messages, isInbox).ToList();
 
         @if (messages.Count == 0)
         {
@@ -58,96 +62,185 @@
         }
         else
         {
-            <div class="card shadow-sm border-0 rounded-4">
-                <div class="card-body">
+            @* =========================================================
+       FILTRES DES MESSAGES
+       ========================================================= *@
 
-                    <div class="table-responsive">
-                        <table class="table align-middle responsive-table messages-table">
-                        <thead>
-                            <tr>
-                                   <th class="message-date">Date</th>
-                                   <th>Type</th>
-                                    <th class="message-object">Objet</th>
-                                    <th class="message-content">Contenu</th>
-                                    <th>Contact</th>
-                                    <th>Statut</th>
+            <div class="matches-filter-panel mb-4">
 
-                                @* Les actions n'ont de sens que pour les messages reçus *@
-                                @if (isInbox)
-                                {
-                                        <th class="message-actions">Actions</th>
-                                }
-                            </tr>
-                        </thead>
+                <div class="row g-3 align-items-end">
 
-                        <tbody>
-                            @foreach (var message in messages)
-                            {
-                                <tr>
-                                        <td class="message-date">
-                                            @message.DateEnvoi.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                                        </td>
+                    <div class="col-lg-5">
+                        <label class="form-label fw-semibold">
+                            Rechercher
+                        </label>
 
-                                    <td>
-                                        @if (isInbox)
-                                        {
-                                            <span class="badge bg-primary">IN</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-secondary">OUT</span>
-                                        }
-                                    </td>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <span class="bi bi-search"></span>
+                            </span>
 
-                                        <td class="message-object">
-                                            @message.ObjetMessage
-                                        </td>
+                            <input class="form-control"
+                                   placeholder="Contact, objet ou contenu..."
+                                   @bind="messageSearchText"
+                                   @bind:event="oninput" />
+                        </div>
+                    </div>
 
-                                        <td class="message-content">
-                                            @message.Contenu
-                                        </td>
+                    <div class="col-lg-2">
+                        <label class="form-label fw-semibold">
+                            Statut
+                        </label>
 
-                                    @* Inbox : contact = expéditeur / Outbox : contact = destinataire *@
-                                    <td>@(isInbox ? message.NomExpediteur : message.NomDestinataire)</td>
+                        <select class="form-select"
+                                @bind="messageReadFilter">
+                            <option value="all">Tous</option>
+                            <option value="read">Lu</option>
+                            <option value="unread">Non lu</option>
+                        </select>
+                    </div>
 
-                                    <td>
-                                        @if (message.IsLu)
-                                        {
-                                            <span class="badge bg-success">Lu</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-warning text-dark">Non lu</span>
-                                        }
-                                    </td>
+                    <div class="col-lg-2">
+                        <label class="form-label fw-semibold">
+                            Du
+                        </label>
 
-                                    @if (isInbox)
-                                    {
-                                            <td class="message-actions">
-                                                <button class="btn btn-energy-action btn-sm message-reply-btn"
-                                                        @onclick="() => ReplyTo(message)">
-                                                    <span class="bi bi-reply-fill me-1"></span>
-                                                    Répondre
-                                                </button>
+                        <InputDate class="form-control"
+                                   @bind-Value="dateFrom" />
+                    </div>
 
-                                            @if (!message.IsLu)
-                                            {
-                                                <button class="btn btn-energy-cancel btn-sm"
-                                                        @onclick="() => MarkAsReadAsync(message.Id)">
-                                                    <span class="bi bi-check2 me-1"></span>
-                                                    Marquer lu
-                                                </button>
-                                            }
-                                        </td>
-                                    }
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                    <div class="col-lg-2">
+                        <label class="form-label fw-semibold">
+                            Au
+                        </label>
+
+                        <InputDate class="form-control"
+                                   @bind-Value="dateTo" />
+                    </div>
+
+                    <div class="col-lg-1">
+                        <button class="btn btn-energy-cancel w-100"
+                                type="button"
+                                title="Réinitialiser les filtres"
+                                @onclick="ResetMessageFilters">
+                            <span class="bi bi-arrow-counterclockwise"></span>
+                        </button>
+                    </div>
+
                 </div>
 
             </div>
+
+
+            @if (filteredMessages.Count == 0)
+            {
+                <div class="alert alert-info rounded-4">
+                    Aucun message ne correspond aux critères sélectionnés.
+                </div>
+            }
+            else
+            {
+                <div class="card shadow-sm border-0 rounded-4">
+                    <div class="card-body">
+
+                        <div class="table-responsive">
+                            <table class="table align-middle responsive-table messages-table">
+
+                                <thead>
+                                    <tr>
+                                        <th class="message-date">Date</th>
+                                        <th>Type</th>
+                                        <th class="message-object">Objet</th>
+                                        <th class="message-content">Contenu</th>
+                                        <th>Contact</th>
+                                        <th>Statut</th>
+
+                                        @if (isInbox)
+                                        {
+                                            <th class="message-actions">Actions</th>
+                                        }
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @foreach (var message in filteredMessages)
+                                    {
+                                        <tr>
+
+                                            <td class="message-date">
+                                                @message.DateEnvoi.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                            </td>
+
+                                            <td>
+                                                @if (isInbox)
+                                                {
+                                                    <span class="badge bg-primary">IN</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">OUT</span>
+                                                }
+                                            </td>
+
+                                            <td class="message-object">
+                                                @message.ObjetMessage
+                                            </td>
+
+                                            <td class="message-content">
+                                                @message.Contenu
+                                            </td>
+
+                                            <td>
+                                                @(isInbox
+                                                    ? message.NomExpediteur
+                                                    : message.NomDestinataire)
+                                            </td>
+
+                                            <td>
+                                                @if (message.IsLu)
+                                                {
+                                                    <span class="badge bg-success">Lu</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning text-dark">
+                                                        Non lu
+                                                    </span>
+                                                }
+                                            </td>
+
+                                            @if (isInbox)
+                                            {
+                                                <td class="message-actions">
+
+                                                    <button class="btn btn-energy-action btn-sm message-reply-btn"
+                                                            @onclick="() => ReplyTo(message)">
+                                                        <span class="bi bi-reply-fill me-1"></span>
+                                                        Répondre
+                                                    </button>
+
+                                                    @if (!message.IsLu)
+                                                    {
+                                                        <button class="btn btn-energy-cancel btn-sm"
+                                                                @onclick="() => MarkAsReadAsync(message.Id)">
+                                                            <span class="bi bi-check2 me-1"></span>
+                                                            Marquer lu
+                                                        </button>
+                                                    }
+
+                                                </td>
+                                            }
+
+                                        </tr>
+                                    }
+                                </tbody>
+
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            }
         }
     }
 </div>
@@ -159,6 +252,92 @@
     private bool IsLoading { get; set; } = true;
     private string ActiveTab { get; set; } = "inbox";
     private string? AlertMessage { get; set; }
+
+    // =========================================================
+    // FILTRES DES MESSAGES
+    // =========================================================
+
+    // Recherche libre : contact, objet ou contenu.
+    private string messageSearchText = string.Empty;
+
+    // all = tous
+    // read = lus
+    // unread = non lus
+    private string messageReadFilter = "all";
+
+    // Période de recherche.
+    private DateTime? dateFrom;
+    private DateTime? dateTo;
+
+    /// <summary>
+    /// Retourne les messages correspondant aux filtres sélectionnés.
+    /// Le contact recherché dépend de l'onglet actif :
+    /// - reçus  -> expéditeur ;
+    /// - envoyés -> destinataire.
+    /// </summary>
+    
+    private IEnumerable<MessageDto> GetFilteredMessages(
+        IEnumerable<MessageDto> messages, bool isInbox)
+    {
+        var query = messages;
+
+        // Recherche libre sur contact, objet et contenu.
+        if (!string.IsNullOrWhiteSpace(messageSearchText))
+        {
+            query = query.Where(message =>
+            {
+                var contact = isInbox
+                    ? message.NomExpediteur
+                    : message.NomDestinataire;
+
+                return
+                    (!string.IsNullOrWhiteSpace(contact)
+                     && contact.Contains( messageSearchText,StringComparison.OrdinalIgnoreCase))
+                    || (!string.IsNullOrWhiteSpace(message.ObjetMessage)
+                        && message.ObjetMessage.Contains( messageSearchText,StringComparison.OrdinalIgnoreCase))
+                    || (!string.IsNullOrWhiteSpace(message.Contenu)
+                     && message.Contenu.Contains( messageSearchText, StringComparison.OrdinalIgnoreCase));
+            });
+        }
+
+        // Filtre lu / non lu.
+        if (messageReadFilter == "read")
+        {
+            query = query.Where(message => message.IsLu);
+        }
+        else if (messageReadFilter == "unread")
+        {
+            query = query.Where(message => !message.IsLu);
+        }
+
+        // Date de début incluse.
+        if (dateFrom.HasValue)
+        {
+            query = query.Where(message =>
+                message.DateEnvoi.ToLocalTime().Date >= dateFrom.Value.Date);
+        }
+
+        // Date de fin incluse.
+        if (dateTo.HasValue)
+        {
+            query = query.Where(message =>
+                message.DateEnvoi.ToLocalTime().Date <= dateTo.Value.Date);
+        }
+
+        return query;
+    }
+
+    private void ResetMessageFilters()
+    {
+        messageSearchText = string.Empty;
+        messageReadFilter = "all";
+        dateFrom = null;
+        dateTo = null;
+    }
+
+    // =========================================================
+    // FILTRES DES MESSAGES        Fin
+    // =========================================================
 
     protected override async Task OnInitializedAsync()
     {

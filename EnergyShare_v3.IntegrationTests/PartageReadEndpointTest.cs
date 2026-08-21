@@ -28,11 +28,16 @@ public class PartageReadEndpointTests
     [Fact]
     public async Task GetPartageById_WhenUserIsSeller_ShouldReturnOk()
     {
-        await _dataFactory.CreateSellerWithInjectionPointAsync();
+        // Création d'un vendeur avec un vrai point d'accès d'injection actif.
+        // La méthode "Data" permet de récupérer son email et son PointAccessId.
+        var seller = await _dataFactory
+            .CreateSellerWithInjectionPointDataAsync();
 
+        // Création du partage avec le vrai point d'accès du vendeur.
         var command = new CreatePartage(
             Nom: "Partage Seller Access Test",
-            EnergieType: PartageEnergieType.PairToPair);
+            EnergieType: PartageEnergieType.PairToPair,
+            PointAccessId: seller.PointAccessId);
 
         var createResponse =
             await _client.PostAsJsonAsync(
@@ -49,6 +54,10 @@ public class PartageReadEndpointTests
         var partageId =
             await createResponse.Content.ReadFromJsonAsync<Guid>();
 
+        partageId.Should().NotBeEmpty();
+
+        // Le HttpClient est toujours authentifié avec le vendeur créé,
+        // il doit donc pouvoir consulter le partage qu'il vient de créer.
         var response =
             await _client.GetAsync(
                 $"/api/partages/{partageId}");
@@ -68,7 +77,6 @@ public class PartageReadEndpointTests
 
         dto.NombreParticipants.Should().Be(1);
     }
-
     /// <summary>
     /// Un utilisateur non authentifié ne peut pas consulter la liste des partages.
     /// </summary>

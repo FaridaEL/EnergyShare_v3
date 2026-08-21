@@ -35,6 +35,7 @@ namespace EnergyShare_v3.Application.Features.PointAccess
                     pa.Id,
                     pa.AdresseLine1,
                     pa.CodePostal,
+                    pa.EAN_Encrypted,
                     pa.IsInjectionPoint,
                     pa.Fournisseur,
                     pa.EstActif,
