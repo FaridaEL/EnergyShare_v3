@@ -87,5 +87,50 @@ namespace EnergyShare_v3.IntegrationTests
 
             result.Should().BeNull();
         }
+        /// <summary>
+        /// Vérifie qu'une recherche partielle d'adresse retourne des suggestions d'adresses bruxelloises via UrbIS.
+        /// </summary>
+        [Fact]
+        public async Task SearchAddressesAsync_WithPartialStreet_ShouldReturnSuggestions()
+        {
+            using var scope = _factory.Services.CreateScope();
+
+            var geocodingService = scope.ServiceProvider
+                .GetRequiredService<IGeocodingService>();
+
+            var results = await geocodingService.SearchAddressesAsync(
+                street: "avenue des ar",
+                number: "21",
+                postalCode: "1000");
+
+            results.Should().NotBeEmpty();
+
+            results.Should().Contain(x =>
+                x.Street == "Avenue des Arts" &&
+                x.Number == "21" &&
+                x.PostalCode == "1000");
+        }
+
+        /// <summary>
+        /// Vérifie qu'une saisie trop courte ne déclenche pas de recherche d'adresse inutile.
+        /// </summary>
+        [Fact]
+        public async Task SearchAddressesAsync_WithTooShortStreet_ShouldReturnEmptyList()
+        {
+            using var scope = _factory.Services.CreateScope();
+
+            var geocodingService = scope.ServiceProvider
+                .GetRequiredService<IGeocodingService>();
+
+            var results = await geocodingService.SearchAddressesAsync(
+                street: "av",
+                number: null,
+                postalCode: null);
+
+            results.Should().BeEmpty();
+        }
+
+
+
     }
 }

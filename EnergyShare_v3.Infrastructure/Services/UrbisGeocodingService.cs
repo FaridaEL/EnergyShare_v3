@@ -170,12 +170,15 @@ namespace EnergyShare_v3.Infrastructure.Services
                 return null;
             }
 
-            const double MinimumMatchScore = 5.0;   //seuil minimal de score pour considérer le résultat comme valide. UrbIS retourne un score de 0 à 10.
+            // TODO : ne pas utiliser le MatchScore comme seuil métier strict.
+            // Une adresse réelle peut être retournée avec un score faible selon la méthode de géocodage UrbIS utilisée.
 
-            if (response.Result.MatchScore < MinimumMatchScore)
-            {
-                return null;
-            }
+            //const double MinimumMatchScore = 5.0;   //seuil minimal de score pour considérer le résultat comme valide. 
+
+            //if (response.Result.MatchScore < MinimumMatchScore)
+            //{
+            //    return null;
+            //}
 
             // Transformation de la réponse UrbIS en objet métier/application GeocodingResult.
             // Dans la réponse WGS84 testée : X = longitude et Y = latitude
@@ -216,6 +219,7 @@ namespace EnergyShare_v3.Infrastructure.Services
             public double Y { get; set; } // En WGS84 :Y correspond à la latitude.
         }
 
+        
         private static bool IsBrusselsPostalCode(string codePostal)
         {
             return codePostal is
@@ -224,6 +228,131 @@ namespace EnergyShare_v3.Infrastructure.Services
                 "1083" or "1090" or "1120" or "1130" or "1140" or
                 "1150" or "1160" or "1170" or "1180" or "1190" or
                 "1200" or "1210";
+        }
+
+
+        //Autocomplétion 
+        private class UrbisAddressesResponse
+        {
+            public List<UrbisAddressResult>? Result { get; set; }
+            public bool Error { get; set; }
+            public string? Status { get; set; }
+        }
+
+        private class UrbisAddressResult
+        {
+            public UrbisAddress? Address { get; set; }
+            public double Score { get; set; }
+        }
+
+        private class UrbisAddress
+        {
+            public UrbisStreet? Street { get; set; }
+            public string? Number { get; set; }
+        }
+
+        private class UrbisStreet
+        {
+            public string? Name { get; set; }
+            public string? PostCode { get; set; }
+            public string? Municipality { get; set; }
+        }
+
+        public async Task<IReadOnlyList<AddressSuggestion>> SearchAddressesAsync(
+            string street,
+            string? number, 
+            string? postalCode, 
+            CancellationToken cancellationToken = default)
+        {
+            // On évite d'interroger UrbIS tant que l'utilisateur
+            // n'a pas saisi suffisamment de caractères.
+            if (string.IsNullOrWhiteSpace(street) || street.Trim().Length < 3)
+            {
+                return [];
+            }
+
+            // Structure attendue par l'endpoint getaddressesfields d'UrbIS.
+            var payload = new
+            {
+                language = "fr",
+                address = new
+                {
+                    street = new
+                    {
+                        name = street.Trim(),
+                        postcode = postalCode?.Trim() ?? string.Empty
+                    },
+                    number = number?.Trim() ?? string.Empty
+                },
+                spatialReference = "4326"
+            };
+
+            var json = JsonSerializer.Serialize(payload);
+
+            var url =
+                $"localization/Rest/Localize/getaddressesfields" +
+                $"?json={Uri.EscapeDataString(json)}" +
+                $"&callback=callback";
+
+            var httpResponse = await _httpClient.GetAsync(
+                url,
+                cancellationToken);
+
+            if (!httpResponse.IsSuccessStatusCode)
+            {
+                return [];
+            }
+
+            var rawJson = await httpResponse.Content
+                .ReadAsStringAsync(cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                return [];
+            }
+
+            // UrbIS retourne du JSONP : callback({...})
+            var startIndex = rawJson.IndexOf('(');
+            var endIndex = rawJson.LastIndexOf(')');
+
+            if (startIndex < 0 || endIndex <= startIndex)
+            {
+                return [];
+            }
+
+            var jsonResponse = rawJson.Substring(
+                startIndex + 1,
+                endIndex - startIndex - 1);
+
+            var response = JsonSerializer.Deserialize<UrbisAddressesResponse>(
+                jsonResponse,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            if (response is null ||
+                response.Error ||
+                response.Result is null)
+            {
+                return [];
+            }
+
+            // Transformation des résultats techniques UrbIS
+            // vers notre modèle AddressSuggestion utilisé par l'Application.
+            return response.Result
+                .Where(x =>
+                    x.Address?.Street is not null &&
+                    !string.IsNullOrWhiteSpace(x.Address.Street.Name) &&
+                    !string.IsNullOrWhiteSpace(x.Address.Street.PostCode))
+                .Select(x => new AddressSuggestion(
+                    Street: x.Address!.Street!.Name!,
+                    Number: x.Address.Number ?? string.Empty,
+                    PostalCode: x.Address.Street.PostCode!,
+                    Municipality: x.Address.Street.Municipality ?? string.Empty,
+                    Score: x.Score
+                ))
+                .ToList();
         }
     }
 }

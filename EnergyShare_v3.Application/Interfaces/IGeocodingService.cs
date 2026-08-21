@@ -1,7 +1,4 @@
 ﻿using EnergyShare_v3.Application.Features.Geocoding;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace EnergyShare_v3.Application.Interfaces
 {
@@ -11,9 +8,11 @@ namespace EnergyShare_v3.Application.Interfaces
     /// </summary>
     public interface IGeocodingService
     {
-        Task<GeocodingResult?> GeocodeAsync(
-            string adresseLine1,
-            string codePostal,
+        Task<GeocodingResult?> GeocodeAsync(string adresseLine1,  string codePostal, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<AddressSuggestion>> SearchAddressesAsync(
+            string street,
+            string? number,
+            string? postalCode,
             CancellationToken cancellationToken = default);
     }
 }
