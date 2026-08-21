@@ -123,6 +123,13 @@ builder.Services.AddAuthentication()
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContext, CurrentUserContext>();
 
+//Service de géocodage
+// Service de géocodage
+builder.Services.AddHttpClient<IGeocodingService, UrbisGeocodingService>(client =>
+{
+    client.BaseAddress = new Uri("https://geoservices.irisnet.be/");
+});
+
 //audit-securité
 builder.Services.ConfigureApplicationCookie(options =>
 {

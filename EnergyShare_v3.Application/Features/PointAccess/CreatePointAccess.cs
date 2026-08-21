@@ -27,7 +27,8 @@ namespace EnergyShare_v3.Application.Features.PointAccess
 
     public class CreatePointAccessHandler(
         IApplicationDbContext context,
-        IUserContext userContext)
+        IUserContext userContext, 
+        IGeocodingService geocodingService)
         : ICommandHandler<CreatePointAccess, Result<Guid>>
     {
         public async ValueTask<Result<Guid>> Handle(
@@ -40,8 +41,7 @@ namespace EnergyShare_v3.Application.Features.PointAccess
                 return Result<Guid>.Unauthorized();
 
 
-            // Règle applicative : un même EAN ne peut pas être actif
-            // plusieurs fois en même temps.
+            // Règle applicative : un même EAN ne peut pas être actif plusieurs fois en même temps.
             if (!string.IsNullOrWhiteSpace(command.EAN))
             {
                 var eanAlreadyActive = await context.PointAccesses
@@ -51,11 +51,23 @@ namespace EnergyShare_v3.Application.Features.PointAccess
                         cancellationToken);
 
                 if (eanAlreadyActive)
-                    return Result<Guid>.Conflict(
-                        "Ce point d'accès est déjà rattaché à un utilisateur actif.");
+                    return Result<Guid>.Conflict("Ce point d'accès est déjà rattaché à un utilisateur actif.");
             }
 
+            // Géocodage de l'adresse via le service externe UrbIS.
+            // L'Application ne connaît pas UrbIS directement : elle dépend uniquement de l'interface IGeocodingService.
+            var geocodingResult = await geocodingService.GeocodeAsync(
+                command.AdresseLine1,
+                command.CodePostal,
+                cancellationToken);
 
+            // Si l'adresse n'a pas pu être localisée, on empêche la création du point d'accès.
+            if (geocodingResult is null)
+            {
+                return Result<Guid>.Invalid( new ValidationError  {
+                        ErrorMessage = "L'adresse n'a pas pu être localisée en Région bruxelloise."
+                    });
+            }
 
 
             var result = Domain.Entities.PointsAccesses.PointAccess.Create(
@@ -72,6 +84,9 @@ namespace EnergyShare_v3.Application.Features.PointAccess
                 return Result<Guid>.Invalid(result.ValidationErrors);
 
             var entity = result.Value;
+
+            // Les coordonnées retournées par UrbIS sont enregistrées dans le point d'accès.
+            entity.SetCoordinates( geocodingResult.Latitude, geocodingResult.Longitude);
 
             await context.PointAccesses.AddAsync(entity, cancellationToken);
 
