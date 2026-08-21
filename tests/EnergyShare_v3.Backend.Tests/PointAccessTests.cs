@@ -110,5 +110,26 @@ namespace EnergyShare_v3.Backend.Tests
             secondResult.IsSuccess.Should().BeTrue();
             pointAccess.EstActif.Should().BeFalse();
         }
+
+        [Fact]
+        public void SetCoordinates_ShouldSetLatitudeAndLongitude()
+        {
+            var pointAccess = PointAccess.Create(
+                userId: Guid.NewGuid(),
+                adresseLine1: "Avenue des Arts 21",
+                codePostal: "1000",
+                fournisseur: "Engie",
+                smartMeter: "1SJ-TEST-0001",
+                ean: "541448900000000001",
+                isInjectionPoint: false).Value;
+
+            pointAccess.SetCoordinates(
+                latitude: 50.84611067348397,
+                longitude: 4.369348589036705);
+
+            pointAccess.Latitude.Should().Be(50.84611067348397);
+            pointAccess.Longitude.Should().Be(4.369348589036705);
+        }
+
     }
 }

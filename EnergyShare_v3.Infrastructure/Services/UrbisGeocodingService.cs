@@ -1,9 +1,5 @@
 ﻿using EnergyShare_v3.Application.Features.Geocoding;
 using EnergyShare_v3.Application.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Net.Http.Json;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 
@@ -27,13 +23,18 @@ namespace EnergyShare_v3.Infrastructure.Services
             string codePostal,
             CancellationToken cancellationToken = default)
         {
-            Console.WriteLine(">>> GEOCODING SERVICE APPELE <<<");
-            Console.WriteLine($"Adresse reçue = {adresseLine1}");
-            Console.WriteLine($"Code postal reçu = {codePostal}");
+            //Console.WriteLine(">>> GEOCODING SERVICE APPELE <<<");
+            //Console.WriteLine($"Adresse reçue = {adresseLine1}");
+            //Console.WriteLine($"Code postal reçu = {codePostal}");
 
 
             // Première sécurité :   on ne fait pas d'appel vers UrbIS si l'adresse ou le code postal ne sont pas renseignés.
             if (string.IsNullOrWhiteSpace(adresseLine1) || string.IsNullOrWhiteSpace(codePostal))
+            {
+                return null;
+            }
+
+            if (!IsBrusselsPostalCode(codePostal)) //On ne considère que les codes postaux de Bruxelles pour le géocodage. UrbIS ne gère pas les autres codes postaux.
             {
                 return null;
             }
@@ -48,7 +49,7 @@ namespace EnergyShare_v3.Infrastructure.Services
             var match = Regex.Match( adresseLine1.Trim(),  @"^(?<street>.+?)\s+(?<number>\d+[A-Za-z]?)$");
             // Si l'adresse ne correspond pas au format attendu (ex : si aucun numéro n'est trouvé à la fin)le géocodage est abandonné.
             if (!match.Success) {
-                Console.WriteLine( $"Impossible de séparer la rue et le numéro depuis : {adresseLine1}");
+                //Console.WriteLine( $"Impossible de séparer la rue et le numéro depuis : {adresseLine1}");
                 return null;
 
             }
@@ -60,74 +61,15 @@ namespace EnergyShare_v3.Infrastructure.Services
             // Récupération du numéro capturé par la Regex. Ex: "Avenue des Arts 21" devient number = "21"
             var number = match.Groups["number"].Value.Trim();
 
-            Console.WriteLine($"Rue extraite = {street}");
-            Console.WriteLine($"Numéro extrait = {number}");
-            Console.WriteLine($"Code postal = {codePostal}");
+            //Console.WriteLine($"Rue extraite = {street}");
+            //Console.WriteLine($"Numéro extrait = {number}");
+            //Console.WriteLine($"Code postal = {codePostal}");
 
-            // Construction de l'URL qui sera envoyée au service UrbIS --> Les paramètres transmis sont :
-            // - language=fr : langue utilisée
-            // - address : nom de la rue
-            // - number : numéro de police
-            // - postalCode : code postal
-            // - spatialReference=4326 : système WGS84
-            //
-            // EPSG:4326 permet d'obtenir des coordonnées
-            // sous forme longitude / latitude.
-            //var url =
-            //    $"localization/rest/getxycoordinates" +
-            //    $"?language=fr" +
-            //    $"&address={Uri.EscapeDataString(street)}" +
-            //    $"&number={Uri.EscapeDataString(number)}" +
-            //    $"&postalCode={Uri.EscapeDataString(codePostal)}" +
-            //    $"&spatialReference=4326";
+            // EPSG:4326 permet d'obtenir des coordonnées sous forme longitude / latitude.
 
             // UrbIS attend les données de recherche dans un objet JSON
             // transmis dans le paramètre "json" de la requête GET.
-            //var payload = new
-            //{
-            //    language = "fr",
-            //    address = new
-            //    {
-            //        street = new
-            //        {
-            //            name = street
-            //        },
-            //        postcode = codePostal,
-            //        number = number
-            //    },
-            //    spatialReference = "4326"
-            //};
-            //var payload = new
-            //{
-            //    language = "fr",
 
-            //    address = new
-            //    {
-            //        street = new
-            //        {
-            //            name = street
-            //        }
-            //    },
-
-            //    postcode = codePostal,
-            //    number = number,
-
-            //    spatialReference = "4326"
-            //};
-            //var payload = new
-            //{
-            //    language = "fr",
-            //    address = new
-            //    {
-            //        street = new
-            //        {
-            //            name = street
-            //        },
-            //        postcode = codePostal
-            //    },
-            //    number = number,
-            //    spatialReference = "4326"
-            //};
             var payload = new
             {
                 language = "fr",
@@ -164,38 +106,19 @@ namespace EnergyShare_v3.Infrastructure.Services
             //var response = await _httpClient.GetFromJsonAsync<UrbisResponse>(url, cancellationToken);
             var httpResponse = await _httpClient.GetAsync( url, cancellationToken);
 
-            Console.WriteLine($"UrbIS URL : {httpResponse.RequestMessage?.RequestUri}");
-            Console.WriteLine($"UrbIS STATUS : {(int)httpResponse.StatusCode} {httpResponse.StatusCode}");
+            //Console.WriteLine($"UrbIS URL : {httpResponse.RequestMessage?.RequestUri}");
+            //Console.WriteLine($"UrbIS STATUS : {(int)httpResponse.StatusCode} {httpResponse.StatusCode}");
 
-            //if (!httpResponse.IsSuccessStatusCode)
-            //{
-            //    return null;
-            //}
             if (!httpResponse.IsSuccessStatusCode)
             {
                 var errorContent = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
-                Console.WriteLine($"UrbIS ERROR RESPONSE : {errorContent}");
+                //Console.WriteLine($"UrbIS ERROR RESPONSE : {errorContent}");
 
                 return null;
             }
 
 
-
-            //V1
-            //var response = await httpResponse.Content
-            //    .ReadFromJsonAsync<UrbisResponse>(
-            //        cancellationToken: cancellationToken);
-
-            //V2
-            //var rawJson = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
-
-            //Console.WriteLine($"UrbIS RESPONSE : {rawJson}");
-            //var response = await httpResponse.Content
-            //    .ReadFromJsonAsync<UrbisResponse>(
-            //        cancellationToken: cancellationToken);
-
-            //V3
             var rawJson = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
             Console.WriteLine($"UrbIS RESPONSE : {rawJson}");
@@ -208,7 +131,7 @@ namespace EnergyShare_v3.Infrastructure.Services
 
             if (startIndex < 0 || endIndex <= startIndex)
             {
-                Console.WriteLine("Réponse UrbIS au format inattendu.");
+                //Console.WriteLine("Réponse UrbIS au format inattendu.");
                 return null;
             }
 
@@ -228,25 +151,29 @@ namespace EnergyShare_v3.Infrastructure.Services
             // - aucune réponse n'a été reçue,
             // - UrbIS indique une erreur,
             // - aucun point géographique n'a été trouvé.
-            //if (response is null || response.Error || response.Result?.Point is null)
-            //{
-            //    return null;
-            //}
+            
             if (response is null)
             {
-                Console.WriteLine("Impossible de désérialiser la réponse UrbIS.");
+                //Console.WriteLine("Impossible de désérialiser la réponse UrbIS.");
                 return null;
             }
 
             if (response.Error)
             {
-                Console.WriteLine($"UrbIS indique une erreur. Status = {response.Status}");
+                //Console.WriteLine($"UrbIS indique une erreur. Status = {response.Status}");
                 return null;
             }
 
             if (response.Result?.Point is null)
             {
-                Console.WriteLine("UrbIS n'a retourné aucun point géographique.");
+                //Console.WriteLine("UrbIS n'a retourné aucun point géographique.");
+                return null;
+            }
+
+            const double MinimumMatchScore = 5.0;   //seuil minimal de score pour considérer le résultat comme valide. UrbIS retourne un score de 0 à 10.
+
+            if (response.Result.MatchScore < MinimumMatchScore)
+            {
                 return null;
             }
 
@@ -287,6 +214,16 @@ namespace EnergyShare_v3.Infrastructure.Services
 
         private class UrbisPoint  {   public double X { get; set; } // En WGS84 : X correspond à la longitude.
             public double Y { get; set; } // En WGS84 :Y correspond à la latitude.
+        }
+
+        private static bool IsBrusselsPostalCode(string codePostal)
+        {
+            return codePostal is
+                "1000" or "1020" or "1030" or "1040" or "1050" or
+                "1060" or "1070" or "1080" or "1081" or "1082" or
+                "1083" or "1090" or "1120" or "1130" or "1140" or
+                "1150" or "1160" or "1170" or "1180" or "1190" or
+                "1200" or "1210";
         }
     }
 }
