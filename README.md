@@ -64,7 +64,7 @@ Le projet suit une architecture inspirée de la Clean Architecture :
 | FE_001 | Création d’un profil énergétique et point d’accès | MUST    | ✅ Fonctionnel |
 | FE_002 | Mise à jour du profil énergétique                | MUST      | ✅ Fonctionnel |
 | FE_003 | Découverte de profils compatibles (matching)     | MUST      | ✅ Fonctionnel |
-| FE_004 | Géolocalisation des adresses                     | SHOULD    | 🔄 Itération future |
+| FE_004 | Géolocalisation des adresses                     | MUST   | ✅ Fonctionnel |
 | FE_005 | Simulateur simplifié des gains énergétiques      | SHOULD    | 🔄 Itération future |
 | FE_006 | Import automatique des données énergétiques      | COULD     | 💡 Évolution future |
 | FE_007 | Simulateur avancé basé sur le facilitateur officiel | COULD  | 💡 Évolution future |
