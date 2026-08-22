@@ -102,6 +102,20 @@
     color: var(--energy-navy);
  }
 
+/* Navigation secondaire dans un module */
+.btn-energy-nav {
+    background: var(--energy-surface);
+    border: 1px solid var(--energy-blue);
+    color: var(--energy-blue-dark);
+    font-weight: 500;
+}
+
+    .btn-energy-nav:hover {
+        background: var(--energy-blue-soft);
+        border-color: var(--energy-blue-dark);
+        color: var(--energy-blue-dark);
+    }
+
 /* =========================================================
   BOUTONS - CHARTE GRAPHIQUE ENERGYSHARE    (FIN)
    ========================================================= */
@@ -829,4 +843,106 @@ h1:focus {
 }
 /* =========================================================
    DONNÉES DU PARTAGE - MODE CONSULTATION   (Fin)
+   ========================================================= */
+
+/* =========================================================
+   MON PARTAGE - CARTES DES PARTAGES (Début)
+   ========================================================= */
+
+/* Carte représentant un partage de l'utilisateur */
+.partage-card {
+    width: 100%;
+    padding: 1.25rem;
+    background: var(--energy-surface);
+    border: 1px solid var(--energy-border);
+    border-radius: var(--energy-radius-large);
+    box-shadow: var(--energy-shadow);
+}
+
+/* En-tête : nom du partage + statut */
+.partage-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.partage-card-title {
+    margin: 0;
+    font-weight: 700;
+    color: var(--energy-navy);
+}
+
+/* Informations synthétiques du partage */
+.partage-card-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    color: var(--energy-text-muted);
+    font-size: 0.95rem;
+}
+
+/* Zone contenant les raccourcis */
+.partage-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--energy-border);
+}
+
+/* Statut générique */
+.partage-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Partage actif */
+.partage-status-active {
+    color: var(--energy-green-dark);
+    background: var(--energy-green-soft);
+    border: 1px solid var(--energy-green-border);
+}
+
+/* Partage encore incomplet / inactif */
+.partage-status-inactive {
+    color: var(--energy-text-muted);
+    background: var(--energy-background);
+    border: 1px solid var(--energy-border);
+}
+
+/* Boutons prévus mais dont la page n'est pas encore disponible */
+.btn-energy-disabled {
+    background: var(--energy-background);
+    border: 1px solid var(--energy-border);
+    color: var(--energy-text-muted);
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+/* Adaptation mobile */
+@media (max-width: 768px) {
+
+    .partage-card-header {
+        flex-direction: column;
+    }
+
+    .partage-card-actions {
+        flex-direction: column;
+    }
+
+        .partage-card-actions .btn {
+            width: 100%;
+        }
+}
+
+/* =========================================================
+   MON PARTAGE - CARTES DES PARTAGES (Fin)
    ========================================================= */
