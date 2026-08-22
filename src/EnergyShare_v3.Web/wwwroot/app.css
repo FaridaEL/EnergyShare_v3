@@ -116,6 +116,20 @@
         color: var(--energy-blue-dark);
     }
 
+/* Action positive / validation */
+.btn-energy-success {
+    background-color: var(--energy-green);
+    border: 1px solid var(--energy-green);
+    color: #fff;
+    font-weight: 600;
+}
+
+    .btn-energy-success:hover {
+        background-color: var(--energy-green-dark);
+        border-color: var(--energy-green-dark);
+        color: #fff;
+    }
+
 /* =========================================================
   BOUTONS - CHARTE GRAPHIQUE ENERGYSHARE    (FIN)
    ========================================================= */

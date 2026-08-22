@@ -1,0 +1,558 @@
+﻿@page "/partages/{Id:guid}/demandes"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Mediator
+@using EnergyShare_v3.Application.Features.Partage
+@using EnergyShare_v3.Domain.Enums
+
+@inject ISender Sender
+
+<PageTitle>Demandes GRD</PageTitle>
+
+<div class="page-shell py-4">
+
+    <h3>Demandes GRD</h3>
+
+    <p class="page-subtitle mb-4">
+        Consultez et effectuez les démarches administratives liées à votre partage d’énergie.
+    </p>
+
+    @* =========================================================
+       ETAT DE CHARGEMENT
+       ========================================================= *@
+    @if (isLoading)
+    {
+        <p>Chargement...</p>
+    }
+
+    @* =========================================================
+       ERREUR GENERALE
+       ========================================================= *@
+    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-warning">
+            @errorMessage
+        </div>
+    }
+
+    @* =========================================================
+       AFFICHAGE DU PARTAGE
+       ========================================================= *@
+    else if (partage is not null)
+    {
+        @* ---------------------------------------------------------
+           RAPPEL DU PARTAGE CONCERNE  :   Cette page ne concerne qu'un seul partage.L'utilisateur conserve ainsi 
+           toujours le contexte du dossier sur lequel il effectue ses démarches GRD.
+           --------------------------------------------------------- *@
+        <div class="partage-card mb-4">
+
+            <div class="partage-card-header">
+
+                <div>
+                    <h4 class="partage-card-title">
+                        @partage.Nom
+                    </h4>
+
+                    <div class="partage-card-info mt-2">
+
+                        <span>
+                            <i class="bi bi-lightning-charge me-1"></i>
+
+                            @(partage.EnergieType == PartageEnergieType.PairToPair
+                                ? "Pair à pair"
+                                : "Même bâtiment")
+                        </span>
+
+                        <span>
+                            <i class="bi bi-people me-1"></i>
+                            @partage.NombreParticipants participant(s)
+                        </span>
+
+                    </div>
+                </div>
+
+                @* Statut actuel du partage *@
+                <span class="partage-status
+                    @(partage.Statut == PartageEnergieStatutType.Actif
+                        ? "partage-status-active"
+                        : "partage-status-inactive")">
+
+                    @GetStatutLabel(partage.Statut)
+                </span>
+
+            </div>
+        </div>
+
+
+        @* =========================================================
+           ACTIONS DISPONIBLES AUPRES DU GRD
+
+           Deux démarches existent actuellement :
+           1. demander le périmètre électrique ;
+           2. demander la validation du partage.
+
+           Plus tard, cette zone pourra également proposer :
+           - déclarer une modification du partage au GRD.
+           ========================================================= *@
+        <div class="card mb-4">
+
+            <div class="card-header fw-bold">
+                Nouvelle demande
+            </div>
+
+            <div class="card-body">
+
+                <p class="text-muted">
+                    Sélectionnez la démarche que vous souhaitez effectuer auprès du GRD.
+                </p>
+
+                <div class="d-flex flex-wrap gap-2">
+
+                    @* =====================================================
+                       DEMANDE D'INFORMATION DE PERIMETRE
+
+                       Désactivée si :
+                       - l'utilisateur ne peut pas modifier le partage ;
+                       - le partage ne possède pas encore 2 participants ;
+                       - une demande est en cours d'envoi ;
+                       - une demande de périmètre est déjà en attente.
+                       ===================================================== *@
+                    <button class="btn btn-energy-action"
+                            @onclick="HandleDemandePerimetre"
+                            disabled="@(!partage.CanEdit || partage.NombreParticipants < 2 
+                                        || isPerimetreLoading || HasDemandePerimetreEnAttente)">
+
+                        <span class="bi bi-info-circle me-1"></span>
+
+                        @(isPerimetreLoading
+                            ? "Envoi..."
+                            : "Demander info périmètre")
+                    </button>
+
+                   
+
+                    @* =====================================================
+                       DEMANDE DE VALIDATION DU PARTAGE
+
+                       Désactivée si :
+                       - l'utilisateur ne peut pas modifier ;
+                       - moins de 2 participants ;
+                       - une demande est déjà en cours d'envoi ;
+                       - le partage est déjà en attente de validation.
+                       ===================================================== *@
+                    <button class="btn btn-energy-success"
+                            @onclick="HandleDemandeValidation"
+                            disabled="@(!partage.CanEdit || partage.NombreParticipants < 2  || isValidationLoading
+                                        || partage.Statut == PartageEnergieStatutType.EnAttenteValidation)">
+
+                        <span class="bi bi-check-circle-fill me-1"></span>
+
+                        @GetValidationButtonLabel()
+                    </button>
+
+                </div>
+                @* Message affiché lorsqu'une demande de périmètre est déjà en cours *@
+                @if (HasDemandePerimetreEnAttente)
+                {
+                    <div class="alert alert-info mt-3 mb-0">
+                        Une demande d’information de périmètre est déjà en attente de traitement par le GRD.
+                    </div>
+                }
+
+                @* -----------------------------------------------------
+                   Informations utiles lorsque les actions sont bloquées.
+                   ----------------------------------------------------- *@
+                @if (partage.NombreParticipants < 2)
+                {
+                    <div class="alert alert-info mt-3 mb-0">
+                        Le partage doit compter au minimum deux participants avant de pouvoir effectuer une demande auprès du GRD.
+                    </div>
+                }
+
+                @if (!partage.CanEdit)
+                {
+                    <div class="alert alert-info mt-3 mb-0">
+                        Vous consultez les demandes de ce partage en lecture seule.
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* =========================================================
+           MESSAGE D'ERREUR - DEMANDE DE PERIMETRE
+           ========================================================= *@
+        @if (!string.IsNullOrWhiteSpace(perimetreError))
+        {
+            <div class="alert alert-warning">
+                @perimetreError
+            </div>
+        }
+
+        @* =========================================================
+           MESSAGE D'ERREUR - DEMANDE DE VALIDATION
+           ========================================================= *@
+        @if (!string.IsNullOrWhiteSpace(validationError))
+        {
+            <div class="alert alert-warning">
+                @validationError
+            </div>
+        }
+
+
+        @* =========================================================
+           DERNIERE DEMANDE D'INFORMATION DE PERIMETRE
+
+           Pour l'instant, GetPartageById fournit uniquement la dernière demande de périmètre.
+
+           TODO : prévoir plus tard une Query spécifique permettant de récupérer l'historique complet des demandes du partage.
+           ========================================================= *@
+        <div class="card mb-4">
+
+            <div class="card-header fw-bold">
+                Demande d’information de périmètre
+            </div>
+
+            <div class="card-body">
+
+                @if (demandePerimetre is null)
+                {
+                    <p class="text-muted mb-0">
+                        Aucune demande d’information de périmètre n’a encore été effectuée pour ce partage.
+                    </p>
+                }
+                else
+                {
+                    <p class="text-muted">
+                        Dernière demande enregistrée auprès du GRD.
+                    </p>
+
+                    <div class="metadata-box mb-3">
+
+                        <div>
+                            <span class="metadata-label">
+                                Statut :
+                            </span>
+
+                            <span>
+                                @demandePerimetre.ResponseStatus
+                            </span>
+                        </div>
+
+                        <div>
+                            <span class="metadata-label">
+                                Date de demande :
+                            </span>
+
+                            <span>
+                                @FormatDateTime(demandePerimetre.DateDemande)
+                            </span>
+                        </div>
+
+                        @* -------------------------------------------------
+                           PERIMETRE CONFIRME PAR LE GRD
+                           ------------------------------------------------- *@
+                        @if (demandePerimetre.PerimetreConfirme is not null)
+                        {
+                            <div>
+                                <span class="metadata-label">
+                                    Périmètre confirmé :
+                                </span>
+
+                                <span class="badge bg-success">
+                                    @demandePerimetre.PerimetreConfirme
+                                </span>
+                            </div>
+                        }
+
+                        @* -------------------------------------------------
+                           COMMENTAIRE DU GRD
+                           ------------------------------------------------- *@
+                        @if (!string.IsNullOrWhiteSpace(
+                            demandePerimetre.CommentaireReponseGRD))
+                        {
+                            <div>
+                                <span class="metadata-label">
+                                    Commentaire du GRD :
+                                </span>
+
+                                <span>
+                                    @demandePerimetre.CommentaireReponseGRD
+                                </span>
+                            </div>
+                        }
+
+                    </div>
+
+
+                    @* -------------------------------------------------
+                       DETAILS TRANSMIS AU GRD
+
+                       Le champ est volontairement en lecture seule : il représente le contenu envoyé lors de la demande.
+                       ------------------------------------------------- *@
+                    <label class="form-label">
+                        Détails transmis au GRD
+                    </label>
+
+                    <textarea class="form-control"
+                              rows="5"
+                              readonly>@demandePerimetre.DetailsDemande</textarea>
+                }
+
+            </div>
+        </div>
+
+        @* =========================================================
+           DEMANDE DE VALIDATION DU PARTAGE
+
+           Pour l'instant, le backend retourne le DTO après l'envoi, mais GetPartageById ne semble pas fournir l'historique
+           complet des demandes de validation.
+
+           Cette zone affiche donc :
+           - l'état général du partage ;
+           - la demande envoyée pendant la session courante si disponible.
+
+           TODO :  créer plus tard une Query dédiée permettant d'afficher toutes les demandes de validation du partage.
+           ========================================================= *@
+        <div class="card mb-4">
+
+            <div class="card-header fw-bold">
+                Validation du partage
+            </div>
+
+            <div class="card-body">
+
+                @if (partage.Statut == PartageEnergieStatutType.EnAttenteValidation)
+                {
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-hourglass-split me-1"></i>
+                        Une demande de validation est actuellement
+                        en attente de traitement par le GRD.
+                    </div>
+                }
+                else if (partage.Statut == PartageEnergieStatutType.Actif)
+                {
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Ce partage est actuellement actif.
+                    </div>
+                }
+                else if (demandeValidation is not null)
+                {
+                    <div class="alert alert-success mb-0">
+                        La demande de validation a été envoyée au GRD.
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">
+                        Aucune demande de validation en cours
+                        n’est disponible dans cette vue.
+                    </p>
+                }
+
+            </div>
+        </div>
+
+
+        @* =========================================================
+           HISTORIQUE COMPLET DES DEMANDES - TODO
+
+           L'objectif final sera d'afficher ici un tableau filtrable :
+
+           Date | Type de demande | Statut | Réponse GRD
+
+           Exemples :
+           - Information de périmètre
+           - Validation du partage
+           - Déclaration d'une modification
+
+           Cette fonctionnalité nécessitera une Query backend dédiée.
+           ========================================================= *@
+        <div class="card">
+
+            <div class="card-header fw-bold">
+                Historique des demandes
+            </div>
+
+            <div class="card-body">
+
+                <p class="text-muted mb-0">
+                    L’historique complet des demandes sera ajouté
+                    lorsque la récupération de l’ensemble des démarches
+                    du partage sera disponible.
+                </p>
+
+            </div>
+        </div>
+    }
+
+</div>
+
+
+@code {
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    // =========================================================
+    // DONNEES GENERALES DE LA PAGE
+    // =========================================================
+
+    private PartageDetailsDto? partage; // Partage actuellement consulté.
+    private bool isLoading = true; // Etat de chargement initial.
+    private string? errorMessage;  // Message d'erreur lors du chargement du partage.
+
+    // =========================================================
+    // DEMANDE D'INFORMATION DE PERIMETRE
+    // =========================================================
+    private DemandePerimetreDto? demandePerimetre; // Dernière demande de périmètre connue pour ce partage.
+    private string? perimetreError;  // Message d'erreur éventuel.
+    private bool isPerimetreLoading;    // Permet d'éviter plusieurs envois simultanés.
+    // Une nouvelle demande ne peut pas être envoyée tant que la précédente est encore en attente.
+    private bool HasDemandePerimetreEnAttente =>     
+        demandePerimetre?.ResponseStatus == "EnAttente";
+
+    // =========================================================
+    // DEMANDE DE VALIDATION DU PARTAGE
+    // =========================================================
+    private DemandeValidationPartageDto? demandeValidation;  // DTO retourné lorsqu'une nouvelle demande de validation est envoyée.
+    private string? validationError;  // Message d'erreur éventuel.
+    private bool isValidationLoading;   // Permet d'éviter plusieurs clics pendant l'envoi.
+
+    // Charge les informations du partage ainsi quesa dernière demande de périmètre éventuelle
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        var result = await Sender.Send(
+            new GetPartageById(Id));
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Impossible de charger les demandes du partage.";
+
+            isLoading = false;
+            return;
+        }
+
+        partage = result.Value;
+
+        // GetPartageById expose actuellement la dernière demande de périmètre.
+        demandePerimetre =  partage.DerniereDemandePerimetre;
+
+        isLoading = false;
+    }
+
+    /// <summary>
+    /// Envoie une demande d'information de périmètre au GRD. Les données nécessaires sont préparées par la couche Application.
+    /// <summary>
+    private async Task HandleDemandePerimetre()
+    {
+        if (partage is null)
+            return;
+
+        perimetreError = null;
+        isPerimetreLoading = true;
+
+        var result = await Sender.Send(
+            new DemandeInfoPerimetrePartage(partage.Id));
+
+        isPerimetreLoading = false;
+
+        if (!result.IsSuccess)
+        {
+            perimetreError = "Impossible d’envoyer la demande d’information de périmètre.";
+
+            return;
+        }
+        // Le DTO retourné devient directement la dernière demande affichée dans la page.
+        demandePerimetre = result.Value;
+    }
+
+    /// <summary>
+    /// Envoie le dossier de partage au GRD pour validation.
+    /// </summary>
+    private async Task HandleDemandeValidation()
+    {
+        if (partage is null)
+            return;
+
+        validationError = null;
+        isValidationLoading = true;
+
+        var result = await Sender.Send(
+            new DemandeValidationPartage(partage.Id));
+
+        isValidationLoading = false;
+
+        if (!result.IsSuccess)
+        {
+            validationError = "Impossible d’envoyer la demande de validation GRD.";
+
+            return;
+        }
+
+        // Conservation du DTO retourné.
+        demandeValidation = result.Value;
+
+        // Recharge du partage afin de récupérer le nouveau statut. Ex : Inactif -> EnAttenteValidation.
+        var refresh = await Sender.Send(
+            new GetPartageById(Id));
+
+        if (refresh.IsSuccess)
+        {
+            partage = refresh.Value;
+            demandePerimetre = partage.DerniereDemandePerimetre;// On resynchronise également la dernière demande de périmètre.
+        }
+    }
+
+    /// <summary>
+    /// Retourne le texte du bouton de validation selon l'état actuel du partage.
+    /// </summary>
+    private string GetValidationButtonLabel()
+    {
+        if (isValidationLoading)
+            return "Envoi...";
+
+        if (partage?.Statut ==
+            PartageEnergieStatutType.EnAttenteValidation)
+        {
+            return "Validation GRD en cours...";
+        }
+
+        return "Demander validation GRD";
+    }
+
+
+    /// <summary>
+    /// Affiche un libellé compréhensible pour le statut métier.
+    /// </summary>
+    private static string GetStatutLabel(
+        PartageEnergieStatutType statut)
+    {
+        return statut switch
+        {
+            PartageEnergieStatutType.Inactif => "Brouillon / Inactif",
+            PartageEnergieStatutType.EnAttenteValidation =>  "En attente GRD",
+            PartageEnergieStatutType.Actif =>  "Actif",
+            PartageEnergieStatutType.EnAttenteModification => "Modification en attente",
+            PartageEnergieStatutType.Suspendu => "Suspendu",
+            PartageEnergieStatutType.EnCoursCloture =>  "Clôture en cours",
+            PartageEnergieStatutType.Cloture =>  "Clôturé",
+
+            _ => statut.ToString()
+        };
+    }
+
+    /// <summary>
+    /// Affiche les dates en heure locale de Bruxelles
+    /// selon le comportement actuellement utilisé dans l'application.
+    /// </summary>
+    private static string FormatDateTime(DateTime? date)
+        => date?.ToLocalTime()
+               .ToString("dd/MM/yyyy HH:mm")
+           ?? "Non définie";
+}
