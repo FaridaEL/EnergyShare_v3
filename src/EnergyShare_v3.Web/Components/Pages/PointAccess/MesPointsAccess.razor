@@ -511,7 +511,8 @@ else
             var results = await GeocodingService.SearchAddressesAsync(
                 street: searchText,
                 number: null,
-                postalCode: formModel.CodePostal,
+                // postalCode: formModel.CodePostal,
+                postalCode: null,
                 cancellationToken: addressSearchCts.Token);
 
             addressSuggestions = results

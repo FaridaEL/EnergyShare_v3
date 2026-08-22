@@ -140,6 +140,27 @@ namespace EnergyShare_v3.Application.Features.Matching
         private static bool EstAcheteur(dynamic profil)
             => profil.DemandeEnergie_kWh is not null && profil.DemandeEnergie_kWh > 0;
 
+        //private static decimal CalculerDistanceKm(
+        //    double? lat1,
+        //    double? lon1,
+        //    double? lat2,
+        //    double? lon2)
+        //{
+        //    if (lat1 is null || lon1 is null || lat2 is null || lon2 is null)
+        //        return 0;
+
+        //    // Distance simplifiée pour MVP : suffisante pour trier les résultats par proximité
+        //    //todo v2 : heversine ( -> limité à Bxl donc courbure de la terre négligable à cette échelle) ou API GoogleMaps/openRoute
+        //    var dLat = lat2.Value - lat1.Value;
+        //    var dLon = lon2.Value - lon1.Value;
+        //    var distance = Math.Sqrt((dLat * dLat) + (dLon * dLon)) * 111; //*111 pour convertir les degrés en kilomètres (approximation) 1 degré = 111km sur Terre
+
+        //    return Math.Round((decimal)distance, 2);
+        //}
+
+        // Distance géodésique entre deux coordonnées GPS  calculée avec la formule de Haversine.
+        //En effet, après contrôle avec Google Maps, la distance calculée avec la formule de Haversine est plus proche de la réalité que la distance simplifiée.
+
         private static decimal CalculerDistanceKm(
             double? lat1,
             double? lon1,
@@ -149,11 +170,26 @@ namespace EnergyShare_v3.Application.Features.Matching
             if (lat1 is null || lon1 is null || lat2 is null || lon2 is null)
                 return 0;
 
-            // Distance simplifiée pour MVP : suffisante pour trier les résultats par proximité
-            //todo v2 : heversine ( -> limité à Bxl donc courbure de la terre négligable à cette échelle) ou API GoogleMaps/openRoute
-            var dLat = lat2.Value - lat1.Value;
-            var dLon = lon2.Value - lon1.Value;
-            var distance = Math.Sqrt((dLat * dLat) + (dLon * dLon)) * 111; //*111 pour convertir les degrés en kilomètres (approximation) 1 degré = 111km sur Terre
+            const double rayonTerreKm = 6371.0;
+
+            var lat1Rad = lat1.Value * Math.PI / 180.0;
+            var lat2Rad = lat2.Value * Math.PI / 180.0;
+
+            var deltaLat = (lat2.Value - lat1.Value) * Math.PI / 180.0;
+            var deltaLon = (lon2.Value - lon1.Value) * Math.PI / 180.0;
+
+            var a =
+                Math.Sin(deltaLat / 2) * Math.Sin(deltaLat / 2) +
+                Math.Cos(lat1Rad) *
+                Math.Cos(lat2Rad) *
+                Math.Sin(deltaLon / 2) *
+                Math.Sin(deltaLon / 2);
+
+            var c = 2 * Math.Atan2(
+                Math.Sqrt(a),
+                Math.Sqrt(1 - a));
+
+            var distance = rayonTerreKm * c;
 
             return Math.Round((decimal)distance, 2);
         }

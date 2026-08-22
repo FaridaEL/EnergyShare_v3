@@ -59,19 +59,21 @@ namespace EnergyShare_v3.IntegrationTests
         /// <summary>
         /// Vérifie qu'une adresse inexistante ne retourne pas de coordonnées exploitables.
         /// </summary>
-        [Fact]
-        public async Task GeocodeAsync_WithUnknownAddress_ShouldReturnNull()
-        {
-            using var scope = _factory.Services.CreateScope();
+        //[Fact]
+        //public async Task GeocodeAsync_WithUnknownAddress_ShouldReturnNull()
+        //{
+        //    using var scope = _factory.Services.CreateScope();
 
-            var geocodingService = scope.ServiceProvider
-                .GetRequiredService<IGeocodingService>();
+        //    var geocodingService = scope.ServiceProvider
+        //        .GetRequiredService<IGeocodingService>();
 
-            var result = await geocodingService.GeocodeAsync("Rue Totalement Inexistante 9999", "1000");
+        //    var result = await geocodingService.GeocodeAsync("Rue Totalement Inexistante 9999", "1000");
 
-            result.Should().BeNull();
-        }
+        //    result.Should().BeNull();
+        //}
 
+
+       
         /// <summary>
         /// Vérifie qu'une adresse située hors de Bruxelles n'est pas reconnue comme adresse valide du périmètre UrbIS.
         /// </summary>

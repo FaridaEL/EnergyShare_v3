@@ -20,5 +20,9 @@
   <ItemGroup>
     <Folder Include="Features\Dashboard\" />
   </ItemGroup>
+	
+    <ItemGroup>
+		<InternalsVisibleTo Include="EnergyShare_v3.Backend.Tests" />
+	</ItemGroup>
 
 </Project>
