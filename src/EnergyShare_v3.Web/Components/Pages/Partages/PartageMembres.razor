@@ -1,0 +1,315 @@
+﻿@page "/partages/{Id:guid}/membres"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.JSInterop
+@using Mediator
+@using EnergyShare_v3.Application.Features.Partage
+
+@inject ISender Sender
+@inject IJSRuntime JS
+
+<PageTitle>Membres du partage</PageTitle>
+
+<div class="page-shell py-4">
+
+    <h3>Membres du partage</h3>
+
+    <p class="page-subtitle mb-4">
+        Consultez les participants du partage et gérez les invitations.
+    </p>
+
+    @* =========================================================
+       ETAT DE CHARGEMENT
+       ========================================================= *@
+    @if (isLoading)
+    {
+        <p>Chargement...</p>
+    }
+
+    @* =========================================================
+       ERREUR GENERALE
+       ========================================================= *@
+    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-warning">
+            @errorMessage
+        </div>
+    }
+
+    @* =========================================================
+       AFFICHAGE DU PARTAGE
+       ========================================================= *@
+    else if (partage is not null)
+    {
+        @* ---------------------------------------------------------
+           Rappel du partage concerné.
+           Cette page travaille toujours dans le contexte d'un partage précis.
+           --------------------------------------------------------- *@
+        <div class="partage-card mb-4">
+
+            <div class="partage-card-header">
+                <div>
+                    <h4 class="partage-card-title">
+                        @partage.Nom
+                    </h4>
+
+                    <div class="partage-card-info mt-2">
+
+                        <span>
+                            <i class="bi bi-lightning-charge me-1"></i>
+                            @partage.EnergieType
+                        </span>
+
+                        <span>
+                            <i class="bi bi-people me-1"></i>
+                            @partage.NombreParticipants participant(s)
+                        </span>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        @* =========================================================
+           LISTE DES MEMBRES   : 
+           Pour l'instant, PartageDetailsDto fournit le nombre de
+           participants mais pas encore nécessairement la liste détaillée.
+           
+           Cette zone accueillera ensuite le tableau des membres :
+           nom, rôle, date d'entrée, statut, préavis, etc.
+           ========================================================= *@
+        <div class="card mb-4">
+
+            <div class="card-header fw-bold">
+                Participants
+            </div>
+
+            <div class="card-body">
+
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <i class="bi bi-people fs-4"></i>
+
+                    <div>
+                        <strong>@partage.NombreParticipants participant(s)</strong>
+                        <div class="text-muted small">
+                            Liste détaillée des membres à compléter.
+                        </div>
+                    </div>
+                </div>
+
+                @* TODO :
+                   Lorsque la Query de lecture des membres sera disponible,
+                   afficher ici un tableau :
+                   - Nom
+                   - Rôle
+                   - Date d'entrée
+                   - Date de sortie
+                   - Préavis éventuel
+                   - Statut
+                *@
+
+            </div>
+        </div>
+
+        @* =========================================================
+           ACTION : INVITER UN PARTICIPANT
+           
+           Cette action était auparavant située dans PartageDetails.
+           Elle est maintenant regroupée dans la page dédiée aux membres.
+           
+           Le bouton est disponible uniquement si l'utilisateur
+           possède les droits de modification sur le partage.
+           ========================================================= *@
+        @if (partage.CanEdit)
+        {
+            <div class="mb-4">
+
+                <button class="btn btn-energy-action"
+                        @onclick="HandleInvitation"
+                        disabled="@isInvitationLoading">
+
+                    <span class="bi bi-person-plus-fill me-1"></span>
+
+                    @(isInvitationLoading
+                        ? "Préparation..."
+                        : "Inviter un participant")
+                </button>
+
+            </div>
+        }
+
+        @* =========================================================
+           BLOC CODE D'INVITATION
+           
+           Affiché uniquement après génération d'un code.
+           Le gestionnaire peut ensuite transmettre ce code
+           au futur participant.
+           ========================================================= *@
+        @if (invitation is not null)
+        {
+            <div class="card mb-4">
+
+                <div class="card-header fw-bold">
+                    Code d’invitation
+                </div>
+
+                <div class="card-body">
+
+                    <p class="text-muted">
+                        Transmettez ce code à la personne que vous souhaitez inviter.
+                        Elle devra se connecter à EnergyShare puis utiliser la fonction
+                        <strong>Rejoindre un partage</strong>.
+                    </p>
+
+                    <div class="input-group mb-2">
+
+                        <input class="form-control fw-bold"
+                               value="@invitation.InvitationCode"
+                               readonly />
+
+                        <button class="btn btn-energy-nav"
+                                @onclick="CopyInvitationCode">
+
+                            <span class="bi bi-copy me-1"></span>
+                            Copier
+                        </button>
+
+                    </div>
+
+                    <div class="small text-muted">
+                        Expire le :
+                        @invitation.InvitationCodeExpiresAt
+                        .ToLocalTime()
+                        .ToString("dd/MM/yyyy HH:mm")
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(invitationMessage))
+                    {
+                        <div class="alert alert-success mt-3 mb-0">
+                            @invitationMessage
+                        </div>
+                    }
+
+                </div>
+            </div>
+        }
+
+        @* =========================================================
+           ERREUR LIEE A L'INVITATION
+           ========================================================= *@
+        @if (!string.IsNullOrWhiteSpace(invitationError))
+        {
+            <div class="alert alert-warning">
+                @invitationError
+            </div>
+        }
+
+        @* =========================================================
+           FUTURE ACTION : QUITTER LE PARTAGE
+           
+           La logique métier n'est pas encore implémentée ici.
+           Le bouton reste donc volontairement désactivé.
+           
+           A terme :
+           - membre simple : pourra quitter son partage ;
+           - gestionnaire : pourra gérer les membres ;
+           - une boîte de dialogue devra confirmer l'action.
+           ========================================================= *@
+        <div class="mt-4">
+
+            <button class="btn btn-energy-danger"
+                    disabled
+                    title="Fonctionnalité à implémenter">
+                <span class="bi bi-box-arrow-right me-1"></span>
+                Quitter le partage
+            </button>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    [Parameter]
+    public Guid Id { get; set; }
+    private PartageDetailsDto? partage;// Données générales du partage.
+    private bool isLoading = true;// Etat général de chargement de la page.
+    private string? errorMessage;// Message d'erreur lors du chargement du partage.
+    private InvitationCodeDto? invitation;// Données du code d'invitation généré.
+    private string? invitationMessage;// Message affiché après copie du code.
+    private string? invitationError;// Message affiché si la génération du code échoue.
+    private bool isInvitationLoading;// Empêche plusieurs générations simultanées.
+
+    /// <summary>
+    /// Charge le partage correspondant à l'identifiant reçu dans l'URL.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        var result = await Sender.Send(
+            new GetPartageById(Id));
+
+        if (!result.IsSuccess)
+        {
+            errorMessage = "Impossible de charger le partage.";
+            isLoading = false;
+            return;
+        }
+
+        partage = result.Value;
+
+        isLoading = false;
+    }
+
+    /// <summary>
+    /// Génère ou récupère le code d'invitation du partage.
+    /// La logique métier reste située dans la couche Application.
+    /// </summary>
+    private async Task HandleInvitation()
+    {
+        if (partage is null)
+            return;
+
+        invitationError = null;
+        invitationMessage = null;
+        isInvitationLoading = true;
+
+        var result = await Sender.Send(
+            new GetInvitationCodePartage(partage.Id));
+
+        isInvitationLoading = false;
+
+        if (!result.IsSuccess)
+        {
+            invitationError =
+                "Impossible de générer le code d’invitation.";
+
+            return;
+        }
+
+        invitation = result.Value;
+    }
+
+
+    /// <summary>
+    /// Copie le code d'invitation dans le presse-papiers du navigateur.
+    /// </summary>
+    private async Task CopyInvitationCode()
+    {
+        if (invitation is null)
+            return;
+
+        await JS.InvokeVoidAsync(
+            "navigator.clipboard.writeText",
+            invitation.InvitationCode);
+
+        invitationMessage =
+            "Code copié dans le presse-papiers.";
+    }
+}
