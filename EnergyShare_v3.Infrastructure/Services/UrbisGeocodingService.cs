@@ -324,16 +324,38 @@ namespace EnergyShare_v3.Infrastructure.Services
                 startIndex + 1,
                 endIndex - startIndex - 1);
 
-            var response = JsonSerializer.Deserialize<UrbisAddressesResponse>(
-                jsonResponse,
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+            //var response = JsonSerializer.Deserialize<UrbisAddressesResponse>(
+            //    jsonResponse,
+            //    new JsonSerializerOptions
+            //    {
+            //        PropertyNameCaseInsensitive = true
+            //    });
 
-            if (response is null ||
-                response.Error ||
-                response.Result is null)
+            UrbisAddressesResponse? response;
+
+            try
+            {
+                response = JsonSerializer.Deserialize<UrbisAddressesResponse>(
+                    jsonResponse,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+            }
+            catch (JsonException)
+            {
+                // UrbIS peut retourner une structure différente
+                // lorsqu'aucune suggestion exploitable n'est trouvée.
+                // Dans ce cas, on retourne simplement une liste vide
+                // plutôt que de faire planter l'interface Blazor.
+                return new List<AddressSuggestion>();
+            }
+
+
+
+
+
+            if (response is null ||  response.Error || response.Result is null)
             {
                 return [];
             }

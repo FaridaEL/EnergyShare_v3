@@ -1,6 +1,7 @@
 ﻿using EnergyShare_v3.Domain.Entities.Matchs;
 using FluentAssertions;
 
+
 namespace EnergyShare_v3.Backend.Tests
 {
     public class MatchTests
@@ -66,6 +67,18 @@ namespace EnergyShare_v3.Backend.Tests
 
             result.IsSuccess.Should().BeFalse();
         }
+
+        //[Fact]
+        //public void CalculerDistanceKm_ShouldReturnAbout4Point73Km()
+        //{
+        //    var distance = SearchPotentialMatchesHandler.CalculerDistanceKm(
+        //        50.851504,
+        //        4.356767,
+        //        50.866007,
+        //        4.293434);
+
+        //    distance.Should().BeApproximately(4.73m, 0.05m);
+        //}
 
 
     }

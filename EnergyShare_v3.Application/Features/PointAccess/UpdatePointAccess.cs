@@ -3,6 +3,7 @@ using EnergyShare_v3.Application.Interfaces;
 using FluentValidation;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
+using EnergyShare_v3.Application.Features.Geocoding;
 
 namespace EnergyShare_v3.Application.Features.PointAccess
 {
@@ -40,7 +41,8 @@ namespace EnergyShare_v3.Application.Features.PointAccess
 
     public class UpdatePointAccessHandler(
         IApplicationDbContext context,
-        IUserContext userContext) //permet de s'assurer que le user connecté modifie son point uniquement !)
+        IUserContext userContext, //permet de s'assurer que le user connecté modifie son point uniquement !)
+        IGeocodingService geocodingService)  //Si l'adresse est mise à jour , on peut géocoder la nouvelle adresse pour récupérer les coordonnées GPS
         : ICommandHandler<UpdatePointAccess, Result<Guid>>
     {
         public async ValueTask<Result<Guid>> Handle(
@@ -81,6 +83,31 @@ namespace EnergyShare_v3.Application.Features.PointAccess
                         "Ce code EAN est déjà rattaché à un autre point d'accès actif.");
             }
 
+            // On vérifie si l'adresse géographique a réellement changé. Si ce n'est pas le cas, inutile d'interroger UrbIS à nouveau.
+            var addressHasChanged =
+                !string.Equals( entity.AdresseLine1?.Trim(),command.AdresseLine1.Trim(),StringComparison.OrdinalIgnoreCase)
+                ||
+                !string.Equals(entity.CodePostal?.Trim(), command.CodePostal.Trim(),StringComparison.OrdinalIgnoreCase);
+
+            GeocodingResult? geocodingResult = null;
+
+            if (addressHasChanged)
+            {
+                // L'adresse modifiée doit être géocodée avant d'être enregistrée, afin de conserver la cohérence entre adresse et coordonnées GPS.
+                geocodingResult = await geocodingService.GeocodeAsync( command.AdresseLine1,command.CodePostal, cancellationToken);
+
+                if (geocodingResult is null)
+                {
+                    return Result<Guid>.Invalid(
+                        new ValidationError
+                        {
+                            ErrorMessage =
+                                "La nouvelle adresse n'a pas pu être localisée en Région bruxelloise."
+                        });
+                }
+            }
+
+
             var result = entity.Update(
                 command.AdresseLine1,
                 command.CodePostal,
@@ -92,6 +119,12 @@ namespace EnergyShare_v3.Application.Features.PointAccess
             if (!result.IsSuccess)
                 return Result<Guid>.Invalid(result.ValidationErrors);
 
+            // Si l'adresse a changé et qu'UrbIS a retourné
+            // de nouvelles coordonnées, on met à jour le point d'accès.
+            if (addressHasChanged && geocodingResult is not null)
+            {
+                entity.SetCoordinates( geocodingResult.Latitude,geocodingResult.Longitude);
+            }
             return Result.Success(entity.Id);
         }
     }
