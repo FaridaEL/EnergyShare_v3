@@ -68,8 +68,30 @@ namespace EnergyShare_v3.Application.Features.Partage
 
             // Le partage est modifiable tant qu'il n'a pas été soumis au GRD.
             // Dès qu'il est en validation, actif, suspendu ou clôturé, on passe par des demandes de modification dédiées.
-            if (partage.Statut != PartageEnergieStatutType.Inactif)
-                return Result<Guid>.Conflict("Le partage ne peut être modifié que lorsqu'il est inactif/brouillon.");
+            //if (partage.Statut != PartageEnergieStatutType.Inactif)
+            //    return Result<Guid>.Conflict("Le partage ne peut être modifié que lorsqu'il est inactif/brouillon.");
+            // Le dossier ne peut pas être modifié pendant son examen initial par le GRD.
+            if (partage.Statut == PartageEnergieStatutType.EnAttenteValidation)
+            {
+                return Result<Guid>.Conflict(
+                    "Le partage ne peut pas être modifié pendant une demande de validation GRD en cours.");
+            }
+
+            // Une modification déjà déclarée au GRD doit être traitée avant d'en introduire une nouvelle.
+            if (partage.Statut == PartageEnergieStatutType.EnAttenteModification)
+            {
+                return Result<Guid>.Conflict(
+                    "Une demande de modification est déjà en attente de traitement par le GRD.");
+            }
+
+            // Un partage en cours de clôture ou clôturé n'est plus modifiable.
+            if (partage.Statut == PartageEnergieStatutType.EnCoursCloture || partage.Statut == PartageEnergieStatutType.Cloture)
+            {
+                return Result<Guid>.Conflict(
+                    "Le partage ne peut plus être modifié lorsqu'il est en cours de clôture ou clôturé.");
+            }
+
+
 
             var result = partage.Update(
                 command.Nom,

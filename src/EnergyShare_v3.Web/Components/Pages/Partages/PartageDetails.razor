@@ -38,7 +38,6 @@ else if (!string.IsNullOrWhiteSpace(errorMessage))
    AFFICHAGE DU PARTAGE SI il existe.
    ========================================================= *@
 
-
 else if (partage is not null)
 {
     @* =========================================================
@@ -187,7 +186,6 @@ else if (partage is not null)
 
                 </div>
 
-
                 @* =================================================
                ACTION : MODIFIER LE PARTAGE
 
@@ -212,7 +210,6 @@ else if (partage is not null)
                 }
             }
 
-
             @* =====================================================
            MODE ÉDITION
            Les champs deviennent éditables uniquement
@@ -222,10 +219,8 @@ else if (partage is not null)
             else
             {
                 <p class="text-muted mb-3">
-                    Modifiez les informations nécessaires puis enregistrez
-                    vos changements.
+                    Modifiez les informations nécessaires puis enregistrez vos changements.
                 </p>
-
 
                 @* =================================================
                TODO MÉTIER :
@@ -233,10 +228,8 @@ else if (partage is not null)
                être modifiés selon le statut du partage.
 
                Exemple :
-               - le type de partage pourrait devenir non modifiable
-                 après certaines étapes ;
-               - une modification importante pourrait nécessiter
-                 une nouvelle validation du GRD.
+               - le type de partage pourrait devenir non modifiable après certaines étapes ;
+               - une modification importante pourrait nécessiter une nouvelle validation du GRD.
                ================================================= *@
 
                 <div class="row g-3">
@@ -315,10 +308,7 @@ else if (partage is not null)
 
 
                 @* =================================================
-               ACTIONS DU MODE ÉDITION
-
-               Bleu = sauvegarder les données.
-               Gris = abandonner les modifications.
+               ACTIONS DU MODE ÉDITION   :  Bleu = sauvegarder les données.  Gris = abandonner les modifications.
                ================================================= *@
 
                 <div class="d-flex gap-2 mt-4">
@@ -347,102 +337,6 @@ else if (partage is not null)
 
         </div>
     </div>
-
-
-
-    @* =========================================================
-   ACTIONS PRINCIPALES DU DOSSIER DE PARTAGE
-   ========================================================= *@
-
-
-  @*   <div class="d-flex gap-2 mt-3 flex-wrap"> *@
-
-        @* =========================================================
-       ENREGISTRER LES MODIFICATIONS DU PARTAGE
-       ========================================================= *@
-       
-        @* =========================================================
-       INVITER UN PARTICIPANT
-       - Génère un code d’invitation sécurisé.
-       - Désactivé si :
-         -> l'utilisateur ne peut pas modifier le partage ;
-         -> une génération est déjà en cours.
-       ========================================================= *@
-
-        
-        @* <button class="btn btn-energy-action"
-                @onclick="HandleInvitation"
-                disabled="@(!partage.CanEdit || isInvitationLoading)">
-
-            <span class="bi bi-person-plus-fill me-1"></span>
-
-            @(isInvitationLoading
-                ? "Préparation..."
-                : "Inviter un participant")
-        </button> *@
-
-        @* <button class="btn btn-outline-secondary" disabled="@(!partage.CanEdit || partage.NombreParticipants < 2)">
-            Demander info périmètre
-        </button> *@
-
-        @* =========================================================
-       DEMANDE D’INFORMATION DE PÉRIMÈTRE
-       - Permet d’envoyer une demande au GRD.
-       - Désactivé si :
-         -> l'utilisateur ne peut pas modifier ;
-         -> moins de 2 participants ;
-         -> une dde est déjà en cours ;
-         -> une dde existe déjà en attente.
-       ========================================================= *@
-
-         @* <button class="btn btn-energy-cancel"
-            @onclick="HandleDemandePerimetre"
-            disabled="@(!partage.CanEdit
-                        || partage.NombreParticipants < 2
-                        || isPerimetreLoading
-                        || HasDemandePerimetreEnAttente)">
-
-        <span class="bi bi-info-circle me-1"></span>
-
-        @(isPerimetreLoading
-            ? "Envoi..."
-            : "Demander info périmètre")
-    </button> *@
-
-         @* bouton désactivé SI  :
-            - l'user ne peut pas modifier le partage ;
-            - le nombre minimum de participants n'est pas atteint ;
-            - une validation GRD est déjà en cours.  *@
-       
-        @* =========================================================
-       DEMANDE DE VALIDATION GRD
-       - Envoie officiellement le partage au GRD.
-       - Désactivé si :
-         -> l'utilisateur ne peut pas modifier ;
-         -> moins de 2 participants ;
-         -> une validation est déjà en cours ;
-         -> le partage est déjà en attente de validation.
-       ========================================================= *@      
-            
-
-       @*  <button class="btn btn-success"
-                @onclick="HandleDemandeValidation"
-                disabled="@(!partage.CanEdit
-                                    || partage.NombreParticipants < 2
-                                    || isValidationLoading
-                                    || partage.Statut == PartageEnergieStatutType.EnAttenteValidation)">
-
-            <span class="bi bi-check-circle-fill me-1"></span>
-
-            @GetValidationButtonLabel()
-        </button> *@
-
-    @* </div> *@
-
-
-
-
-
 }
 
 @code {
@@ -455,25 +349,7 @@ else if (partage is not null)
     //  --> même principe que pour profil
     private bool isEditMode = false;
     private PartageDetailsDto? partage;// données lues depuis la base         
-    //private PartageDetailsFormModel? editModel;  // copie utilisée pendant l'édition
-
-    //var pour inviter et rejoindre un partage
-    // private InvitationCodeDto? invitation;
-    // private string? invitationMessage;
-    // private string? invitationError;
-    // private bool isInvitationLoading;
-
-    //var pour demande périmètre
-    // private DemandePerimetreDto? demandePerimetre;
-    // private string? perimetreError;
-    // private bool isPerimetreLoading;
-    // private bool HasDemandePerimetreEnAttente =>
-    // demandePerimetre?.ResponseStatus == "EnAttente"; //permet de désativer le bouton si une dde est en attente 
-
-    // private bool PerimetreConnu =>
-    // partage?.EnergieType == PartageEnergieType.MemeBatiment
-    // || demandePerimetre?.PerimetreConfirme is not null;
-
+    
     // Variables pour la dde  de validation GRD
     private DemandeValidationPartageDto? demandeValidation;
     private string? validationError;
@@ -497,14 +373,8 @@ else if (partage is not null)
         partage = result.Value;
         PopulateFormModel();   // Copie les données du DTO vers le modèle éditable
         isEditMode = false;       // Par défaut, la page est en mode consultation
-        //demandePerimetre = partage.DerniereDemandePerimetre;   // Recharge la dernière demande de périmètre éventuelle
-
-       
         isLoading = false;
     }
-
-    // private static string FormatDate(DateTime? date)
-    //     => date?.ToShortDateString() ?? "Non définie";
 
     //on corrigel'affichage de la date doit être au format de Bxl heure locale
 
@@ -584,103 +454,6 @@ else if (partage is not null)
         isEditMode = false; // Retour au mode consultation après sauvegarde
     }
 
-    // private async Task HandleInvitation()
-    // {
-    //     if (partage is null)
-    //         return;
-
-    //     invitationError = null;
-    //     invitationMessage = null;
-    //     isInvitationLoading = true;
-
-    //     var result = await Sender.Send(new GetInvitationCodePartage(partage.Id));
-
-    //     isInvitationLoading = false;
-
-    //     if (!result.IsSuccess)
-    //     {
-    //         invitationError = "Impossible de générer le code d’invitation.";
-    //         return;
-    //     }
-
-    //     invitation = result.Value;
-    // }
-
-    // private async Task CopyInvitationCode()
-    // {
-    //     if (invitation is null)
-    //         return;
-
-    //     await JS.InvokeVoidAsync("navigator.clipboard.writeText", invitation.InvitationCode);
-
-    //     invitationMessage = "Code copié dans le presse-papiers.";
-    // }
-
-    //gestion des demandes de périmètre
-    // private async Task HandleDemandePerimetre()
-    // {
-    //     if (partage is null)
-    //         return;
-
-    //     perimetreError = null;
-    //     isPerimetreLoading = true;
-
-    //     var result = await Sender.Send(new DemandeInfoPerimetrePartage(partage.Id));
-
-    //     isPerimetreLoading = false;
-
-    //     if (!result.IsSuccess)
-    //     {
-    //         perimetreError = "Impossible d’envoyer la demande d’information de périmètre.";
-    //         return;
-    //     }
-
-    //     // On conserve le DTO retourné pour afficher la box de confirmation.
-    //     demandePerimetre = result.Value;
-    // }
-
-    // Gestion de la demande de validation du partage auprès du GRD
-    // private async Task HandleDemandeValidation()
-    // {
-    //     if (partage is null)
-    //         return;
-
-    //     validationError = null;
-    //     isValidationLoading = true;
-
-    //     var result = await Sender.Send(new DemandeValidationPartage(partage.Id));
-
-    //     isValidationLoading = false;
-
-    //     if (!result.IsSuccess)
-    //     {
-    //         validationError = "Impossible d’envoyer la demande de validation GRD.";
-    //         return;
-    //     }
-
-    //     // On conserve le DTO retourné si on veut afficher une confirmation.
-    //     demandeValidation = result.Value;
-
-    //     // On recharge le partage pour afficher le nouveau statut :
-    //     // Inactif -> EnAttenteValidation
-    //     var refresh = await Sender.Send(new GetPartageById(Id));
-
-    //     if (refresh.IsSuccess)
-    //     {
-    //         partage = refresh.Value;
-    //         demandePerimetre = partage.DerniereDemandePerimetre;
-    //     }
-    // } 
-
-    //désactivation du bouton dder valider : permet d'afficher un label explicatif à l'user.
-    // private string GetValidationButtonLabel()
-    // {
-    //     if (partage?.Statut == PartageEnergieStatutType.EnAttenteValidation)
-    //         return "Validation GRD en cours...";
-
-    //     return "Demander validation GRD";
-    // }
-
     /// <summary> Passe la zone "Données du partage" en mode édition.
     /// Le formulaire contient déjà les données chargées depuis le backend. /// </summary>
     private void EnableEdit()
@@ -693,7 +466,6 @@ else if (partage is not null)
         isEditMode = true;
     }
 
-
     /// <summary> Annule les modifications en cours. Les valeurs du formulaire sont rechargées depuis les données 
     /// // actuellement enregistrées afin d'éviter de conserver des modifications non sauvegardées.   </summary>
     private void CancelEdit()
@@ -702,7 +474,6 @@ else if (partage is not null)
             return;
 
         PopulateFormModel();
-
         errorMessage = null;
         isEditMode = false;
     }
@@ -712,7 +483,6 @@ else if (partage is not null)
     {
         if (partage is null)
             return;
-
         formModel = new PartageDetailsFormModel
         {
             Nom = partage.Nom,
@@ -722,5 +492,4 @@ else if (partage is not null)
             Description = partage.Description
         };
     }
-
-}
+ }
