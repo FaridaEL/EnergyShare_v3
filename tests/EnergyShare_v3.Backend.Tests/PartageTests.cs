@@ -284,7 +284,25 @@ namespace EnergyShare_v3.Backend.Tests
             result.Value.DetailsDemande.Should().Contain("Adresse 1");
         }
 
-        
+        // Vérifie qu'un partage non actif ne peut pas demander une modification. (Un nouveau partage est Inactif).
+        [Fact]
+        public void DemanderModification_ShouldFail_WhenPartageIsNotActif()
+        {
+            // Arrange
+            var partage = Partage.Create(
+                "Partage Test",
+                PartageEnergieType.PairToPair,
+                Guid.NewGuid()).Value;
+
+            // Act
+            var result = partage.DemanderModification();
+
+            // Assert
+            result.IsSuccess.Should().BeFalse();
+            partage.Statut.Should().Be(PartageEnergieStatutType.Inactif);
+        }
+
+
 
 
 
