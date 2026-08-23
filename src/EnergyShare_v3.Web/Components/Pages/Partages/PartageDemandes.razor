@@ -167,9 +167,16 @@
                     @* =====================================================
                        DEMANDE DE MODIFICATION DU PARTAGE
 
-                       Ce bouton est actif uniquement si le partage est actif
-                   ===================================================== *@
-                    @if (partage.Statut == PartageEnergieStatutType.Actif)
+                       Une demande de modification peut être envoyée :
+                       - lorsque le partage est actif ;
+                       - lorsqu'il est suspendu après un refus du GRD.
+
+                       Dans le second cas, l'utilisateur peut corriger son
+                       partage puis soumettre à nouveau sa situation au GRD.
+                       ===================================================== *@
+
+                    @if (partage.Statut == PartageEnergieStatutType.Actif
+                        || partage.Statut == PartageEnergieStatutType.Suspendu)
                     {
                         <button class="btn btn-energy-action"
                                 @onclick="HandleDemandeModification"
@@ -177,21 +184,47 @@
 
                             <span class="bi bi-pencil-square me-1"></span>
 
-                            @(isModificationLoading
-                                ? "Envoi..."
-                                : "Déclarer les modifications au GRD")
+                            @if (isModificationLoading)
+                            {
+                                <span>Envoi...</span>
+                            }
+                            else if (partage.Statut == PartageEnergieStatutType.Suspendu)
+                            {
+                                <span>Soumettre à nouveau au GRD</span>
+                            }
+                            else
+                            {
+                                <span>Déclarer les modifications au GRD</span>
+                            }
                         </button>
                     }
+
+                    @* =====================================================
+                       PARTAGE SUSPENDU
+
+                       Le GRD a refusé la précédente demande.L'utilisateur peut 
+                       corriger son partage puis soumettre une nouvelle demande.
+                       ===================================================== *@
+
+                    @if (partage.Statut == PartageEnergieStatutType.Suspendu)
+                    {
+                        <div class="alert alert-info mt-3 mb-0 w-100">
+                            <i class="bi bi-info-circle me-1"></i>
+
+                            La précédente demande de modification a été refusée par le GRD.
+                            Vous pouvez corriger le partage puis soumettre à nouveau les modifications.
+                        </div>
+                    }
+                    
                    @* =========================================================
                        DEMANDE DE MODIFICATION EN COURS
 
-                       Une fois la déclaration transmise au GRD,
-                       le partage passe en statut EnAttenteModification.
+                       Une fois la déclaration transmise au GRD,le partage passe en statut EnAttenteModification.
                        ========================================================= *@
 
                     @if (partage.Statut == PartageEnergieStatutType.EnAttenteModification)
                     {
-                        <div class="alert alert-info mt-3 mb-0">
+                        <div class="alert alert-info mt-3 mb-0 w-100">
 
                             <i class="bi bi-hourglass-split me-1"></i>
 
@@ -207,7 +240,7 @@
                 @* Message affiché lorsqu'une demande de périmètre est déjà en cours *@
                 @if (HasDemandePerimetreEnAttente)
                 {
-                    <div class="alert alert-info mt-3 mb-0">
+                    <div class="alert alert-info mt-3 mb-0 w-100">
                         Une demande d’information de périmètre est déjà en attente de traitement par le GRD.
                     </div>
                 }

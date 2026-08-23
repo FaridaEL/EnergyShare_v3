@@ -232,5 +232,38 @@ namespace EnergyShare_v3.Domain.Entities.Partages
         }
 
 
+        //Gestion des réponses du GRD à une demande de modification d'un partage existant : 
+        public Result RepondreDemandeModificationPartage(
+            bool isValide,
+            string? commentaireReponseGrd,
+            Guid agentTraitantId,
+            Guid? organismePublicId)
+        {
+            // Cette méthode est réservée aux demandes de modification d'un partage existant.
+            if (DemandeType != DemandeGRDType.ModificationPartageExistant)
+                return DemandeGRDErrors.TypeDemandeInvalide();
+
+            // On ne peut répondre qu'à une demande encore en attente.
+            if (ResponseStatus != DdeGRDResponseStatus.EnAttente)
+                return DemandeGRDErrors.DemandeDejaTraitee();
+
+            if (agentTraitantId == Guid.Empty)
+                return DemandeGRDErrors.AgentTraitantObligatoire();
+
+            CommentaireReponseGRD =
+                string.IsNullOrWhiteSpace(commentaireReponseGrd)
+                    ? null
+                    : commentaireReponseGrd.Trim();
+
+            AgentTraitantId = agentTraitantId;
+            OrganismePublicId = organismePublicId;
+            DateReponse = DateTime.UtcNow;
+
+            ResponseStatus = isValide
+                ? DdeGRDResponseStatus.Valide
+                : DdeGRDResponseStatus.Refus;
+
+            return Result.Success();
+        }
     }
 }

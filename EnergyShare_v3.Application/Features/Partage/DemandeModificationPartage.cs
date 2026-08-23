@@ -45,11 +45,21 @@ namespace EnergyShare_v3.Application.Features.Partage
             if (partage.VendeurId != userId)
                 return Result<DemandeModificationPartageDto>.Forbidden();
 
-            // 4. Une demande de modification concerne uniquement un partage déjà actif :
-            if (partage.Statut != PartageEnergieStatutType.Actif)
+            // 4. Une demande de modification concerne uniquement un partage déjà actif ou suspendu :
+            //if (partage.Statut != PartageEnergieStatutType.Actif)
+            //{
+            //    return Result<DemandeModificationPartageDto>.Conflict(
+            //        "Seul un partage actif peut faire l'objet d'une demande de modification.");
+            //}
+
+
+            // 4. Une demande de modification peut être introduite :
+            // - depuis un partage actif ;
+            // - ou depuis un partage suspendu après correction des éléments refusés par le GRD.
+            if (partage.Statut != PartageEnergieStatutType.Actif && partage.Statut != PartageEnergieStatutType.Suspendu)
             {
                 return Result<DemandeModificationPartageDto>.Conflict(
-                    "Seul un partage actif peut faire l'objet d'une demande de modification.");
+                    "Le partage doit être actif ou suspendu pour faire l'objet d'une demande de modification.");
             }
             var validationMembres = partage.VerifierNombreMembres();
 

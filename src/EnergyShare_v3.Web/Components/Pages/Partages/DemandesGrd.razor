@@ -123,6 +123,17 @@ else
                                         Traiter validation
                                     </a>
                                 }
+                                else if (demande.DemandeType == DemandeGRDType.ModificationPartageExistant)
+                                {
+                                    @* Demande de modification d'un partage déjà actif.
+                                       On utilise une page dédiée car le GRD doit pouvoir
+                                       consulter le snapshot transmis avant de valider/refuser. *@
+
+                                    <a class="btn btn-sm btn-warning"
+                                       href="@($"/organisme-public/demandes-grd/{demande.Id}/modification")">
+                                        Traiter modification
+                                    </a>
+                                }
                                 else
                                 {
                                     @*Cas par défaut : les autres types de ddes pas encore dveloppés. 
@@ -208,8 +219,6 @@ else
                                 </td>
                             </tr>
                         }
-
-
 
 
                     }

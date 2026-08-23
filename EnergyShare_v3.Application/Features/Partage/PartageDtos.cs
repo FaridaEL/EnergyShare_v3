@@ -110,4 +110,14 @@ namespace EnergyShare_v3.Application.Features.Partage
         string DetailsDemande
     );
 
+    // Réponse du GRD à une demande de modification d'un partage déjà actif.
+    public record ReponseDemandeModificationPartageDto(
+        Guid DemandeId,
+        Guid PartageId,
+        string ResponseStatus,
+        PartageEnergieStatutType StatutPartage,
+        DateTime DateReponse,
+        string? CommentaireReponseGRD
+    );
+
 }

@@ -110,7 +110,13 @@ namespace EnergyShare_v3.Web.Endpoints
             group.MapPost("/{id:guid}/demande-modification", DemandeModificationPartage)
                 .RequireAuthorization(authenticatedUserPolicy);
 
-
+            // POST /api/partages/demandes-grd/{id}/modification/repondre
+            // Permet au GRD / organisme public de valider ou refuser
+            // une demande de modification d'un partage déjà actif.
+            group.MapPost(
+                "/demandes-grd/{id:guid}/modification/repondre",
+                RepondreDemandeModificationPartage)
+                .RequireAuthorization(adminOrOrganismePublicPolicy);
             return app;
         }
 
@@ -375,5 +381,40 @@ namespace EnergyShare_v3.Web.Endpoints
 
             return Results.Ok(response.Value);
         }
+
+        // Réponse du GRD à une demande de modification
+        // d'un partage déjà actif.
+        internal static async Task<IResult> RepondreDemandeModificationPartage(
+            ISender sender,
+            Guid id,
+            [FromBody] RepondreDemandeModificationPartageRequest request)
+        {
+            // Envoi de la commande vers la couche Application.
+            // L'identifiant de la demande provient de l'URL,
+            // tandis que la décision et le commentaire viennent du body HTTP.
+            var response = await sender.Send(
+                new RepondreDemandeModificationPartage(
+                    id,
+                    request.IsValide,
+                    request.CommentaireReponseGRD));
+
+            if (response.Status == ArdalisResultStatus.Unauthorized)
+                return Results.Unauthorized();
+
+            if (response.Status == ArdalisResultStatus.Forbidden)
+                return Results.StatusCode(403);
+
+            if (response.Status == ArdalisResultStatus.NotFound)
+                return Results.NotFound();
+
+            if (response.Status == ArdalisResultStatus.Invalid)
+                return Results.BadRequest(response.ValidationErrors);
+
+            if (!response.IsSuccess)
+                return Results.BadRequest(response.Errors);
+
+            return Results.Ok(response.Value);
+        }
+
     }
 }
