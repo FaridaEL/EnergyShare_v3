@@ -77,4 +77,32 @@ public class PartageModificationEndpointTests
         response.StatusCode.Should()
             .Be(HttpStatusCode.Forbidden);
     }
+
+    /// <summary>
+    /// Vérifie qu'un partage non actif et non suspendu ne peut pas faire l'objet d'une demande de modification.
+    /// </summary>
+    [Fact]
+    public async Task DemandeModification_WhenPartageIsInactif_ShouldReturnConflict()
+    {
+        // Arrange
+        var seller = await _dataFactory.CreateSellerWithInjectionPointDataAsync();
+
+        var createResponse = await _client.PostAsJsonAsync(
+            "/api/partages",
+            new CreatePartage("Partage inactif",  PartageEnergieType.PairToPair, seller.PointAccessId));
+
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var partageId = await createResponse.Content .ReadFromJsonAsync<Guid>();
+
+        partageId.Should().NotBeEmpty();
+
+        // Act
+        var response = await _client.PostAsync( $"/api/partages/{partageId}/demande-modification", null);
+
+        // Assert
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
 }
