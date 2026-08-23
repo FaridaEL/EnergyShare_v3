@@ -8,7 +8,7 @@
 @using EnergyShare_v3.Application.Features.Partage
 @using EnergyShare_v3.Domain.Enums
 @using EnergyShare_v3.Web.Models.Partage
-@using Microsoft.JSInterop  
+
 
 @inject ISender Sender
 @* =========================================================
@@ -114,8 +114,7 @@ else if (partage is not null)
 
 
             @* =====================================================
-           MODE CONSULTATION
-           Les données sont affichées mais ne sont pas éditables.
+           MODE CONSULTATION    :   Les données sont affichées mais ne sont pas éditables.
            ===================================================== *@
 
             @if (!isEditMode)
@@ -208,6 +207,40 @@ else if (partage is not null)
 
                     </div>
                 }
+
+                @* =========================================================
+                   DECLARATION DES MODIFICATIONS AU GRD
+
+                   Ce message apparaît immédiatement après la sauvegarde
+                   d'une modification significative sur un partage actif.
+
+                   L'action GRD reste centralisée dans la page PartageDemandes.
+                   ========================================================= *@
+
+                @if (hasPendingGrdChanges)
+                {
+                    <div class="alert alert-warning mt-3 mb-0">
+
+                        <div class="fw-bold mb-1">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Des modifications doivent être déclarées au GRD.
+                        </div>
+
+                        <p class="mb-3">
+                            Le partage a été modifié.
+                            Vous devez transmettre la situation mise à jour au GRD.
+                        </p>
+
+                        <a href="@($"/partages/{partage.Id}/demandes")"
+                           class="btn btn-energy-action">
+
+                            <i class="bi bi-send me-1"></i>
+                            Déclarer les modifications au GRD
+                        </a>
+
+                    </div>
+                }
+
             }
 
             @* =====================================================
@@ -222,15 +255,38 @@ else if (partage is not null)
                     Modifiez les informations nécessaires puis enregistrez vos changements.
                 </p>
 
-                @* =================================================
-               TODO MÉTIER :
-               Déterminer ultérieurement quels champs peuvent encore
-               être modifiés selon le statut du partage.
 
-               Exemple :
-               - le type de partage pourrait devenir non modifiable après certaines étapes ;
-               - une modification importante pourrait nécessiter une nouvelle validation du GRD.
-               ================================================= *@
+                @* =========================================================
+                   INFORMATION GRD
+
+                   Pour un partage déjà actif, certaines modifications sont considérées comme significatives 
+                   et devront être déclarées au GRD.
+
+                   Pour le moment, dans cette page, on retient 4 éléments  : 
+                   - le nom ;
+                   - le type de partage ;
+                   - la date de début ;
+                   - la date de fin.
+
+                   La description reste considérée comme une donnée descriptive.
+                   Cette liste pourra facilement évoluer par la suite.
+                   TODO MÉTIER : Déterminer ultérieurement quels champs peuvent encore
+                     être modifiés selon le statut du partage.
+                   ========================================================= *@
+
+                @if (partage.Statut == PartageEnergieStatutType.Actif)
+                {
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-1"></i>
+
+                        <strong>Attention :</strong>
+                        certaines modifications d’un partage actif doivent être déclarées au GRD.
+
+                        <div class="mt-1">
+                            Cela concerne actuellement le nom, le type de partage et les dates de début ou de fin.
+                        </div>
+                    </div>
+                }
 
                 <div class="row g-3">
 
@@ -348,7 +404,13 @@ else if (partage is not null)
     // variaible pour pour gérer l'édition du partage : modifier, enregistrer les modifications
     //  --> même principe que pour profil
     private bool isEditMode = false;
-    private PartageDetailsDto? partage;// données lues depuis la base         
+    private PartageDetailsDto? partage;// données lues depuis la base  
+    
+    // Indique qu'une modification significative vient d'être enregistrée sur un partage actif.
+    // Pour le moment cet indicateur appartient uniquement à l'UI.
+    // Il deviendra persistant lorsque l'historique des modifications sera mis en place.
+    //Donc LIMITES ! les changements significatifs ne sont visibles que le temps de la connexion.
+    private bool hasPendingGrdChanges;
     
     // Variables pour la dde  de validation GRD
     // private DemandeValidationPartageDto? demandeValidation;
@@ -419,6 +481,12 @@ else if (partage is not null)
         if (partage is null)
             return;
 
+        // On détermine AVANT la sauvegarde si les changements effectués doivent être déclarés au GRD.
+        // Cette règle ne concerne ici que les partages déjà actifs.
+        var requiresGrdDeclaration =
+            partage.Statut == PartageEnergieStatutType.Actif
+            && HasSignificantGeneralChanges(partage, formModel);
+       
         var command = new UpdatePartage(
             partage.Id,
             formModel.Nom,
@@ -426,21 +494,22 @@ else if (partage is not null)
             formModel.EnergieType,
             formModel.DateDebut,
             formModel.DateFin
-
         );
 
         var result = await Sender.Send(command);
 
         if (!result.IsSuccess)
         {
-            // errorMessage = "Erreur lors de la mise à jour.";
-            // return;
-             errorMessage = result.Errors.Any()
+            errorMessage = result.Errors.Any()
                 ? string.Join(" | ", result.Errors)
                 : $"Erreur lors de la mise à jour. Statut : {result.Status}";
 
-            return;
+           
+                return;
         }
+        // Si une donnée significative d'un partage actif a été modifiée,
+        // l'interface proposera immédiatement de déclarer les changements au GRD.
+        hasPendingGrdChanges = requiresGrdDeclaration;
 
         // Recharge les données après update (bonne pratique)
         var refresh = await Sender.Send(new GetPartageById(Id));
@@ -448,8 +517,7 @@ else if (partage is not null)
         {
             partage = refresh.Value;
             PopulateFormModel();
-            // Re-synchroniser le formModel
-            
+            // Re-synchroniser le formModel 
         }
         isEditMode = false; // Retour au mode consultation après sauvegarde
     }
@@ -492,4 +560,26 @@ else if (partage is not null)
             Description = partage.Description
         };
     }
+    /// <summary>
+    /// Vérifie si les données générales modifiées doivent faire l'objet d'une déclaration au GRD.
+    /// Cette méthode centralise volontairement la liste des champs significatifs pour pouvoir l'adapter facilement.
+    /// Les modifications de membres seront traitées séparément dans la fonctionnalité PartageMembres.
+    /// </summary>
+    private static bool HasSignificantGeneralChanges( PartageDetailsDto current, PartageDetailsFormModel edited)
+    {
+        return
+            // Nom du partage
+            !string.Equals(current.Nom?.Trim(), edited.Nom?.Trim(),StringComparison.Ordinal)
+
+            //Description n'est pas considérée comme un changement significatif pour le GRD.
+            // || !string.Equals(current.Description?.Trim(), edited.Description?.Trim(),StringComparison.Ordinal)
+           
+            // Type de partage
+            || current.EnergieType != edited.EnergieType
+            
+            // Dates du partage
+            || current.DateDebut?.Date != edited.DateDebut?.Date
+            || current.DateFin?.Date != edited.DateFin?.Date;
+    }
+
  }

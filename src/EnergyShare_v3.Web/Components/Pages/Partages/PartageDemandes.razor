@@ -142,7 +142,7 @@
                        - une demande est déjà en cours d'envoi ;
                        - le partage est déjà en attente de validation.
                        ===================================================== *@
-                    <button class="btn btn-energy-success"
+                    @* <button class="btn btn-energy-success"
                             @onclick="HandleDemandeValidation"
                             disabled="@(!partage.CanEdit || partage.NombreParticipants < 2  || isValidationLoading
                                         || partage.Statut == PartageEnergieStatutType.EnAttenteValidation)">
@@ -150,9 +150,60 @@
                         <span class="bi bi-check-circle-fill me-1"></span>
 
                         @GetValidationButtonLabel()
-                    </button>
+                    </button> *@
+                    @* Validation initiale uniquement pour un partage encore inactif *@
+                    @if (partage.Statut == PartageEnergieStatutType.Inactif)
+                    {
+                        <button class="btn btn-energy-success"
+                                @onclick="HandleDemandeValidation"
+                                disabled="@(!partage.CanEdit || partage.NombreParticipants < 2 || isValidationLoading)">
 
+                            <span class="bi bi-check-circle-fill me-1"></span>
+
+                            @GetValidationButtonLabel()
+                        </button>
+                    }
+
+                    @* =====================================================
+                       DEMANDE DE MODIFICATION DU PARTAGE
+
+                       Ce bouton est actif uniquement si le partage est actif
+                   ===================================================== *@
+                    @if (partage.Statut == PartageEnergieStatutType.Actif)
+                    {
+                        <button class="btn btn-energy-action"
+                                @onclick="HandleDemandeModification"
+                                disabled="@isModificationLoading">
+
+                            <span class="bi bi-pencil-square me-1"></span>
+
+                            @(isModificationLoading
+                                ? "Envoi..."
+                                : "Déclarer les modifications au GRD")
+                        </button>
+                    }
+                   @* =========================================================
+                       DEMANDE DE MODIFICATION EN COURS
+
+                       Une fois la déclaration transmise au GRD,
+                       le partage passe en statut EnAttenteModification.
+                       ========================================================= *@
+
+                    @if (partage.Statut == PartageEnergieStatutType.EnAttenteModification)
+                    {
+                        <div class="alert alert-info mt-3 mb-0">
+
+                            <i class="bi bi-hourglass-split me-1"></i>
+
+                            Une déclaration de modification est actuellement
+                            en attente de traitement par le GRD.
+                        </div>
+                    }
+                
                 </div>
+               
+               
+                
                 @* Message affiché lorsqu'une demande de périmètre est déjà en cours *@
                 @if (HasDemandePerimetreEnAttente)
                 {
@@ -160,6 +211,8 @@
                         Une demande d’information de périmètre est déjà en attente de traitement par le GRD.
                     </div>
                 }
+
+               
 
                 @* -----------------------------------------------------
                    Informations utiles lorsque les actions sont bloquées.
@@ -200,7 +253,15 @@
             </div>
         }
 
-
+        @* =========================================================
+           MESSAGE D'ERREUR - DEMANDE DE MODIFICATION
+           ========================================================= *@
+        @if (!string.IsNullOrWhiteSpace(modificationError))
+        {
+            <div class="alert alert-warning">
+                @modificationError
+            </div>
+        }
         @* =========================================================
            DERNIERE DEMANDE D'INFORMATION DE PERIMETRE
 
@@ -208,7 +269,10 @@
 
            TODO : prévoir plus tard une Query spécifique permettant de récupérer l'historique complet des demandes du partage.
            ========================================================= *@
-        <div class="card mb-4">
+      
+           
+           
+       <div class="card mb-4">
 
             <div class="card-header fw-bold">
                 Demande d’information de périmètre
@@ -420,6 +484,14 @@
     private DemandeValidationPartageDto? demandeValidation;  // DTO retourné lorsqu'une nouvelle demande de validation est envoyée.
     private string? validationError;  // Message d'erreur éventuel.
     private bool isValidationLoading;   // Permet d'éviter plusieurs clics pendant l'envoi.
+     
+    // =========================================================
+     // DEMANDE DE MODIFICATION DU PARTAGE
+     // =========================================================
+    private DemandeModificationPartageDto? demandeModification;
+    private string? modificationError;
+    private bool isModificationLoading;
+
 
     // Charge les informations du partage ainsi quesa dernière demande de périmètre éventuelle
     protected override async Task OnInitializedAsync()
@@ -526,7 +598,6 @@
         return "Demander validation GRD";
     }
 
-
     /// <summary>
     /// Affiche un libellé compréhensible pour le statut métier.
     /// </summary>
@@ -555,4 +626,43 @@
         => date?.ToLocalTime()
                .ToString("dd/MM/yyyy HH:mm")
            ?? "Non définie";
+
+    /// <summary>
+    /// Déclare au GRD les modifications apportées à un partage déjà actif.
+    /// </summary>
+    private async Task HandleDemandeModification()
+    {
+        if (partage is null)
+            return;
+
+        modificationError = null;
+        isModificationLoading = true;
+
+        var result = await Sender.Send(
+            new DemandeModificationPartage(partage.Id));
+
+        isModificationLoading = false;
+
+        if (!result.IsSuccess)
+        {
+            modificationError =
+                "Impossible d’envoyer la demande de modification au GRD.";
+
+            return;
+        }
+
+        demandeModification = result.Value;
+
+        // Recharge le partage afin d'afficher immédiatement le nouveau statut EnAttenteModification.
+        var refresh = await Sender.Send(
+            new GetPartageById(Id));
+
+        if (refresh.IsSuccess)
+        {
+            partage = refresh.Value;
+            demandePerimetre =
+                partage.DerniereDemandePerimetre;
+        }
+    }
+
 }
