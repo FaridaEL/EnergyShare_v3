@@ -226,11 +226,15 @@ namespace EnergyShare_v3.Domain.Entities.Partages
          //Pour les modifications
         public Result DemanderModification()
         {
-            if (Statut != PartageEnergieStatutType.Actif)
+            // Un partage actif peut faire l'objet d'une modification.
+            // Un partage suspendu peut également être resoumis
+            // après correction des éléments refusés par le GRD.
+            if (Statut != PartageEnergieStatutType.Actif && Statut != PartageEnergieStatutType.Suspendu)
                  return PartageErrors.ModificationImpossible();
 
             Statut = PartageEnergieStatutType.EnAttenteModification;
             Audit.Touch(null);
+           
             return Result.Success();
         }
 

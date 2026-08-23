@@ -2,117 +2,230 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 
-@using Microsoft.AspNetCore.Authorization
-@using Mediator
-@using EnergyShare_v3.Application.Features.PointAccess
 @using EnergyShare_v3.Application.Features.Partage
+@using EnergyShare_v3.Application.Features.PointAccess
+@using EnergyShare_v3.Domain.Enums
+@using Mediator
+@using Microsoft.AspNetCore.Authorization
 
 @inject ISender Sender
 
 <PageTitle>Mon partage</PageTitle>
 
-<h3>Mon partage</h3>
+<div class="page-shell py-4">
 
-<p class="text-muted">
-    Suivez votre partage d’énergie et les prochaines étapes.
-</p>
+    <h3>Mon partage</h3>
 
-@if (isLoading)
-{
-    <p>Chargement...</p>
-}
-else
-{
-    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    <p class="page-subtitle mb-4">
+        Consultez vos partages d’énergie et accédez rapidement à leur dossier.
+    </p>
+
+    @if (isLoading)
     {
-        <div class="alert alert-warning">@errorMessage</div>
-    }
-
-    @if (partages.Any())
-    {
-        <div class="row g-3">
-            @foreach (var partage in partages)
-            {
-                <div class="col-md-6">
-                    <div class="card border-primary mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">@partage.Nom</h5>
-
-                            <p class="card-text mb-1">
-                                <strong>Type :</strong> @partage.EnergieType
-                            </p>
-
-                            <p class="card-text mb-1">
-                                <strong>Statut :</strong> @partage.Statut
-                            </p>
-
-                            <p class="card-text mb-3">
-                                <strong>Participants :</strong> @partage.NombreParticipants
-                            </p>
-
-                            <a href="@($"/partages/{partage.Id}")" class="btn btn-primary">
-                                Voir le détail
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
+        <p>Chargement...</p>
     }
     else
     {
-        <div class="alert alert-info">
-            Aucun partage trouvé.
-        </div>
-
-        @if (hasInjectionPoint)
+        @* Message affiché lorsqu'une erreur survient pendant le chargement *@
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
         {
-            <div class="card border-primary mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">💡 Vous pouvez créer un partage</h5>
-                    <p class="card-text">
-                        Vous possédez un point d’injection. Vous pouvez créer un partage
-                        et devenir l’interlocuteur unique vis-à-vis du GRD.
-                    </p>
+            <div class="alert alert-warning">
+                @errorMessage
+            </div>
+        }
 
-                    <a href="/partages/create" class="btn btn-primary">
-                        Créer un partage
-                    </a>
-                </div>
+        @if (partages.Any())
+        {
+            <div class="row g-4">
+
+                @foreach (var partage in partages)
+                {
+                    <div class="col-12 col-xl-6">
+
+                        @* Une carte représente un partage appartenant à l'utilisateur *@
+                        <div class="partage-card h-100">
+
+                            @* En-tête : nom du partage et statut *@
+                            <div class="partage-card-header">
+
+                                <div>
+                                    <h4 class="partage-card-title">
+                                        @partage.Nom
+                                    </h4>
+
+                                    <div class="partage-card-info mt-2">
+
+                                        <span>
+                                            <i class="bi bi-lightning-charge me-1"></i>
+                                            @partage.EnergieType
+                                        </span>
+
+                                        <span>
+                                            <i class="bi bi-people me-1"></i>
+                                            @partage.NombreParticipants participant(s)
+                                        </span>
+
+                                    </div>
+                                </div>
+
+                                @* Le statut est mis en évidence visuellement *@
+                                @if (partage.Statut == PartageEnergieStatutType.Actif)
+                                {
+                                    <span class="partage-status partage-status-active">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        @partage.Statut
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="partage-status partage-status-inactive">
+                                        @partage.Statut
+                                    </span>
+                                }
+
+                            </div>
+
+                            @* Raccourcis vers les différentes sections du dossier de partage *@
+                            <div class="partage-card-actions">
+
+                                @* Cette page existe déjà *@
+                                <a href="@($"/partages/{partage.Id}")"
+                                   class="btn btn-energy-save">
+                                    <i class="bi bi-eye me-1"></i>
+                                    Vue générale
+                                </a>
+                                <a class="btn btn-energy-nav"
+                                   href="@($"/partages/{partage.Id}/membres")">
+                                    <i class="bi bi-people me-1"></i>
+                                    Membres
+                                </a>
+
+                                <a class="btn btn-energy-nav"
+                                   href="@($"/partages/{partage.Id}/demandes")">
+                                    <i class="bi bi-envelope-paper me-1"></i>
+                                    Demandes
+                                </a>
+                                @* Pages prévues mais pas encore développées. Les boutons sont visibles mais désactivés
+                                   afin d'éviter une redirection vers une page 404. *@
+                                @* <button class="btn btn-energy-disabled"
+                                        disabled
+                                        title="La gestion des membres sera bientôt disponible">
+                                    <i class="bi bi-people me-1"></i>
+                                    Membres
+                                </button> *@
+
+                               @*  <button class="btn btn-energy-disabled"
+                                        disabled
+                                        title="L'historique des demandes sera bientôt disponible">
+                                    <i class="bi bi-envelope-paper me-1"></i>
+                                    Demandes
+                                </button> *@
+
+                                <button class="btn btn-energy-disabled"
+                                        disabled
+                                        title="La gestion documentaire sera bientôt disponible">
+                                    <i class="bi bi-file-earmark-text me-1"></i>
+                                    Documents
+                                </button>
+
+                                <button class="btn btn-energy-disabled"
+                                        disabled
+                                        title="Le dashboard sera bientôt disponible">
+                                    <i class="bi bi-bar-chart me-1"></i>
+                                    Dashboard
+                                </button>
+
+                            </div>
+
+                        </div>
+                    </div>
+                }
+
             </div>
         }
         else
         {
-            <div class="card border-warning mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Point d’injection requis</h5>
-                    <p class="card-text">
-                        Pour créer un partage, vous devez d’abord déclarer un point d’accès
-                        qui injecte de l’énergie sur le réseau.
-                    </p>
-
-                    <a href="/mes-points-access" class="btn btn-primary">
-                        Mes points d’accès
-                    </a>
-                </div>
+            <div class="alert alert-info">
+                Aucun partage trouvé.
             </div>
+
+            @* Un producteur disposant déjà d'un point d'injection peut directement créer un nouveau partage. *@
+            @if (hasInjectionPoint)
+            {
+                <div class="partage-card">
+
+                    <div class="partage-card-header">
+                        <div>
+                            <h4 class="partage-card-title">
+                                Vous pouvez créer un partage
+                            </h4>
+
+                            <p class="mb-0 mt-2">
+                                Vous possédez un point d’injection.
+                                Vous pouvez créer un partage et devenir l’interlocuteur unique vis-à-vis du GRD.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="partage-card-actions">
+                        <a href="/partages/create"
+                           class="btn btn-energy-action">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Créer un partage
+                        </a>
+                    </div>
+
+                </div>
+            }
+            else
+            {
+                @* Sans point d'injection actif, la création d'un partagen'est pas possible. 
+                    L'utilisateur est dirigé vers ses points d'accès. *@
+                <div class="partage-card">
+
+                    <div class="partage-card-header">
+                        <div>
+                            <h4 class="partage-card-title">
+                                Point d’injection requis
+                            </h4>
+
+                            <p class="mb-0 mt-2">
+                                Pour créer un partage, vous devez d’abord déclarer un point d’accès qui injecte de l’énergie sur le réseau.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="partage-card-actions">
+                        <a href="/mes-points-access"
+                           class="btn btn-energy-nav">
+                            <i class="bi bi-geo-alt me-1"></i>
+                            Mes points d’accès
+                        </a>
+                    </div>
+
+                </div>
+            }
         }
     }
-}
+
+</div>
 
 @code {
-    private bool isLoading = true;
-    private bool hasInjectionPoint = false;
 
-    private string? errorMessage;
+    private bool isLoading = true;// Indique si les données de la page sont encore en cours de chargement.
+    private bool hasInjectionPoint;// Indique si l'utilisateur possède au moins un point d'injection actif.--> Cet info détermine s'il peut créer un nouveau partage. 
+    private string? errorMessage;// Message d'erreur affiché dans l'interface en cas d'échec de chargement.
+    private IReadOnlyList<PartageSummaryDto> partages = [];// Liste des partages auxquels l'utilisateur appartient.
 
-    private IReadOnlyList<PartageSummaryDto> partages = [];
-
+    /// <summary>
+    /// Charge les points d'accès puis les partages de l'utilisateur.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         isLoading = true;
         errorMessage = null;
 
+        // Chargement des points d'accès afin de déterminersi l'utilisateur possède un point d'injection actif.
         var pointAccessResult = await Sender.Send(new GetMyPointAccesses());
 
         if (!pointAccessResult.IsSuccess)
@@ -122,8 +235,10 @@ else
             return;
         }
 
-        hasInjectionPoint = pointAccessResult.Value.Any(p => p.EstActif && p.IsInjectionPoint);
+        hasInjectionPoint = pointAccessResult.Value
+            .Any(p => p.EstActif && p.IsInjectionPoint);
 
+        // Chargement des partages de l'utilisateur.
         var partageResult = await Sender.Send(new GetMyPartages());
 
         if (!partageResult.IsSuccess)

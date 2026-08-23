@@ -8,7 +8,7 @@
 @using EnergyShare_v3.Application.Features.Partage
 @using EnergyShare_v3.Domain.Enums
 @using EnergyShare_v3.Web.Models.Partage
-@using Microsoft.JSInterop  
+
 
 @inject ISender Sender
 @* =========================================================
@@ -38,67 +38,22 @@ else if (!string.IsNullOrWhiteSpace(errorMessage))
    AFFICHAGE DU PARTAGE SI il existe.
    ========================================================= *@
 
-
 else if (partage is not null)
 {
     @* =========================================================
-       CARD : PROGRESSION DU DOSSIER  admin du partage.  lié au statut du dossier ( cf. backend)
-       ========================================================= *@
-   
-    
-    <div class="card mb-3">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+   STATUT DU PARTAGE
+   La barre de progression a été retirée provisoirement.
+   Le statut métier reste affiché car il constitue une information importante du dossier.
+   ========================================================= *@
 
-                @* =========================================================
-                   PARTIE GAUCHE : BARRE DE PROGRESSION + ÉTAPES  --> TODO : éventuellemnt corriger les étapes 
-                   ou les retirer pour gain de place ..
-                   ========================================================= *@ 
-  
-                
-                <div class="flex-grow-1">
-                    <h5 class="mb-2">Progression du dossier</h5>
+    <div class="d-flex justify-content-end mb-3">
+        <div class="status-box text-center">
+            <div class="text-muted small">
+                Statut du partage
+            </div>
 
-                    <div class="progress mb-2">
-                        <div class="progress-bar" style="width:@($"{partage.Progression}%")">
-                            @partage.Progression%
-                        </div>
-                    </div>
-                    @* =========================================================
-                       CHECKLIST DES ÉTAPES DU DOSSIER   : ! à revoir TODO  : 
-                       -1) Création du partage 
-                       - 2) participants :  Vert si minimum atteint.
-                        - 3) perimetre  : TODO : progression périmètre 
-                        - 4) validation GRD : Vert si le partage est En attente validation ou Actif
-
-                       ========================================================= *@
-
-                    <ul class="mb-0">
-
-                        <li class="text-success">✔ Création du partage</li>
-                        <li class="@(partage.NombreParticipants >= 2 ? "text-success" : "text-muted")">
-                            @(partage.NombreParticipants >= 2 ? "✔" : "○") Participants
-                        </li>
-                        <li class="@(PerimetreConnu ? "text-success" : "text-muted")">
-                            @(PerimetreConnu ? "✔" : "○") Périmètre électrique
-                        </li>
-                            
-                        <li class="@(partage.Statut == PartageEnergieStatutType.EnAttenteValidation || partage.Statut == PartageEnergieStatutType.Actif ? "text-success" : "text-muted")">
-                            @(partage.Statut == PartageEnergieStatutType.EnAttenteValidation || partage.Statut == PartageEnergieStatutType.Actif ? "✔" : "○") Validation GRD
-                        </li>
-                    </ul>
-                </div>
-
-                @* =========================================================
-                   PARTIE DROITE : STATUT DU PARTAGE
-                   ========================================================= *@
-
-                <div class="status-box text-center">
-                    <div class="text-muted small">Statut du partage</div>
-                    <div class="fw-bold text-danger fs-5">
-                        @GetStatutLabel(partage.Statut)
-                    </div>
-                </div>
+            <div class="fw-bold fs-5">
+                @GetStatutLabel(partage.Statut)
             </div>
         </div>
     </div>
@@ -114,88 +69,7 @@ else if (partage is not null)
             Vous consultez ce dossier en lecture seule.
         </div>
     }
-    @* =========================================================
-       CARD : DONNÉES DU PARTAGE    : métadonnées + informations éditables du partage.
-       ========================================================= *@
-
-    @* <div class="card mb-3">
-        <div class="card-header fw-bold">
-            Données du partage
-        </div>
-
-        <div class="card-body"> *@
-            @* =========================================================
-               MÉTADONNÉES DU DOSSIER    : non éditable mais mise à jour auto 
-               ========================================================= *@
-            @* <div class="metadata-box mb-3">
-                <div>
-                    <span class="metadata-label">Créé le :</span>
-                    <span>@partage.CreatedAt.ToShortDateString()</span>
-                </div>
-
-                <div>
-                    <span class="metadata-label">Dernière modification le :</span>
-                    <span>@FormatDate(partage.UpdatedAt)</span>
-                </div>
-
-                <div>
-                    <span class="metadata-label">Participants :</span>
-                    <span>@partage.NombreParticipants</span>
-                </div>
-            </div>
-
-            <p class="text-muted mb-3">
-                Cette zone vous permet de compléter les informations de votre partage avant de demander une validation au GRD (Sibelga).
-            </p> *@
-
-            @* =========================================================
-               MÉTADONNÉES DU DOSSIER    : éditable 
-               TODO : en cas de modification il faut idéalement dder une validation 
-               TODO : déterminer quel élements sont éditables ou pas 
-               ========================================================= *@
-           @*  <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Nom du partage</label>
-                    <InputText class="form-control"
-                               @bind-Value="formModel.Nom"
-                               disabled="@(!partage.CanEdit)" />
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">Type de partage</label>
-                    <InputSelect class="form-select"
-                                 @bind-Value="formModel.EnergieType"
-                                 disabled="@(!partage.CanEdit)">
-                        <option value="@PartageEnergieType.PairToPair">Pair à pair</option>
-                        <option value="@PartageEnergieType.MemeBatiment">Même bâtiment</option>
-                    </InputSelect>
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">Date de début</label>
-                    <InputDate class="form-control"
-                               @bind-Value="formModel.DateDebut"
-                               disabled="@(!partage.CanEdit)" />
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">Date de fin</label>
-                    <InputDate class="form-control"
-                               @bind-Value="formModel.DateFin"
-                               disabled="@(!partage.CanEdit)" />
-                </div>
-
-                <div class="col-12">
-                    <label class="form-label">Description</label>
-                    <InputTextArea class="form-control"
-                                   @bind-Value="formModel.Description"
-                                   rows="3"
-                                   disabled="@(!partage.CanEdit)" />
-                </div>
-            </div>
-        </div>
-    </div> *@
-
+ 
     @* =========================================================
    CARD : DONNÉES DU PARTAGE
 
@@ -240,8 +114,7 @@ else if (partage is not null)
 
 
             @* =====================================================
-           MODE CONSULTATION
-           Les données sont affichées mais ne sont pas éditables.
+           MODE CONSULTATION    :   Les données sont affichées mais ne sont pas éditables.
            ===================================================== *@
 
             @if (!isEditMode)
@@ -312,7 +185,6 @@ else if (partage is not null)
 
                 </div>
 
-
                 @* =================================================
                ACTION : MODIFIER LE PARTAGE
 
@@ -335,8 +207,41 @@ else if (partage is not null)
 
                     </div>
                 }
-            }
 
+                @* =========================================================
+                   DECLARATION DES MODIFICATIONS AU GRD
+
+                   Ce message apparaît immédiatement après la sauvegarde
+                   d'une modification significative sur un partage actif.
+
+                   L'action GRD reste centralisée dans la page PartageDemandes.
+                   ========================================================= *@
+
+                @if (hasPendingGrdChanges)
+                {
+                    <div class="alert alert-warning mt-3 mb-0">
+
+                        <div class="fw-bold mb-1">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Des modifications doivent être déclarées au GRD.
+                        </div>
+
+                        <p class="mb-3">
+                            Le partage a été modifié.
+                            Vous devez transmettre la situation mise à jour au GRD.
+                        </p>
+
+                        <a href="@($"/partages/{partage.Id}/demandes")"
+                           class="btn btn-energy-action">
+
+                            <i class="bi bi-send me-1"></i>
+                            Déclarer les modifications au GRD
+                        </a>
+
+                    </div>
+                }
+
+            }
 
             @* =====================================================
            MODE ÉDITION
@@ -347,22 +252,41 @@ else if (partage is not null)
             else
             {
                 <p class="text-muted mb-3">
-                    Modifiez les informations nécessaires puis enregistrez
-                    vos changements.
+                    Modifiez les informations nécessaires puis enregistrez vos changements.
                 </p>
 
 
-                @* =================================================
-               TODO MÉTIER :
-               Déterminer ultérieurement quels champs peuvent encore
-               être modifiés selon le statut du partage.
+                @* =========================================================
+                   INFORMATION GRD
 
-               Exemple :
-               - le type de partage pourrait devenir non modifiable
-                 après certaines étapes ;
-               - une modification importante pourrait nécessiter
-                 une nouvelle validation du GRD.
-               ================================================= *@
+                   Pour un partage déjà actif, certaines modifications sont considérées comme significatives 
+                   et devront être déclarées au GRD.
+
+                   Pour le moment, dans cette page, on retient 4 éléments  : 
+                   - le nom ;
+                   - le type de partage ;
+                   - la date de début ;
+                   - la date de fin.
+
+                   La description reste considérée comme une donnée descriptive.
+                   Cette liste pourra facilement évoluer par la suite.
+                   TODO MÉTIER : Déterminer ultérieurement quels champs peuvent encore
+                     être modifiés selon le statut du partage.
+                   ========================================================= *@
+
+                @if (partage.Statut == PartageEnergieStatutType.Actif)
+                {
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-1"></i>
+
+                        <strong>Attention :</strong>
+                        certaines modifications d’un partage actif doivent être déclarées au GRD.
+
+                        <div class="mt-1">
+                            Cela concerne actuellement le nom, le type de partage et les dates de début ou de fin.
+                        </div>
+                    </div>
+                }
 
                 <div class="row g-3">
 
@@ -440,10 +364,7 @@ else if (partage is not null)
 
 
                 @* =================================================
-               ACTIONS DU MODE ÉDITION
-
-               Bleu = sauvegarder les données.
-               Gris = abandonner les modifications.
+               ACTIONS DU MODE ÉDITION   :  Bleu = sauvegarder les données.  Gris = abandonner les modifications.
                ================================================= *@
 
                 <div class="d-flex gap-2 mt-4">
@@ -472,265 +393,6 @@ else if (partage is not null)
 
         </div>
     </div>
-
-
-
-    @* =========================================================
-   ACTIONS PRINCIPALES DU DOSSIER DE PARTAGE
-   ========================================================= *@
-
-
-    <div class="d-flex gap-2 mt-3 flex-wrap">
-
-        @* =========================================================
-       ENREGISTRER LES MODIFICATIONS DU PARTAGE
-       ========================================================= *@
-       @*  <button class="btn btn-primary" @onclick="HandleUpdate" disabled="@(!partage.CanEdit)">
-            Enregistrer les modifications
-        </button> *@
-        @* =========================================================
-       INVITER UN PARTICIPANT
-       - Génère un code d’invitation sécurisé.
-       - Désactivé si :
-         -> l'utilisateur ne peut pas modifier le partage ;
-         -> une génération est déjà en cours.
-       ========================================================= *@
-
-        @* <button class="btn btn-outline-primary"
-                @onclick="HandleInvitation"
-                disabled="@(!partage.CanEdit || isInvitationLoading)">
-            @(isInvitationLoading ? "Préparation..." : "Inviter un participant")
-        </button> *@
-        <button class="btn btn-energy-action"
-                @onclick="HandleInvitation"
-                disabled="@(!partage.CanEdit || isInvitationLoading)">
-
-            <span class="bi bi-person-plus-fill me-1"></span>
-
-            @(isInvitationLoading
-                ? "Préparation..."
-                : "Inviter un participant")
-        </button>
-
-        @* <button class="btn btn-outline-secondary" disabled="@(!partage.CanEdit || partage.NombreParticipants < 2)">
-            Demander info périmètre
-        </button> *@
-
-        @* =========================================================
-       DEMANDE D’INFORMATION DE PÉRIMÈTRE
-       - Permet d’envoyer une demande au GRD.
-       - Désactivé si :
-         -> l'utilisateur ne peut pas modifier ;
-         -> moins de 2 participants ;
-         -> une dde est déjà en cours ;
-         -> une dde existe déjà en attente.
-       ========================================================= *@
-
-
-       @*  <button class="btn btn-outline-secondary"
-                @onclick="HandleDemandePerimetre"
-                disabled="@(!partage.CanEdit 
-                            || partage.NombreParticipants < 2 
-                            || isPerimetreLoading
-                            || HasDemandePerimetreEnAttente )">
-            @(isPerimetreLoading ? "Envoi..." : "Demander info périmètre")
-        </button> *@
-         <button class="btn btn-energy-cancel"
-            @onclick="HandleDemandePerimetre"
-            disabled="@(!partage.CanEdit
-                        || partage.NombreParticipants < 2
-                        || isPerimetreLoading
-                        || HasDemandePerimetreEnAttente)">
-
-        <span class="bi bi-info-circle me-1"></span>
-
-        @(isPerimetreLoading
-            ? "Envoi..."
-            : "Demander info périmètre")
-    </button>
-
-
-        @* <button class="btn btn-success" disabled="@(!partage.CanEdit || partage.NombreParticipants < 2)">
-            Demander validation GRD
-        </button> *@
-        @* bouton désactivé SI  :
-            - l'user ne peut pas modifier le partage ;
-            - le nombre minimum de participants n'est pas atteint ;
-            - une validation GRD est déjà en cours.  *@
-       
-        @* =========================================================
-       DEMANDE DE VALIDATION GRD
-       - Envoie officiellement le partage au GRD.
-       - Désactivé si :
-         -> l'utilisateur ne peut pas modifier ;
-         -> moins de 2 participants ;
-         -> une validation est déjà en cours ;
-         -> le partage est déjà en attente de validation.
-       ========================================================= *@      
-            
-            
-            @* <button class="btn btn-success"
-                @onclick="HandleDemandeValidation"
-                disabled="@(!partage.CanEdit
-                                    || partage.NombreParticipants < 2
-                                    || isValidationLoading
-                                    || partage.Statut == PartageEnergieStatutType.EnAttenteValidation)">
-            @GetValidationButtonLabel()
-        </button> *@
-        <button class="btn btn-success"
-                @onclick="HandleDemandeValidation"
-                disabled="@(!partage.CanEdit
-                                    || partage.NombreParticipants < 2
-                                    || isValidationLoading
-                                    || partage.Statut == PartageEnergieStatutType.EnAttenteValidation)">
-
-            <span class="bi bi-check-circle-fill me-1"></span>
-
-            @GetValidationButtonLabel()
-        </button>
-
-    </div>
-
-    @* =========================================================
-   BLOC CODE D’INVITATION
-   - Affiché après génération d’un code.
-   ========================================================= *@
-
-    @if (invitation is not null)
-    {
-        <div class="card mt-3 mb-3 border-primary">
-            <div class="card-body">
-                <h5 class="card-title">Code d’invitation</h5>
-
-                <p class="text-muted">
-                    Transmettez ce code à la personne que vous souhaitez inviter.
-                    Elle devra se connecter à EnergyShare, puis cliquer sur
-                    <strong>Rejoindre un partage</strong>.
-                    Ce code expire dans 24 heures.
-                </p>
-
-                <div class="input-group mb-2">
-                    <input class="form-control fw-bold"
-                           value="@invitation.InvitationCode"
-                           readonly />
-
-                    <button class="btn btn-outline-secondary"
-                            @onclick="CopyInvitationCode">
-                        Copier
-                    </button>
-                </div>
-
-                <div class="small text-muted">
-                    Expire le : @invitation.InvitationCodeExpiresAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                </div>
-
-                @if (!string.IsNullOrWhiteSpace(invitationMessage))
-                {
-                    <div class="alert alert-success mt-3 mb-0">
-                        @invitationMessage
-                    </div>
-                }
-            </div>
-        </div>
-    }
-
-    @* =========================================================
-   ERREUR INVITATION
-   ========================================================= *@
-
-    @if (!string.IsNullOrWhiteSpace(invitationError))
-    {
-        <div class="alert alert-warning mt-3">
-            @invitationError
-        </div>
-    }
-
-    @* =========================================================
-   BLOC DEMANDE D’INFORMATION DE PÉRIMÈTRE
-   - Affiché après envoi de la demande.
-   - Contient :
-     -> statut ;
-     -> périmètre confirmé ;
-     -> commentaire GRD ;
-     -> détails envoyés.
-   ========================================================= *@
-    @if (demandePerimetre is not null)
-    {
-        <div class="card mt-3 mb-3 border-secondary">
-            <div class="card-body">
-                <h5 class="card-title">Demande d’information de périmètre</h5>
-
-                <p class="text-muted">
-                    Votre demande a été préparée et envoyée au GRD.
-                    Les adresses des participants actifs ont été ajoutées automatiquement à la demande.
-                </p>
-
-                <div class="metadata-box mb-3">
-                    <div>
-                        <span class="metadata-label">Statut :</span>
-                        <span>@demandePerimetre.ResponseStatus</span>
-
-                        @* =========================================================
-                       PÉRIMÈTRE CONFIRMÉ PAR LE GRD
-                       ========================================================= *@
-
-
-                        @if (demandePerimetre.PerimetreConfirme is not null)
-                        {
-                            <div class="mt-2">
-                                <strong>Périmètre confirmé :</strong>
-                                <span class="badge bg-success ms-2">
-                                    @demandePerimetre.PerimetreConfirme
-                                </span>
-                            </div>
-                        }
-
-
-                        @* =========================================================
-                       COMMENTAIRE DU GRD
-                       ========================================================= *@
-                        @if (!string.IsNullOrWhiteSpace(demandePerimetre.CommentaireReponseGRD))
-                        {
-                            <div class="mt-2">
-                                <strong>Commentaire du GRD :</strong>
-                                <span class="badge bg-success ms-2">
-                                    @demandePerimetre.CommentaireReponseGRD
-                                </span>
-                            </div>
-                        }
-
-
-                    </div>
-
-                    <div>
-                        <span class="metadata-label">Date de demande :</span>
-                        <span>@FormatDateTime(demandePerimetre.DateDemande)</span>
-                    </div>
-                </div>
-
-                @* =========================================================
-               DÉTAILS TRANSMIS AU GRD
-               ========================================================= *@
-
-                <label class="form-label">Détails transmis au GRD</label>
-                <textarea class="form-control"
-                          rows="5"
-                          readonly>@demandePerimetre.DetailsDemande</textarea>
-            </div>
-        </div>
-    }
-
-    @* =========================================================
-   ERREUR DEMANDE PÉRIMÈTRE
-   ========================================================= *@
-
-    @if (!string.IsNullOrWhiteSpace(perimetreError))
-    {
-        <div class="alert alert-warning mt-3">
-            @perimetreError
-        </div>
-    }
-
 }
 
 @code {
@@ -742,30 +404,18 @@ else if (partage is not null)
     // variaible pour pour gérer l'édition du partage : modifier, enregistrer les modifications
     //  --> même principe que pour profil
     private bool isEditMode = false;
-    private PartageDetailsDto? partage;// données lues depuis la base         
-    //private PartageDetailsFormModel? editModel;  // copie utilisée pendant l'édition
-
-    //var pour inviter et rejoindre un partage
-    private InvitationCodeDto? invitation;
-    private string? invitationMessage;
-    private string? invitationError;
-    private bool isInvitationLoading;
-
-    //var pour demande périmètre
-    private DemandePerimetreDto? demandePerimetre;
-    private string? perimetreError;
-    private bool isPerimetreLoading;
-    private bool HasDemandePerimetreEnAttente =>
-    demandePerimetre?.ResponseStatus == "EnAttente"; //permet de désativer le bouton si une dde est en attente 
-
-    private bool PerimetreConnu =>
-    partage?.EnergieType == PartageEnergieType.MemeBatiment
-    || demandePerimetre?.PerimetreConfirme is not null;
-
+    private PartageDetailsDto? partage;// données lues depuis la base  
+    
+    // Indique qu'une modification significative vient d'être enregistrée sur un partage actif.
+    // Pour le moment cet indicateur appartient uniquement à l'UI.
+    // Il deviendra persistant lorsque l'historique des modifications sera mis en place.
+    //Donc LIMITES ! les changements significatifs ne sont visibles que le temps de la connexion.
+    private bool hasPendingGrdChanges;
+    
     // Variables pour la dde  de validation GRD
-    private DemandeValidationPartageDto? demandeValidation;
-    private string? validationError;
-    private bool isValidationLoading;
+    // private DemandeValidationPartageDto? demandeValidation;
+    // private string? validationError;
+    // private bool isValidationLoading;
 
     // Modèle UI éditable utilisé par les champs du formulaire.
     // On ne modifie pas directement PartageDetailsDto car c'est un record immutable.
@@ -785,22 +435,8 @@ else if (partage is not null)
         partage = result.Value;
         PopulateFormModel();   // Copie les données du DTO vers le modèle éditable
         isEditMode = false;       // Par défaut, la page est en mode consultation
-        demandePerimetre = partage.DerniereDemandePerimetre;   // Recharge la dernière demande de périmètre éventuelle
-        
-        // Copie du DTO vers le modèle éditable du formulaire.
-        // formModel = new PartageDetailsFormModel
-        // {
-        //     Nom = partage.Nom,
-        //     Description = partage.Description,
-        //     EnergieType = partage.EnergieType,
-        //     DateDebut = partage.DateDebut,
-        //     DateFin = partage.DateFin
-        // };
         isLoading = false;
     }
-
-    // private static string FormatDate(DateTime? date)
-    //     => date?.ToShortDateString() ?? "Non définie";
 
     //on corrigel'affichage de la date doit être au format de Bxl heure locale
 
@@ -845,6 +481,12 @@ else if (partage is not null)
         if (partage is null)
             return;
 
+        // On détermine AVANT la sauvegarde si les changements effectués doivent être déclarés au GRD.
+        // Cette règle ne concerne ici que les partages déjà actifs.
+        var requiresGrdDeclaration =
+            partage.Statut == PartageEnergieStatutType.Actif
+            && HasSignificantGeneralChanges(partage, formModel);
+       
         var command = new UpdatePartage(
             partage.Id,
             formModel.Nom,
@@ -852,21 +494,22 @@ else if (partage is not null)
             formModel.EnergieType,
             formModel.DateDebut,
             formModel.DateFin
-
         );
 
         var result = await Sender.Send(command);
 
         if (!result.IsSuccess)
         {
-            // errorMessage = "Erreur lors de la mise à jour.";
-            // return;
-             errorMessage = result.Errors.Any()
+            errorMessage = result.Errors.Any()
                 ? string.Join(" | ", result.Errors)
                 : $"Erreur lors de la mise à jour. Statut : {result.Status}";
 
-            return;
+           
+                return;
         }
+        // Si une donnée significative d'un partage actif a été modifiée,
+        // l'interface proposera immédiatement de déclarer les changements au GRD.
+        hasPendingGrdChanges = requiresGrdDeclaration;
 
         // Recharge les données après update (bonne pratique)
         var refresh = await Sender.Send(new GetPartageById(Id));
@@ -874,114 +517,9 @@ else if (partage is not null)
         {
             partage = refresh.Value;
             PopulateFormModel();
-            // Re-synchroniser le formModel
-            // formModel = new PartageDetailsFormModel
-            // {
-            //     Nom = partage.Nom,
-            //     Description = partage.Description,
-            //     EnergieType = partage.EnergieType,
-            //     DateDebut = partage.DateDebut,
-            //     DateFin = partage.DateFin
-            // };
+            // Re-synchroniser le formModel 
         }
         isEditMode = false; // Retour au mode consultation après sauvegarde
-    }
-
-    private async Task HandleInvitation()
-    {
-        if (partage is null)
-            return;
-
-        invitationError = null;
-        invitationMessage = null;
-        isInvitationLoading = true;
-
-        var result = await Sender.Send(new GetInvitationCodePartage(partage.Id));
-
-        isInvitationLoading = false;
-
-        if (!result.IsSuccess)
-        {
-            invitationError = "Impossible de générer le code d’invitation.";
-            return;
-        }
-
-        invitation = result.Value;
-    }
-
-    private async Task CopyInvitationCode()
-    {
-        if (invitation is null)
-            return;
-
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", invitation.InvitationCode);
-
-        invitationMessage = "Code copié dans le presse-papiers.";
-    }
-
-    //gestion des demandes de périmètre
-    private async Task HandleDemandePerimetre()
-    {
-        if (partage is null)
-            return;
-
-        perimetreError = null;
-        isPerimetreLoading = true;
-
-        var result = await Sender.Send(new DemandeInfoPerimetrePartage(partage.Id));
-
-        isPerimetreLoading = false;
-
-        if (!result.IsSuccess)
-        {
-            perimetreError = "Impossible d’envoyer la demande d’information de périmètre.";
-            return;
-        }
-
-        // On conserve le DTO retourné pour afficher la box de confirmation.
-        demandePerimetre = result.Value;
-    }
-
-    // Gestion de la demande de validation du partage auprès du GRD
-    private async Task HandleDemandeValidation()
-    {
-        if (partage is null)
-            return;
-
-        validationError = null;
-        isValidationLoading = true;
-
-        var result = await Sender.Send(new DemandeValidationPartage(partage.Id));
-
-        isValidationLoading = false;
-
-        if (!result.IsSuccess)
-        {
-            validationError = "Impossible d’envoyer la demande de validation GRD.";
-            return;
-        }
-
-        // On conserve le DTO retourné si on veut afficher une confirmation.
-        demandeValidation = result.Value;
-
-        // On recharge le partage pour afficher le nouveau statut :
-        // Inactif -> EnAttenteValidation
-        var refresh = await Sender.Send(new GetPartageById(Id));
-
-        if (refresh.IsSuccess)
-        {
-            partage = refresh.Value;
-            demandePerimetre = partage.DerniereDemandePerimetre;
-        }
-    } 
-
-    //désactivation du bouton dder valider : permet d'afficher un label explicatif à l'user.
-    private string GetValidationButtonLabel()
-    {
-        if (partage?.Statut == PartageEnergieStatutType.EnAttenteValidation)
-            return "Validation GRD en cours...";
-
-        return "Demander validation GRD";
     }
 
     /// <summary> Passe la zone "Données du partage" en mode édition.
@@ -996,7 +534,6 @@ else if (partage is not null)
         isEditMode = true;
     }
 
-
     /// <summary> Annule les modifications en cours. Les valeurs du formulaire sont rechargées depuis les données 
     /// // actuellement enregistrées afin d'éviter de conserver des modifications non sauvegardées.   </summary>
     private void CancelEdit()
@@ -1005,7 +542,6 @@ else if (partage is not null)
             return;
 
         PopulateFormModel();
-
         errorMessage = null;
         isEditMode = false;
     }
@@ -1015,7 +551,6 @@ else if (partage is not null)
     {
         if (partage is null)
             return;
-
         formModel = new PartageDetailsFormModel
         {
             Nom = partage.Nom,
@@ -1025,5 +560,26 @@ else if (partage is not null)
             Description = partage.Description
         };
     }
+    /// <summary>
+    /// Vérifie si les données générales modifiées doivent faire l'objet d'une déclaration au GRD.
+    /// Cette méthode centralise volontairement la liste des champs significatifs pour pouvoir l'adapter facilement.
+    /// Les modifications de membres seront traitées séparément dans la fonctionnalité PartageMembres.
+    /// </summary>
+    private static bool HasSignificantGeneralChanges( PartageDetailsDto current, PartageDetailsFormModel edited)
+    {
+        return
+            // Nom du partage
+            !string.Equals(current.Nom?.Trim(), edited.Nom?.Trim(),StringComparison.Ordinal)
 
-}
+            //Description n'est pas considérée comme un changement significatif pour le GRD.
+            // || !string.Equals(current.Description?.Trim(), edited.Description?.Trim(),StringComparison.Ordinal)
+           
+            // Type de partage
+            || current.EnergieType != edited.EnergieType
+            
+            // Dates du partage
+            || current.DateDebut?.Date != edited.DateDebut?.Date
+            || current.DateFin?.Date != edited.DateFin?.Date;
+    }
+
+ }

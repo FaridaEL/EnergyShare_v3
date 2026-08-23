@@ -5,8 +5,12 @@ using EnergyShare_v3.Domain.Enums;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
+//____________________________________________
+//VALIDATION INITIALE DU PARTAGE PAR LE GRD 
+//____________________________________________
 namespace EnergyShare_v3.Application.Features.Partage
-{
+{     
+
     // Commande envoyée quand le vendeur clique sur "Demander validation GRD".
     // Elle contient uniquement l'Id du partage, car l'utilisateur connecté est récupéré via IUserContext.
     public record DemandeValidationPartage(Guid PartageId)
