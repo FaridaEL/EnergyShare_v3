@@ -141,6 +141,51 @@ namespace EnergyShare_v3.Domain.Entities.Partages
                 return Result.Success(demande);
         }
 
+        // Factory pour créer une demande de modification
+        // d'un partage déjà actif.
+        public static Result<DemandeGRD> CreateDemandeModificationPartage(
+            Guid partageId,
+            Guid demandeurId,
+            string? detailsDemande = null)
+        {
+            // Un partage doit obligatoirement être lié à la demande.
+            if (partageId == Guid.Empty)
+                return DemandeGRDErrors.PartageObligatoire().Map();
+
+            // Le demandeur doit être identifié.
+            if (demandeurId == Guid.Empty)
+                return DemandeGRDErrors.DemandeurObligatoire().Map();
+
+            string detailsFinal;
+
+            if (string.IsNullOrWhiteSpace(detailsDemande))
+            {
+                detailsFinal = "Demande de modification d'un partage existant.";
+            }
+            else
+            {
+                detailsFinal = detailsDemande.Trim();
+            }
+
+            // Toute nouvelle demande de modification commence en attente de traitement par le GRD.
+            var demande = new DemandeGRD
+            {
+                Id = Guid.NewGuid(),
+                DateDemande = DateTime.UtcNow,
+                ResponseStatus = DdeGRDResponseStatus.EnAttente,
+
+                // Différence essentielle avec une demande d'activation initiale.
+                //Todo : on peut factorise les deux ddes : nouvelle activationet et modification. Pour l'instant on les garde distincte pour des raisons de clarté.
+                DemandeType = DemandeGRDType.ModificationPartageExistant,
+
+                DemandeurId = demandeurId,
+                PartageId = partageId,
+                DetailsDemande = detailsFinal
+            };
+
+            return Result.Success(demande);
+        }
+
         //Gestion des réponses du GRD à une demande de validation d'un nouveau partage : 
         public Result RepondreDemandeValidationPartage(
           bool isValide,
