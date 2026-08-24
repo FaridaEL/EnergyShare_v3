@@ -120,4 +120,17 @@ namespace EnergyShare_v3.Application.Features.Partage
         string? CommentaireReponseGRD
     );
 
+    // Historique des demandes GRD liées à un partage --> Ce DTO est volontairement simple :
+    // il contient uniquement les informations utiles pour afficher les démarches passées dans l'UI.
+    public record HistoriqueDemandeGrdDto(
+        Guid DemandeId,
+        DateTime DateDemande,
+        DateTime? DateReponse,
+        DemandeGRDType DemandeType,
+        DdeGRDResponseStatus ResponseStatus,
+        string DetailsDemande,
+        string? CommentaireReponseGRD,
+        PerimetreType? PerimetreConfirme
+    );
+
 }

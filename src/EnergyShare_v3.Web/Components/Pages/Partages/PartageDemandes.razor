@@ -454,19 +454,17 @@
 
 
         @* =========================================================
-           HISTORIQUE COMPLET DES DEMANDES - TODO
+   HISTORIQUE DES DEMANDES GRD
 
-           L'objectif final sera d'afficher ici un tableau filtrable :
+   Cette section affiche toutes les démarches liées au partage :
+   - demande d'information de périmètre ;
+   - validation initiale ;
+   - modification d'un partage actif ;
+   - plus tard : clôture.
 
-           Date | Type de demande | Statut | Réponse GRD
+   Les demandes les plus récentes sont affichées en premier.
+   ========================================================= *@
 
-           Exemples :
-           - Information de périmètre
-           - Validation du partage
-           - Déclaration d'une modification
-
-           Cette fonctionnalité nécessitera une Query backend dédiée.
-           ========================================================= *@
         <div class="card">
 
             <div class="card-header fw-bold">
@@ -475,11 +473,98 @@
 
             <div class="card-body">
 
-                <p class="text-muted mb-0">
-                    L’historique complet des demandes sera ajouté
-                    lorsque la récupération de l’ensemble des démarches
-                    du partage sera disponible.
-                </p>
+                @if (!historiqueDemandes.Any())
+                {
+                    <p class="text-muted mb-0">
+                        Aucune demande GRD n’a encore été enregistrée pour ce partage.
+                    </p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+
+                        <table class="table table-striped table-hover align-middle mb-0">
+
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Statut</th>
+                                    <th>Réponse GRD</th>
+                                    <th>Détails</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var demande in historiqueDemandes)
+                                {
+                                    <tr>
+
+                                        @* Date d'introduction de la demande *@
+                                        <td>
+                                            @FormatDateTime(demande.DateDemande)
+                                        </td>
+
+                                        @* Type de démarche *@
+                                        <td>
+                                            @GetDemandeTypeLabel(demande.DemandeType)
+                                        </td>
+
+                                        @* Etat actuel de la demande *@
+                                        <td>
+                                            @demande.ResponseStatus
+                                        </td>
+
+                                        @* Commentaire du GRD.
+                                   C'est notamment ici que l'utilisateur
+                                   peut comprendre pourquoi une modification
+                                   a été refusée. *@
+                                        <td>
+                                            @if (!string.IsNullOrWhiteSpace(
+                                                demande.CommentaireReponseGRD))
+                                            {
+                                                @demande.CommentaireReponseGRD
+                                            }
+                                            else if (demande.ResponseStatus ==
+                                                     DdeGRDResponseStatus.EnAttente)
+                                            {
+                                                <span class="text-muted">
+                                                    En attente de réponse
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">
+                                                    Aucun commentaire
+                                                </span>
+                                            }
+                                        </td>
+
+                                        @* Pour le MVP, on affiche les détails
+                                   directement dans un élément repliable.
+                                   Pas besoin de créer une nouvelle page. *@
+                                        <td>
+                                            <details>
+                                                <summary class="text-primary">
+                                                    Voir
+                                                </summary>
+
+                                                <pre class="mt-2 mb-0 text-wrap">
+@demande.DetailsDemande
+                                        </pre>
+                                            </details>
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
 
             </div>
         </div>
@@ -525,6 +610,10 @@
     private string? modificationError;
     private bool isModificationLoading;
 
+    // =========================================================
+    // Historique complet des demandes GRD du partage.
+    // =========================================================
+    private IReadOnlyList<HistoriqueDemandeGrdDto> historiqueDemandes = [];
 
     // Charge les informations du partage ainsi quesa dernière demande de périmètre éventuelle
     protected override async Task OnInitializedAsync()
@@ -547,6 +636,14 @@
 
         // GetPartageById expose actuellement la dernière demande de périmètre.
         demandePerimetre =  partage.DerniereDemandePerimetre;
+
+        // Chargement de l'historique complet des démarches GRD.
+        var historiqueResult = await Sender.Send(new GetHistoriqueDemandesGrdPartage(Id));
+
+        if (historiqueResult.IsSuccess)
+        {
+            historiqueDemandes = historiqueResult.Value;
+        }
 
         isLoading = false;
     }
@@ -696,6 +793,21 @@
             demandePerimetre =
                 partage.DerniereDemandePerimetre;
         }
+    }
+    /// <summary>
+    /// Transforme le type  de la demande  en libellé lisible pour l'utilisateur.
+    /// </summary>
+    private static string GetDemandeTypeLabel(DemandeGRDType type)
+    {
+        return type switch
+        {
+            DemandeGRDType.DdeInfoPerimetre => "Information périmètre",
+            DemandeGRDType.NouvelleActivation => "Validation initiale",
+            DemandeGRDType.ModificationPartageExistant => "Modification du partage",
+            DemandeGRDType.CloturePartageExistant => "Clôture du partage",
+
+            _ => type.ToString()
+        };
     }
 
 }
