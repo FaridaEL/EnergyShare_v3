@@ -650,14 +650,26 @@
                                         </td>
 
                                         @* Etat actuel de la demande *@
-                                        <td>
+                                        @* <td>
                                             @demande.ResponseStatus
-                                        </td>
+                                        </td> *@
+                                        <td>
+                                        @if (demande.ResponseStatus == DdeGRDResponseStatus.Valide)
+                                        {
+                                            <span class="badge bg-success">Validé</span>
+                                        }
+                                        else if (demande.ResponseStatus == DdeGRDResponseStatus.Refus)
+                                        {
+                                            <span class="badge bg-danger">Refusé</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">En attente</span>
+                                        }
+                                    </td>
 
-                                        @* Commentaire du GRD.
-                                   C'est notamment ici que l'utilisateur
-                                   peut comprendre pourquoi une modification
-                                   a été refusée. *@
+                                        @* Commentaire du GRD : ici l'utilisateur peut comprendre 
+                                            pourquoi une modification  a été refusée. *@
                                         <td>
                                             @if (!string.IsNullOrWhiteSpace(
                                                 demande.CommentaireReponseGRD))
@@ -667,15 +679,11 @@
                                             else if (demande.ResponseStatus ==
                                                      DdeGRDResponseStatus.EnAttente)
                                             {
-                                                <span class="text-muted">
-                                                    En attente de réponse
-                                                </span>
+                                                <span class="text-muted">En attente de réponse</span>
                                             }
                                             else
                                             {
-                                                <span class="text-muted">
-                                                    Aucun commentaire
-                                                </span>
+                                                <span class="text-muted">Aucun commentaire</span>
                                             }
                                         </td>
 
@@ -683,13 +691,11 @@
                                    Pas besoin de créer une nouvelle page. *@
                                         <td>
                                             <details>
-                                                <summary class="text-primary">
-                                                    Voir
-                                                </summary>
+                                                <summary class="text-primary">Voir</summary>
 
                                                 <pre class="mt-2 mb-0 text-wrap">
-@demande.DetailsDemande
-                                        </pre>
+                                                @demande.DetailsDemande
+                                                </pre>
                                             </details>
                                         </td>
 
@@ -941,8 +947,7 @@
 
         if (!result.IsSuccess)
         {
-            modificationError =
-                "Impossible d’envoyer la demande de modification au GRD.";
+            modificationError = "Impossible d’envoyer la demande de modification au GRD.";
 
             return;
         }
@@ -978,13 +983,8 @@
 
 
     /// <summary>
-    /// Retourne l'historique après application des filtres UI.
-    ///
-    /// Le filtrage est volontairement effectué côté Razor car
-    /// le volume de demandes d'un partage reste limité.
-    ///
-    /// Si le volume devient important plus tard, le filtrage
-    /// pourra être déplacé côté backend.
+    /// Retourne l'historique après application des filtres UI--> Le filtrage est volontairement effectué côté Razor car le volume de ddes d'un partage reste limité. 
+    /// Si le volume devient important, le filtrage pourra être déplacé côté backend.
     /// </summary>
     private IEnumerable<HistoriqueDemandeGrdDto> FilteredHistoriqueDemandes
     {
@@ -992,17 +992,6 @@
         {
             var query = historiqueDemandes.AsEnumerable();
 
-            // ---------------------------------------------
-            // Recherche libre
-            // ---------------------------------------------
-            // if (!string.IsNullOrWhiteSpace(historiqueSearchText))
-            // {// Recherche dans le libellé du type.Ou dans le commentaire/feedback du GRD.
-            //     query = query.Where(demande => 
-            //         GetDemandeTypeLabel(demande.DemandeType)
-            //             .Contains( historiqueSearchText, StringComparison.OrdinalIgnoreCase)
-            //         || (demande.CommentaireReponseGRD?.Contains( historiqueSearchText,StringComparison.OrdinalIgnoreCase)
-            //             ?? false));
-            // }
 
             // ---------------------------------------------
             // Filtre sur le type de demande
