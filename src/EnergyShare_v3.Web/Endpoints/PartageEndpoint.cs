@@ -124,7 +124,10 @@ namespace EnergyShare_v3.Web.Endpoints
                 "/{id:guid}/historique-demandes-grd",
                 GetHistoriqueDemandesGrdPartage)
                 .RequireAuthorization(authenticatedUserPolicy);
-
+            // GET /api/partages/{id}/membres  --> Retourne la liste des membres du partage.
+            // Le handler vérifie que l'utilisateur connecté appartient bien au partage ou dispose des droits nécessaires.
+            group.MapGet("/{id:guid}/membres",GetMembresPartage)
+                .RequireAuthorization(authenticatedUserPolicy);
 
             return app;
         }
@@ -363,9 +366,7 @@ namespace EnergyShare_v3.Web.Endpoints
 
 
         // Demande de modification d'un partage déjà actif.
-        internal static async Task<IResult> DemandeModificationPartage(
-            ISender sender,
-            Guid id)
+        internal static async Task<IResult> DemandeModificationPartage(ISender sender,Guid id)
         {
             var response = await sender.Send(
                 new DemandeModificationPartage(id));
@@ -393,9 +394,7 @@ namespace EnergyShare_v3.Web.Endpoints
 
         // Réponse du GRD à une demande de modification
         // d'un partage déjà actif.
-        internal static async Task<IResult> RepondreDemandeModificationPartage(
-            ISender sender,
-            Guid id,
+        internal static async Task<IResult> RepondreDemandeModificationPartage(ISender sender,Guid id,
             [FromBody] RepondreDemandeModificationPartageRequest request)
         {
             // Envoi de la commande vers la couche Application.
@@ -430,6 +429,29 @@ namespace EnergyShare_v3.Web.Endpoints
         internal static async Task<IResult> GetHistoriqueDemandesGrdPartage(ISender sender, Guid id)
         {
             var response = await sender.Send( new GetHistoriqueDemandesGrdPartage(id));
+
+            if (response.Status == ArdalisResultStatus.Unauthorized)
+                return Results.Unauthorized();
+
+            if (response.Status == ArdalisResultStatus.Forbidden)
+                return Results.StatusCode(403);
+
+            if (response.Status == ArdalisResultStatus.NotFound)
+                return Results.NotFound();
+
+            if (!response.IsSuccess)
+                return Results.BadRequest(response.Errors);
+
+            return Results.Ok(response.Value);
+        }
+
+        /// <summary>
+        /// Retourne la liste des membres d'un partage.
+        /// </summary>
+        internal static async Task<IResult> GetMembresPartage(ISender sender, Guid id)
+        {
+            var response = await sender.Send(
+                new GetMembresPartage(id));
 
             if (response.Status == ArdalisResultStatus.Unauthorized)
                 return Results.Unauthorized();

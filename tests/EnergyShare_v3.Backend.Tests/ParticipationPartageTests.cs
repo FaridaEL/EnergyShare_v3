@@ -125,4 +125,6 @@ public class ParticipationPartageTests
         result.IsSuccess.Should().BeTrue();
         participation.ExitAt.Should().Be(dateSortie);
     }
+
+   
 }

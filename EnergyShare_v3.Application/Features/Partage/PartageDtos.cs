@@ -133,4 +133,26 @@ namespace EnergyShare_v3.Application.Features.Partage
         PerimetreType? PerimetreConfirme
     );
 
+   
+    // MEMBRE D'UN PARTAGE  -->  Il rassemble les informations de la participation,du point EAN et de l'utilisateur.
+        public record MembrePartageDto(
+        Guid ParticipationId,
+        Guid PointAccessId,
+
+        string NomComplet, // utilisateur
+
+        string Ean, // Point d'accès utilisé dans le partage
+        string Adresse,
+
+        string Role,  // Rôle dans le partage
+        bool IsInterlocuteurUnique,
+
+        // Cycle de vie de la participation
+        DateTime JoinedAt,
+        DateTime? DateCommunicationPreavis,
+        DateTime? DateSortiePlanifiee,
+        DateTime? ExitAt,
+        bool EstActif
+    );
+
 }

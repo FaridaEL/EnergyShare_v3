@@ -89,27 +89,130 @@
 
             <div class="card-body">
 
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <i class="bi bi-people fs-4"></i>
+                @* =========================================================
+   LISTE RÉELLE DES PARTICIPANTS
 
-                    <div>
-                        <strong>@partage.NombreParticipants participant(s)</strong>
-                        <div class="text-muted small">
-                            Liste détaillée des membres à compléter.
-                        </div>
+   Les informations proviennent maintenant de la Query
+   GetMembresPartage.
+
+   Pour cette première version, on affiche :
+   - EAN ;
+   - adresse ;
+   - rôle ;
+   - date d'entrée ;
+   - statut ;
+   - éventuel préavis.
+
+   Les actions de retrait / sortie viendront ensuite.
+   ========================================================= *@
+
+                @if (!membres.Any())
+                {
+                    <div class="alert alert-info mb-0">
+                        Aucun membre n’est actuellement enregistré dans ce partage.
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
 
-                @* TODO :
-                   Lorsque la Query de lecture des membres sera disponible,
-                   afficher ici un tableau :
-                   - Nom
-                   - Rôle
-                   - Date d'entrée
-                   - Date de sortie
-                   - Préavis éventuel
-                   - Statut
-                *@
+                        <table class="table align-middle responsive-table mb-0">
+
+                            <thead>
+                                <tr>
+                                    <th>Membre</th>
+                                    <th>EAN</th>
+                                    <th>Adresse</th>
+                                    <th>Rôle</th>
+                                    <th>Date d'entrée</th>
+                                    <th>Statut</th>
+                                    <th>Préavis</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var membre in membres)
+                                {
+                                    <tr>
+
+                                        <td data-label="Membre">
+                                            <strong>@membre.NomComplet</strong>
+                                        </td>
+                                        @* Point d'accès utilisé dans le partage *@
+                                        <td data-label="EAN">
+                                            @membre.Ean
+                                        </td>
+
+                                        @* Adresse du point d'accès *@
+                                        <td data-label="Adresse">
+                                            @membre.Adresse
+                                        </td>
+
+                                        @* Rôle métier dans le partage *@
+                                        <td data-label="Rôle">
+                                            @if (membre.IsInterlocuteurUnique)
+                                            {
+                                                <span>
+                                                    @membre.Role
+                                                    <span class="badge bg-primary ms-1">
+                                                        Interlocuteur unique
+                                                    </span>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                @membre.Role
+                                            }
+                                        </td>
+
+                                        @* Date d'entrée dans le partage *@
+                                        <td data-label="Date d'entrée">
+                                            @FormatDateTime(membre.JoinedAt)
+                                        </td>
+
+                                        @* Statut actuel de la participation *@
+                                        <td data-label="Statut">
+                                            @if (membre.EstActif)
+                                            {
+                                                <span class="badge bg-success">
+                                                    Actif
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">
+                                                    Sorti
+                                                </span>
+                                            }
+                                        </td>
+
+                                        @* Informations de préavis éventuelles *@
+                                        <td data-label="Préavis">
+                                            @if (membre.DateSortiePlanifiee.HasValue)
+                                            {
+                                                <span>
+                                                    Sortie prévue :
+                                                    @FormatDateTime(membre.DateSortiePlanifiee)
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">
+                                                    Aucun
+                                                </span>
+                                            }
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
 
             </div>
         </div>
@@ -242,8 +345,8 @@
     private InvitationCodeDto? invitation;// Données du code d'invitation généré.
     private string? invitationMessage;// Message affiché après copie du code.
     private string? invitationError;// Message affiché si la génération du code échoue.
-    private bool isInvitationLoading;// Empêche plusieurs générations simultanées.
-
+    private bool isInvitationLoading;// Empêche plusieurs générations simultanées.                                
+    private IReadOnlyList<MembrePartageDto> membres = [];  // Liste réelle des membres du partage.
     /// <summary>
     /// Charge le partage correspondant à l'identifiant reçu dans l'URL.
     /// </summary>
@@ -264,6 +367,17 @@
 
         partage = result.Value;
 
+        // Chargement de la liste détaillée des membres.
+        var membresResult = await Sender.Send(new GetMembresPartage(Id));
+
+        if (!membresResult.IsSuccess)
+        {
+            errorMessage = "Impossible de charger les membres du partage.";
+            isLoading = false;
+            return;
+        }
+        membres = membresResult.Value;
+       
         isLoading = false;
     }
 
@@ -280,15 +394,13 @@
         invitationMessage = null;
         isInvitationLoading = true;
 
-        var result = await Sender.Send(
-            new GetInvitationCodePartage(partage.Id));
+        var result = await Sender.Send(new GetInvitationCodePartage(partage.Id));
 
         isInvitationLoading = false;
 
         if (!result.IsSuccess)
         {
-            invitationError =
-                "Impossible de générer le code d’invitation.";
+            invitationError ="Impossible de générer le code d’invitation.";
 
             return;
         }
@@ -305,11 +417,17 @@
         if (invitation is null)
             return;
 
-        await JS.InvokeVoidAsync(
-            "navigator.clipboard.writeText",
-            invitation.InvitationCode);
-
-        invitationMessage =
-            "Code copié dans le presse-papiers.";
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText",invitation.InvitationCode);
+        invitationMessage = "Code copié dans le presse-papiers.";
     }
+
+  
+
+    /// <summary>
+    /// Formate les dates pour l'affichage utilisateur.
+    /// </summary>
+    private static string FormatDateTime(DateTime? date)
+        => date?.ToLocalTime()
+               .ToString("dd/MM/yyyy")
+           ?? "-";
 }

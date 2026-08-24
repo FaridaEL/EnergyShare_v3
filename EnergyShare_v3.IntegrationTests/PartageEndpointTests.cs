@@ -25,7 +25,21 @@ namespace EnergyShare_v3.IntegrationTests
             _client = factory.CreateClient();
         }
 
-     
+        //Obtenir les membres d'un partage sans authentification doit renvoyer Unauthorized
+        [Fact]
+        public async Task GetMembresPartage_WithoutAuthentication_ShouldReturnUnauthorized()
+        {
+            // Arrange
+            var partageId = Guid.NewGuid();
+
+            // Act
+            var response = await _client.GetAsync(
+                $"/api/partages/{partageId}/membres");
+
+            // Assert
+            response.StatusCode.Should()
+                .Be(HttpStatusCode.Unauthorized);
+        }
 
         ////Gestion dde validation d'un nouveau partage par le GRD
         //// Validation d'un nouveau partage par le vendeur
