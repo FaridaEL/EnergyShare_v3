@@ -117,6 +117,15 @@ namespace EnergyShare_v3.Web.Endpoints
                 "/demandes-grd/{id:guid}/modification/repondre",
                 RepondreDemandeModificationPartage)
                 .RequireAuthorization(adminOrOrganismePublicPolicy);
+
+            // GET /api/partages/{id}/historique-demandes-grd
+            // Retourne l'ensemble des ddes GRD (attente,validées ou refusées) liées au partage 
+            group.MapGet(
+                "/{id:guid}/historique-demandes-grd",
+                GetHistoriqueDemandesGrdPartage)
+                .RequireAuthorization(authenticatedUserPolicy);
+
+
             return app;
         }
 
@@ -409,6 +418,27 @@ namespace EnergyShare_v3.Web.Endpoints
 
             if (response.Status == ArdalisResultStatus.Invalid)
                 return Results.BadRequest(response.ValidationErrors);
+
+            if (!response.IsSuccess)
+                return Results.BadRequest(response.Errors);
+
+            return Results.Ok(response.Value);
+        }
+
+
+        // Historique complet des demandes GRD d'un partage.
+        internal static async Task<IResult> GetHistoriqueDemandesGrdPartage(ISender sender, Guid id)
+        {
+            var response = await sender.Send( new GetHistoriqueDemandesGrdPartage(id));
+
+            if (response.Status == ArdalisResultStatus.Unauthorized)
+                return Results.Unauthorized();
+
+            if (response.Status == ArdalisResultStatus.Forbidden)
+                return Results.StatusCode(403);
+
+            if (response.Status == ArdalisResultStatus.NotFound)
+                return Results.NotFound();
 
             if (!response.IsSuccess)
                 return Results.BadRequest(response.Errors);

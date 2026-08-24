@@ -142,16 +142,6 @@
                        - une demande est déjà en cours d'envoi ;
                        - le partage est déjà en attente de validation.
                        ===================================================== *@
-                    @* <button class="btn btn-energy-success"
-                            @onclick="HandleDemandeValidation"
-                            disabled="@(!partage.CanEdit || partage.NombreParticipants < 2  || isValidationLoading
-                                        || partage.Statut == PartageEnergieStatutType.EnAttenteValidation)">
-
-                        <span class="bi bi-check-circle-fill me-1"></span>
-
-                        @GetValidationButtonLabel()
-                    </button> *@
-                    @* Validation initiale uniquement pour un partage encore inactif *@
                     @if (partage.Statut == PartageEnergieStatutType.Inactif)
                     {
                         <button class="btn btn-energy-success"
@@ -175,8 +165,8 @@
                        partage puis soumettre à nouveau sa situation au GRD.
                        ===================================================== *@
 
-                    @if (partage.Statut == PartageEnergieStatutType.Actif
-                        || partage.Statut == PartageEnergieStatutType.Suspendu)
+                    @if (partage.Statut == PartageEnergieStatutType.Actif 
+                    || partage.Statut == PartageEnergieStatutType.Suspendu)
                     {
                         <button class="btn btn-energy-action"
                                 @onclick="HandleDemandeModification"
@@ -452,34 +442,291 @@
             </div>
         </div>
 
+        @* =========================================================
+           FILTRES DE L'HISTORIQUE DES DEMANDES
+
+           Même logique et même présentation que les filtres
+           utilisés dans la page "Mes matchs".
+
+           Les filtres sont appliqués uniquement côté UI :
+           - recherche dans le type ou la réponse du GRD ;
+           - type de demande ;
+           - statut de la demande.
+           ========================================================= *@
+
+        <div class="matches-filter-panel mb-4">
+
+            <div class="row g-3 align-items-end">
+
+                @* -----------------------------------------
+                   RECHERCHE
+                   Recherche dans :
+                   - le type de demande ;
+                   - le commentaire / feedback du GRD.
+                   ----------------------------------------- *@
+
+              @*   <div class="col-lg-5">
+
+                    <label class="form-label fw-semibold">
+                        Rechercher
+                    </label>
+
+                    <div class="input-group">
+
+                        <span class="input-group-text">
+                            <span class="bi bi-search"></span>
+                        </span>
+
+                        <input class="form-control"
+                               placeholder="Type ou réponse GRD..."
+                               @bind="historiqueSearchText"
+                               @bind:event="oninput" />
+
+                    </div>
+
+                </div> *@
+
+
+                @* -----------------------------------------
+                   FILTRE SUR LE TYPE DE DEMANDE
+                   ----------------------------------------- *@
+
+                <div class="col-lg-3">
+
+                    <label class="form-label fw-semibold">
+                        Type
+                    </label>
+
+                    <select class="form-select"
+                            @bind="historiqueTypeFilter">
+
+                        <option value="all">
+                            Tous
+                        </option>
+                        <option value="@DemandeGRDType.DdeInfoPerimetre">
+                            Information périmètre
+                        </option>
+                        <option value="@DemandeGRDType.NouvelleActivation">
+                            Validation initiale
+                        </option>
+                        <option value="@DemandeGRDType.ModificationPartageExistant">
+                            Modification du partage
+                        </option>
+                        <option value="@DemandeGRDType.CloturePartageExistant">
+                            Clôture du partage
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                @* -----------------------------------------
+                   FILTRE SUR LE STATUT
+                   ----------------------------------------- *@
+
+                <div class="col-lg-2">
+
+                    <label class="form-label fw-semibold">
+                        Statut
+                    </label>
+
+                    <select class="form-select"
+                            @bind="historiqueStatusFilter">
+
+                        <option value="all">Tous</option>
+                        <option value="@DdeGRDResponseStatus.EnAttente">En attente</option>
+                        <option value="@DdeGRDResponseStatus.Valide">Validé</option>
+                        <option value="@DdeGRDResponseStatus.Refus">Refusé</option>
+
+                    </select>
+
+                </div>
+                @* -----------------------------------------
+                   FILTRE Date
+                   ----------------------------------------- *@
+                @* Date de début incluse *@
+                <div class="col-lg-2">
+
+                    <label class="form-label fw-semibold">
+                        Du
+                    </label>
+
+                    <InputDate class="form-control"
+                               @bind-Value="historiqueDateFrom" />
+
+                </div>
+
+                @* Date de fin incluse *@
+                <div class="col-lg-2">
+
+                    <label class="form-label fw-semibold">
+                        Au
+                    </label>
+
+                    <InputDate class="form-control"
+                               @bind-Value="historiqueDateTo" />
+
+                </div>
+
+                @* -----------------------------------------
+               RÉINITIALISATION DES FILTRES
+               ----------------------------------------- *@
+
+                <div class="col-lg-2">
+
+                    <button class="btn btn-energy-cancel w-100"
+                            type="button"
+                            @onclick="ResetHistoriqueFilters">
+
+                        <span class="bi bi-arrow-counterclockwise me-1"></span>
+                        Réinitialiser
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
 
         @* =========================================================
-           HISTORIQUE COMPLET DES DEMANDES - TODO
+           HISTORIQUE DES DEMANDES GRD
 
-           L'objectif final sera d'afficher ici un tableau filtrable :
+           Cette section affiche toutes les démarches liées au partage :
+           - demande d'information de périmètre ;
+           - validation initiale ;
+           - modification d'un partage actif ;
+           - plus tard : clôture.
 
-           Date | Type de demande | Statut | Réponse GRD
-
-           Exemples :
-           - Information de périmètre
-           - Validation du partage
-           - Déclaration d'une modification
-
-           Cette fonctionnalité nécessitera une Query backend dédiée.
+           Les demandes les plus récentes sont affichées en premier.
            ========================================================= *@
-        <div class="card">
 
+        <div class="card">
             <div class="card-header fw-bold">
                 Historique des demandes
             </div>
 
             <div class="card-body">
 
-                <p class="text-muted mb-0">
-                    L’historique complet des demandes sera ajouté
-                    lorsque la récupération de l’ensemble des démarches
-                    du partage sera disponible.
-                </p>
+                @if (!historiqueDemandes.Any())
+                {
+                    <p class="text-muted mb-0">
+                        Aucune demande GRD n’a encore été enregistrée pour ce partage.
+                    </p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+
+                        <table class="table table-striped table-hover align-middle mb-0">
+
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Statut</th>
+                                    <th>Réponse GRD</th>
+                                    <th>Détails</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @* @foreach (var demande in historiqueDemandes) *@
+                                @foreach (var demande in FilteredHistoriqueDemandes)
+                                {
+                                    <tr>
+
+                                        @* Date d'introduction de la demande *@
+                                        <td>
+                                            @FormatDateTime(demande.DateDemande)
+                                        </td>
+
+                                        @* Type de démarche *@
+                                        <td>
+                                            @GetDemandeTypeLabel(demande.DemandeType)
+                                        </td>
+
+                                        @* Etat actuel de la demande *@
+                                        @* <td>
+                                            @demande.ResponseStatus
+                                        </td> *@
+                                        <td>
+                                        @if (demande.ResponseStatus == DdeGRDResponseStatus.Valide)
+                                        {
+                                            <span class="badge bg-success">Validé</span>
+                                        }
+                                        else if (demande.ResponseStatus == DdeGRDResponseStatus.Refus)
+                                        {
+                                            <span class="badge bg-danger">Refusé</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">En attente</span>
+                                        }
+                                    </td>
+
+                                        @* Commentaire du GRD : ici l'utilisateur peut comprendre 
+                                            pourquoi une modification  a été refusée. *@
+                                        <td>
+                                            @if (!string.IsNullOrWhiteSpace(
+                                                demande.CommentaireReponseGRD))
+                                            {
+                                                @demande.CommentaireReponseGRD
+                                            }
+                                            else if (demande.ResponseStatus ==
+                                                     DdeGRDResponseStatus.EnAttente)
+                                            {
+                                                <span class="text-muted">En attente de réponse</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Aucun commentaire</span>
+                                            }
+                                        </td>
+
+                                        @* Pour le MVP, on affiche les détails directement dans un élément repliable.
+                                   Pas besoin de créer une nouvelle page. *@
+                                        <td>
+                                            <details>
+                                                <summary class="text-primary">Voir</summary>
+
+                                                <pre class="mt-2 mb-0 text-wrap">
+                                                @demande.DetailsDemande
+                                                </pre>
+                                            </details>
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
+
+                @if (!FilteredHistoriqueDemandes.Any())
+                {
+                    <div class="alert alert-info mb-0">
+                        Aucune demande ne correspond aux critères sélectionnés.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+
+                        <table class="table align-middle responsive-table">
+
+                            @* le tableau actuel *@
+
+                        </table>
+
+                    </div>
+                }
 
             </div>
         </div>
@@ -525,6 +772,20 @@
     private string? modificationError;
     private bool isModificationLoading;
 
+    // =========================================================
+    // Historique complet des demandes GRD du partage.
+    // =========================================================
+    private IReadOnlyList<HistoriqueDemandeGrdDto> historiqueDemandes = [];
+
+    // =========================================================
+    // FILTRAGE DE L'HISTORIQUE  (Même principe que dans  "Mes matchs".)
+    // =========================================================
+    /* private string historiqueSearchText = string.Empty; */ // Texte libre recherché par l'utilisateur.
+    private string historiqueTypeFilter = "all";// Type de demande sélectionné. "all" signifie qu'aucun filtre n'est appliqué sur le type.
+    private string historiqueStatusFilter = "all";// Statut sélectionné. "all" signifie qu'aucun filtre n'est appliqué sur le statut.
+    private DateTime? historiqueDateFrom;
+    private DateTime? historiqueDateTo;
+
 
     // Charge les informations du partage ainsi quesa dernière demande de périmètre éventuelle
     protected override async Task OnInitializedAsync()
@@ -547,6 +808,14 @@
 
         // GetPartageById expose actuellement la dernière demande de périmètre.
         demandePerimetre =  partage.DerniereDemandePerimetre;
+
+        // Chargement de l'historique complet des démarches GRD.
+        var historiqueResult = await Sender.Send(new GetHistoriqueDemandesGrdPartage(Id));
+
+        if (historiqueResult.IsSuccess)
+        {
+            historiqueDemandes = historiqueResult.Value;
+        }
 
         isLoading = false;
     }
@@ -678,8 +947,7 @@
 
         if (!result.IsSuccess)
         {
-            modificationError =
-                "Impossible d’envoyer la demande de modification au GRD.";
+            modificationError = "Impossible d’envoyer la demande de modification au GRD.";
 
             return;
         }
@@ -696,6 +964,84 @@
             demandePerimetre =
                 partage.DerniereDemandePerimetre;
         }
+    }
+    /// <summary>
+    /// Transforme le type  de la demande  en libellé lisible pour l'utilisateur.
+    /// </summary>
+    private static string GetDemandeTypeLabel(DemandeGRDType type)
+    {
+        return type switch
+        {
+            DemandeGRDType.DdeInfoPerimetre => "Information périmètre",
+            DemandeGRDType.NouvelleActivation => "Validation initiale",
+            DemandeGRDType.ModificationPartageExistant => "Modification du partage",
+            DemandeGRDType.CloturePartageExistant => "Clôture du partage",
+
+            _ => type.ToString()
+        };
+    }
+
+
+    /// <summary>
+    /// Retourne l'historique après application des filtres UI--> Le filtrage est volontairement effectué côté Razor car le volume de ddes d'un partage reste limité. 
+    /// Si le volume devient important, le filtrage pourra être déplacé côté backend.
+    /// </summary>
+    private IEnumerable<HistoriqueDemandeGrdDto> FilteredHistoriqueDemandes
+    {
+        get
+        {
+            var query = historiqueDemandes.AsEnumerable();
+
+
+            // ---------------------------------------------
+            // Filtre sur le type de demande
+            // ---------------------------------------------
+            if (historiqueTypeFilter != "all")
+            {
+                query = query.Where(demande =>
+                    demande.DemandeType.ToString() == historiqueTypeFilter);
+            }
+
+            // ---------------------------------------------
+            // Filtre sur le statut
+            // ---------------------------------------------
+            if (historiqueStatusFilter != "all")
+            {
+                query = query.Where(demande =>
+                    demande.ResponseStatus.ToString() == historiqueStatusFilter);
+            }
+
+            // Date de début incluse.
+            if (historiqueDateFrom.HasValue)
+            {
+                query = query.Where(demande =>
+                    demande.DateDemande.ToLocalTime().Date
+                    >= historiqueDateFrom.Value.Date);
+            }
+
+            // Date de fin incluse.
+            if (historiqueDateTo.HasValue)
+            {
+                query = query.Where(demande =>
+                    demande.DateDemande.ToLocalTime().Date
+                    <= historiqueDateTo.Value.Date);
+            }
+
+
+            return query;
+        }
+    }
+
+    /// <summary>
+    /// Réinitialise l'ensemble des filtres de l'historique.
+    /// </summary>
+    private void ResetHistoriqueFilters()
+    {
+        // historiqueSearchText = string.Empty;
+        historiqueTypeFilter = "all";
+        historiqueStatusFilter = "all";
+        historiqueDateFrom = null;
+        historiqueDateTo = null;
     }
 
 }
